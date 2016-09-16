@@ -1,0 +1,64 @@
+import numpy as np
+
+
+class Hex:
+
+    def __init__(self):
+        self.game = np.zeros((11, 11))
+        self.winner = 0
+
+    def play_move(self, move, player):
+        """
+        Play move for player specified
+        """
+        if(self.can_play_move(move)):
+            x, y = move
+            self.game[x, y] = player
+        else:
+            print("Illegal move!")
+
+    def can_play_move(self, move):
+        """
+        Check if a move is legal
+        """
+        x, y = move
+        return 0 <= x < 11 and 0 <= y < 11 and self.game[x, y] == 0
+
+    def get_game(self):
+        return np.copy(self.game)
+
+    def get_owner(self, x, y):
+        return self.game[x, y]
+
+    def get_winner(self):
+        if(self.winner != 0):
+            return self.winner
+        else:
+            def check(player):
+                checked = np.zeros((11, 11), dtype=bool)
+                pile = []
+                for a in range(11):
+                    if player == 1 and self.game[a, 0] == 1:
+                        pile.append((a, 0))
+                    elif player == 2 and self.game[0, a] == 2:
+                        pile.append((0, a))
+
+                while len(pile) != 0:
+                    x, y = pile.pop()
+
+                    if 0 <= x < 11 and 0 <= y < 11 and self.game[x, y] == player and not checked[x, y]:
+                        if (x == 10 and player == 2) or (y == 10 and player == 1):
+                            self.winner = player
+                            return player
+
+                        checked[x, y] = True
+                        pile.append((x - 1, y))
+                        pile.append((x + 1, y))
+                        pile.append((x, y - 1))
+                        pile.append((x, y + 1))
+                        pile.append((x + 1, y - 1))
+                        pile.append((x - 1, y + 1))
+            check(1)
+            check(2)
+
+        return 0
