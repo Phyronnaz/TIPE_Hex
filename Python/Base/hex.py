@@ -3,8 +3,11 @@ import numpy as np
 
 class Hex:
 
-    def __init__(self):
-        self.game = np.zeros((11, 11))
+    def __init__(self, game):
+        if game is None:
+            self.game = np.zeros((11, 11))
+        else:
+            self.game = game
         self.winner = 0
 
     def play_move(self, move, player):
@@ -14,8 +17,8 @@ class Hex:
         if(self.can_play_move(move)):
             x, y = move
             self.game[x, y] = player
-        else:
-            print("Illegal move!")
+        # else:
+        #    print("Illegal move!")
 
     def can_play_move(self, move):
         """
