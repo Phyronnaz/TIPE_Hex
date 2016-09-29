@@ -2,39 +2,33 @@ import numpy as np
 
 
 class Hex:
-
     def __init__(self, game):
         if game is None:
             self.game = np.zeros((11, 11))
         else:
             self.game = game
         self.winner = 0
+        self.shape = 11
 
     def play_move(self, move, player):
         """
         Play move for player specified
         """
-        if(self.can_play_move(move)):
-            x, y = move
-            self.game[x, y] = player
-        # else:
-        #    print("Illegal move!")
-
-    def can_play_move(self, move):
-        """
-        Check if a move is legal
-        """
         x, y = move
-        return 0 <= x < 11 and 0 <= y < 11 and self.game[x, y] == 0
+        if 0 <= x < 11 and 0 <= y < 11 and self.game[x, y] == 0:
+            self.game[x, y] = player
+            return True
+        else:
+            return False
 
-    def get_game(self):
+    def get_game_copy(self):
         return np.copy(self.game)
 
     def get_owner(self, x, y):
         return self.game[x, y]
 
     def get_winner(self):
-        if(self.winner != 0):
+        if (self.winner != 0):
             return self.winner
         else:
             def check(player):
@@ -61,6 +55,7 @@ class Hex:
                         pile.append((x, y + 1))
                         pile.append((x + 1, y - 1))
                         pile.append((x - 1, y + 1))
+
             check(1)
             check(2)
 

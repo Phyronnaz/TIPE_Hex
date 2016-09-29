@@ -3,7 +3,6 @@ import numpy as np
 
 
 class Renderer():
-
     def __init__(self, update, hexGame):
         def create_polygon(i, j, fill, outline):
             p = 25
