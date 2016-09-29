@@ -2,7 +2,7 @@ import numpy
 
 
 class HexGame:
-    def __init__(self, board=None, size=11):
+    def __init__(self, size=11, board=None):
         """
         Create new Hex Game
         :param board: Board to load
@@ -21,10 +21,9 @@ class HexGame:
         :param player: player whose playing
         :return: Whether or not the move succeed
         """
-        if player == self.current_player and 0 <= move_x < self.size and 0 <= move_y < self.size and self.board[
-            move_x, move_y] == 0:
+        if player == self.next_player and 0 <= move_x < self.size > move_y >= 0 and self.board[move_x, move_y] == 0:
             self.board[move_x, move_y] = player
-            self.current_player = 3 - player
+            self.next_player = 3 - player
             return True
         else:
             return False

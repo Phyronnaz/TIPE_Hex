@@ -1,19 +1,12 @@
-import numpy as np
+from hex_game.ai_neural_network import NeuralNetworkAI
+from hex_game.game_handler import GameHandler
+from hex_game.player import Player
 
-from hex_game.hex_game import HexGame
-from hex_game.renderer import Renderer
+# Human vs Human
+# GameHandler(NeuralNetworkAI(), Player())
 
-h = HexGame(None)
-h.play_move()
+# Player (random) vs Human
+# GameHandler(Player())
 
-def update():
-    w = h.get_winner()
-    if w == 0:
-        c = False
-        while not c:
-            move = (np.random.randint(11), np.random.randint(11))
-            c = h.play_move(move, np.random.randint(2) + 1)
-    else:
-        print(w)
-
-r = Renderer(update, h)
+# AI vs Player
+GameHandler(NeuralNetworkAI(), Player())
