@@ -1,12 +1,11 @@
 import numpy as np
 
-from Base.renderer import Renderer
-from Base.hex import Hex
+from hex_game.hex_game import HexGame
 
 l = []
 
 for i in range(100):
-    h = Hex(None)
+    h = HexGame(None)
     w = h.get_winner()
     j = 1
 

@@ -1,9 +1,10 @@
 import numpy as np
 
-from Base.renderer import Renderer
-from Base.hex import Hex
+from hex_game.hex_game import HexGame
+from hex_game.renderer import Renderer
 
-h = Hex(None)
+h = HexGame(None)
+h.play_move()
 
 def update():
     w = h.get_winner()
