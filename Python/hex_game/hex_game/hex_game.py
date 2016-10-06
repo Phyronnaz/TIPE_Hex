@@ -15,10 +15,10 @@ class HexGame:
 
     def play_move(self, move_x, move_y, player):
         """
-        Make players play a move
+        Make player play a move
         :param move_x: x position of the move
         :param move_y: y position of the move
-        :param player: players whose playing
+        :param player: player playing
         :return: Whether or not the move succeed
         """
         if player == self.next_player and 0 <= move_x < self.size > move_y >= 0 and self.board[move_x, move_y] == 0:
@@ -66,10 +66,10 @@ class HexGame:
 
         # Append edges
         for a in range(self.size):
-            if player == 1 and self.board[a, 0] == 1:
-                pile.append((a, 0))
-            elif player == 2 and self.board[0, a] == 2:
+            if player == 1 and self.board[0, a] == 1:
                 pile.append((0, a))
+            elif player == 2 and self.board[a, 0] == 2:
+                pile.append((a, 0))
 
         # Process tiles
         while len(pile) != 0:
@@ -77,7 +77,7 @@ class HexGame:
 
             if 0 <= x < self.size and 0 <= y < self.size and self.board[x, y] == player and not checked[x, y]:
 
-                if (x == self.size - 1 and player == 2) or (y == self.size - 1 and player == 1):
+                if (x == self.size - 1 and player == 1) or (y == self.size - 1 and player == 2):
                     return True
 
                 checked[x, y] = True

@@ -6,8 +6,8 @@ class GameHandler:
     def __init__(self, player1, player2, size=11):
         """
         Create new Game Handler
-        :param player1: players 1, human if not specified
-        :param player2: players 2, human if not specified
+        :param player1: player 1
+        :param player2: player 2
         """
         self.next_player = 1
         self.hex_game = HexGame(size=size)

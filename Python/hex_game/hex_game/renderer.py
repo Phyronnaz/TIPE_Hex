@@ -42,6 +42,7 @@ class Renderer:
 
         # Initialize arrays
         self.polygons = []
+        self.lines = []
         self.hexagons = numpy.zeros(hex_game.board.shape)
 
         # Create game hexagons
@@ -51,13 +52,13 @@ class Renderer:
 
         # Create edges hexagons
         for x in range(-1, hex_game.size + 1):
-            self.create_hexagon(x, -1, '#99dafa', False)
+            self.create_hexagon(x, -1, '#f7597c', False)
         for x in range(-1, hex_game.size + 1):
-            self.create_hexagon(x, hex_game.size, '#99dafa', False)
+            self.create_hexagon(x, hex_game.size, '#f7597c', False)
         for y in range(-1, hex_game.size + 1):
-            self.create_hexagon(-1, y, '#f7597c', False)
+            self.create_hexagon(-1, y, '#99dafa', False)
         for y in range(-1, hex_game.size + 1):
-            self.create_hexagon(hex_game.size, y, '#f7597c', False)
+            self.create_hexagon(hex_game.size, y, '#99dafa', False)
 
         # Recenter
         self.recenter()
@@ -81,6 +82,10 @@ class Renderer:
         self.mainloop()
         self.window.mainloop()
 
+    def clear_lines(self):
+        for l in self.lines:
+            self.canvas.delete(l)
+
     def create_line(self, p1, p2, color="yellow"):
         """
         Create line between p1 and p2
@@ -94,7 +99,7 @@ class Renderer:
         y2 = p2[1] * (2 - numpy.cos(5 * numpy.pi / 3))
         x1, y1 = self.get_coords(x1, y1)
         x2, y2 = self.get_coords(x2, y2)
-        self.canvas.create_line(x1, y1, x2, y2, state=tk.DISABLED, fill=color, width=self.scale / 5, )
+        self.lines.append(self.canvas.create_line(x1, y1, x2, y2, state=tk.DISABLED, fill=color, width=self.scale / 5))
 
     def create_hexagon(self, x, y, fill_color, outline=True, transparent=False):
         """
