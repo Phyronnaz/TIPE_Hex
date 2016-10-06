@@ -15,10 +15,10 @@ class HexGame:
 
     def play_move(self, move_x, move_y, player):
         """
-        Make player play a move
+        Make players play a move
         :param move_x: x position of the move
         :param move_y: y position of the move
-        :param player: player whose playing
+        :param player: players whose playing
         :return: Whether or not the move succeed
         """
         if player == self.next_player and 0 <= move_x < self.size > move_y >= 0 and self.board[move_x, move_y] == 0:
@@ -39,14 +39,14 @@ class HexGame:
         Get tile x, y
         :param x: x position
         :param y: y position
-        :return: 0 if empty, 1 if owned by player 1 and else 2
+        :return: 0 if empty, 1 if owned by players 1 and else 2
         """
         return self.board[x, y]
 
     def get_winner(self):
         """
         Get the winner of the game
-        :return: 0 if nobody win, 1 for player 1 and 2 for player 2
+        :return: 0 if nobody win, 1 for players 1 and 2 for players 2
         """
         if self.winner == 0:
             if self.has_win(1):
@@ -57,9 +57,9 @@ class HexGame:
 
     def has_win(self, player):
         """
-        Check if a player has win
-        :param player: int corresponding to the player (1 or 2)
-        :return: Whether or not player has win
+        Check if a players has win
+        :param player: int corresponding to the players (1 or 2)
+        :return: Whether or not players has win
         """
         checked = numpy.zeros(self.board.shape, dtype=bool)
         pile = []

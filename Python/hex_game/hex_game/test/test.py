@@ -1,6 +1,6 @@
-from hex_game.ai_neural_network import NeuralNetworkAI
+from hex_game.ai_path import PathAI
 from hex_game.game_handler import GameHandler
-from hex_game.player import Player
+from hex_game.player_human import HumanPlayer
 
 # Human vs Human
 # GameHandler(NeuralNetworkAI(), Player())
@@ -9,4 +9,4 @@ from hex_game.player import Player
 # GameHandler(Player())
 
 # AI vs Player
-GameHandler(NeuralNetworkAI(), Player())
+GameHandler(HumanPlayer(), PathAI())

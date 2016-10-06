@@ -2,6 +2,9 @@ import numpy
 
 
 class Player:
+    def init(self, renderer):
+        pass
+
     def play_move(self, player, hex_game):
         """
         Play a move
