@@ -24,7 +24,8 @@ class PathAI:
         :return: 0 : fail, 1 :  success, 2 : wait
         """
         self.renderer.clear_lines()
-        groups = [self.get_groups(hex_game.board, 0), self.get_groups(hex_game.board, 1)]
+
+        groups = [self.get_groups(hex_game.board, k) for k in [0, 1]]
 
         if len(groups[0]) > 0 and len(groups[1]) > 0:
             scores = [[], []]
@@ -34,23 +35,28 @@ class PathAI:
                     l = []
                     for c in g:
                         l.append(c[0])
-                        l.append(c[1])
+                        if len(c) > 1:
+                            l.append(c[1])
+
                     maximum = max(l, key=lambda t: t[k])[k]
                     minimum = min(l, key=lambda t: t[k])[k]
 
                     scores[k].append(maximum - minimum)
 
-            bests = [groups[0][numpy.argmax(scores[0])], groups[1][numpy.argmax(scores[1])]]
-            score = [scores[0][numpy.argmax(scores[0])] for k in [0, 1]]
-            # print(score[0])
-            # print(score[1])
-            # print("///////////////////////////")
-            if score[player] < score[1 - player]:
-                move = PathAI.counter(bests[1 - player], hex_game.board, player)
-            else:
+            bests = [groups[k][numpy.argmax(scores[k])] for k in [0, 1]]
+            score = [scores[k][numpy.argmax(scores[k])] for k in [0, 1]]
+            print("Player 0 score : " + str(score[0]))
+            print("Player 1 score : " + str(score[1]))
+            print("///////////////////////////")
+
+            if score[player] >= score[1 - player]:
                 move = PathAI.counter_counter(bests[player], hex_game.board, player)
                 if move is None:
                     move = PathAI.continue_path(bests[player], hex_game.board, player)
+                if move is None:
+                    move = PathAI.start(hex_game.board, player)
+            else:
+                move = PathAI.counter(bests[1 - player], hex_game.board, player)
         else:
             move = PathAI.start(hex_game.board, player)
 
@@ -69,6 +75,8 @@ class PathAI:
         for i in range(size):
             for j in range(size):
                 if board[i, j] == player:
+                    if i not in [0, size - 1] and j not in [0, size - 1]:
+                        couples.append([(i, j)])
                     l0 = [(i + x, j + y) for x, y in self.NEIGHBORS_1]
                     l1 = [(i + x, j + y) for x, y in self.NEIGHBORS_2]
                     for p in l0 + l1:
@@ -94,7 +102,8 @@ class PathAI:
                     if group1 != group2:
                         for c1 in group1:
                             for c2 in group2:
-                                if c1[0] == c2[0] or c1[0] == c2[1] or c1[1] == c2[0] or c1[1] == c2[1]:
+                                s = len(c1) > 1 and len(c2) > 1
+                                if c1[0] == c2[0] or (s and (c1[0] == c2[1] or c1[1] == c2[0] or c1[1] == c2[1])):
                                     group1.extend(group2)
                                     f_groups.remove(group2)
                                     return True
@@ -108,14 +117,18 @@ class PathAI:
         for g in groups:
             color = "#" + ("%06x" % random.randint(0, 16777215))
             for c in g:
-                self.renderer.create_line(c[0] - numpy.ones(2), c[1] - numpy.ones(2), color)
+                if len(c) > 1:
+                    self.renderer.create_line(c[0] - numpy.ones(2), c[1] - numpy.ones(2), color)
 
         return numpy.array(groups)
 
     @staticmethod
     def start(board, player):
         print("Start")
-        for p in [(6, 6), (7, 4), (8, 3)]:
+        for p in [(k, l) for k in range(2, 6) for l in range(6, 9)]:
+            if player == 1:
+                a, b = p
+                p = b, a
             if board[p] == -1:
                 return p
 
@@ -128,32 +141,34 @@ class PathAI:
     @staticmethod
     def counter_counter(group, board, player):
         for c in group:
-            if c[2] == 1:
-                p1, p2 = PathAI.get_common_neighbours(c[0], c[1])
-                if board[p1] == -1 and board[p2] == 1 - player:
-                    print("Counter counter")
-                    return p1
-                elif board[p2] == -1 and board[p1] == 1 - player:
-                    print("Counter counter")
-                    return p2
+            if len(c) > 1:
+                if c[2] == 1:
+                    p1, p2 = PathAI.get_common_neighbours(c[0], c[1])
+                    if board[p1] == -1 and board[p2] == 1 - player:
+                        print("Counter counter")
+                        return p1
+                    elif board[p2] == -1 and board[p1] == 1 - player:
+                        print("Counter counter")
+                        return p2
 
         return None
 
     @staticmethod
     def continue_path(group, board, player):
         print("Continue path")
+        move = None
         size = board.shape[0] - 1
-        tiles = []
 
+        tiles = []
         for c in group:
-            tiles.append(c[0])
-            tiles.append(c[1])
+            if len(c) > 1:
+                tiles.append(c[0])
+                tiles.append(c[1])
+        if len(tiles) == 0:
+            return move
 
         maximum = max(tiles, key=lambda t: t[player])
         minimum = min(tiles, key=lambda t: t[player])
-
-        print(minimum)
-        print(maximum)
 
         if maximum[player] - minimum[player] == size:
             print("Complete path")
@@ -174,10 +189,11 @@ class PathAI:
     @staticmethod
     def complete_path(group, board):
         for c in group:
-            if c[2] == 1:
-                p1, p2 = PathAI.get_common_neighbours(c[0], c[1])
-                if board[p1] == -1 and board[p2] == -1:
-                    return p1
+            if len(c) > 1:
+                if c[2] == 1:
+                    p1, p2 = PathAI.get_common_neighbours(c[0], c[1])
+                    if board[p1] == -1 and board[p2] == -1:
+                        return p1
         print("No path completion found")
 
     @staticmethod
@@ -197,6 +213,10 @@ class PathAI:
             i = 4
         elif side == [-1, 1]:
             i = 5
+        elif side == [-1, 0]:
+            i = 5
+        elif side == [1, 0]:
+            i = 2
 
         def check(a):
             return 1 <= a[0] < board.shape[0] - 1 > a[1] >= 1 and board[a[0], a[1]] == -1
