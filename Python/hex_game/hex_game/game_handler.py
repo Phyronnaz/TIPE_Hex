@@ -27,5 +27,5 @@ class GameHandler:
                 return
             else:
                 self.next_player = 1 - self.next_player
-        elif self.hex_game.winner == 0:
+        elif self.hex_game.winner == -1:
             print("Player " + str(self.hex_game.get_winner()) + " won")

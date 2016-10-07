@@ -8,21 +8,25 @@ class HexGame:
         :param board: Board to load
         :param size: Size of the game to create
         """
-        self.board = board if board is not None else -numpy.ones((size, size))
+        self.board = board if board is not None else -numpy.ones((size + 2, size + 2))
+        self.board[0, :] = 0
+        self.board[-1, :] = 0
+        self.board[:, -1] = 1
+        self.board[:, 0] = 1
         self.winner = -1
         self.size = size
         self.next_player = 0
 
-    def play_move(self, move_x, move_y, player):
+    def play_move(self, x, y, player):
         """
         Make player play a move
-        :param move_x: x position of the move
-        :param move_y: y position of the move
+        :param x: x position of the move
+        :param y: y position of the move
         :param player: player playing
         :return: Whether or not the move succeed
         """
-        if 0 <= move_x < self.size > move_y >= 0 and self.board[move_x, move_y] != player == self.next_player:
-            self.board[move_x, move_y] = player
+        if 0 <= x < self.size > y >= 0 and self.board[x + 1, y + 1] == -1 and player == self.next_player:
+            self.board[x + 1, y + 1] = player
             self.next_player = 1 - player
             return True
         else:
@@ -41,7 +45,7 @@ class HexGame:
         :param y: y position
         :return: 0 if empty, 1 if owned by players 1 and else 2
         """
-        return self.board[x, y]
+        return self.board[x + 1, y + 1]
 
     def get_winner(self):
         """
@@ -61,21 +65,21 @@ class HexGame:
         :param player: int corresponding to the player (0 or 1)
         :return: Whether or not player has win
         """
-        checked = numpy.zeros(self.board.shape, dtype=bool)
+        checked = numpy.zeros((self.size, self.size), dtype=bool)
         pile = []
 
         # Append edges
         for a in range(self.size):
-            if player == 0 and self.board[0, a] == 0:
+            if player == 0 and self.get_tile(0, a) == 0:
                 pile.append((0, a))
-            elif player == 1 and self.board[a, 0] == 1:
+            elif player == 1 and self.get_tile(a, 0) == 1:
                 pile.append((a, 0))
 
         # Process tiles
         while len(pile) != 0:
             x, y = pile.pop()
 
-            if 0 <= x < self.size and 0 <= y < self.size and self.board[x, y] == player and not checked[x, y]:
+            if 0 <= x < self.size and 0 <= y < self.size and self.get_tile(x, y) == player and not checked[x, y]:
 
                 if (x == self.size - 1 and player == 0) or (y == self.size - 1 and player == 1):
                     return True

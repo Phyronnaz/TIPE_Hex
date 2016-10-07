@@ -6,6 +6,9 @@ from hex_game.player_human import HumanPlayer
 
 
 class PathAI:
+    NEIGHBORS_1 = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
+    NEIGHBORS_2 = [(-1, 2), (1, 1), (2, -1), (1, -2), (-1, -1), (-2, 1)]
+
     def __init__(self):
         self.human = HumanPlayer()
 
@@ -39,20 +42,19 @@ class PathAI:
 
             bests = [groups[0][numpy.argmax(scores[0])], groups[1][numpy.argmax(scores[1])]]
             score = [scores[0][numpy.argmax(scores[0])] for k in [0, 1]]
-            print(score[0])
-            print(score[1])
-            print("///////////////////////////")
+            # print(score[0])
+            # print(score[1])
+            # print("///////////////////////////")
             if score[player] < score[1 - player]:
-                move = self.counter(bests[1 - player], hex_game.board, player)
+                move = PathAI.counter(bests[1 - player], hex_game.board, player)
             else:
-                move = self.continue_path(bests[player], hex_game.board, player)
+                move = PathAI.counter_counter(bests[player], hex_game.board, player)
+                if move is None:
+                    move = PathAI.continue_path(bests[player], hex_game.board, player)
         else:
-            if hex_game.get_tile(5, 5) == 0:
-                move = (5, 5)
-            else:
-                move = (6, 3)
+            move = PathAI.start(hex_game.board, player)
 
-        return hex_game.play_move(move[0], move[1], player)
+        return hex_game.play_move(move[0] - 1, move[1] - 1, player)
 
     def get_groups(self, board, player):
         """
@@ -63,34 +65,36 @@ class PathAI:
         """
         # Generate couples
         couples = []
-        for i in range(board.shape[0]):
-            for j in range(board.shape[1]):
+        size = board.shape[0]
+        for i in range(size):
+            for j in range(size):
                 if board[i, j] == player:
-                    l0 = [[i - 1, j], [i + 1, j], [i, j - 1], [i, j + 1], [i - 1, j + 1], [i + 1, j - 1]]
-                    l1 = [[i - 1, j - 1], [i - 2, j + 1], [i - 1, j + 2], [i + 1, j + 1], [i + 2, j - 1],
-                          [i + 1, j - 2]]
+                    l0 = [(i + x, j + y) for x, y in self.NEIGHBORS_1]
+                    l1 = [(i + x, j + y) for x, y in self.NEIGHBORS_2]
                     for p in l0 + l1:
-                        if 0 <= p[0] < board.shape[0] and 0 <= p[1] < board.shape[1] and board[p[0], p[1]] == player:
+                        border = (i == 0 and p[0] == 0) or (i == size - 1 and p[0] == size - 1) or \
+                                 (j == 0 and p[1] == 0) or (j == size - 1 and p[1] == size - 1)
+                        if 0 <= p[0] < size and 0 <= p[1] < size and board[p] == player and not border:
                             # self.renderer.create_hexagon(p2[0], p2[1], "pink", transparent=True)
                             if p in l0:
-                                couples.append(([i, j], p, 0))
+                                couples.append(((i, j), p, 0))
                             else:
                                 # for a, b in self.get_common_neighbours([i, j], p):
                                 #    self.renderer.create_hexagon(a, b, "green", transparent=True)
-                                couples.append(([i, j], p, 1))
+                                couples.append(((i, j), p, 1))
 
         # Group couples
         groups = [[k] for k in couples]
 
-        def fusion(groups):
-            for group1 in groups:
-                for group2 in groups:
+        def fusion(f_groups):
+            for group1 in f_groups:
+                for group2 in f_groups:
                     if group1 != group2:
                         for c1 in group1:
                             for c2 in group2:
                                 if c1[0] == c2[0] or c1[0] == c2[1] or c1[1] == c2[0] or c1[1] == c2[1]:
                                     group1.extend(group2)
-                                    groups.remove(group2)
+                                    f_groups.remove(group2)
                                     return True
             return False
 
@@ -102,77 +106,115 @@ class PathAI:
         for g in groups:
             color = "#" + ("%06x" % random.randint(0, 16777215))
             for c in g:
-                self.renderer.create_line(c[0], c[1], color)
+                self.renderer.create_line(c[0] - numpy.ones(2), c[1] - numpy.ones(2), color)
+
         return numpy.array(groups)
 
-    def counter(self, group, board, player):
+    @staticmethod
+    def start(board, player):
+        print("Start")
+        for p in [(6, 6), (7, 4), (8, 3)]:
+            if board[p] == -1:
+                return p
+
+    @staticmethod
+    def counter(group, board, player):
+        print("Counter")
         move = (0, 0)
         return move
 
-    def continue_path(self, group, board, player):
-        l = []
+    @staticmethod
+    def counter_counter(group, board, player):
         for c in group:
-            l.append(c[0])
-            l.append(c[1])
-        maximum = max(l, key=lambda t: t[player])
-        minimum = min(l, key=lambda t: t[player])
-        if minimum[player] > 10 - maximum[player]:
+            if c[2] == 1:
+                p1, p2 = PathAI.get_common_neighbours(c[0], c[1])
+                if board[p1] == -1 and board[p2] == 1 - player:
+                    print("Counter counter")
+                    return p1
+                elif board[p2] == -1 and board[p1] == 1 - player:
+                    print("Counter counter")
+                    return p2
+
+        return None
+
+    @staticmethod
+    def continue_path(group, board, player):
+        print("Continue path")
+        size = board.shape[0] - 1
+        tiles = []
+
+        for c in group:
+            tiles.append(c[0])
+            tiles.append(c[1])
+
+        maximum = max(tiles, key=lambda t: t[player])
+        minimum = min(tiles, key=lambda t: t[player])
+
+        print(minimum)
+        print(maximum)
+
+        if maximum[player] - minimum[player] == size:
+            print("Complete path")
+            move = PathAI.complete_path(group, board)
+        elif maximum[player] > size - minimum[player] and minimum[player] != 0:
             side = [0, 0]
             side[player] = -1
-            move = self.get_next(side, board, minimum)
-        else:
+            move = PathAI.get_next(side, board, minimum)
+        elif maximum[player] != board.shape[0] - 1:
             side = [0, 0]
             side[player] = 1
-            move = self.get_next(side, board, maximum)
+            move = PathAI.get_next(side, board, maximum)
+        else:
+            print("No move")
+
         return move
 
     @staticmethod
-    def get_next(side, board, p):
-        p = numpy.array(p)
-        if side == [1, 0]:
-            x = p + numpy.array([2, -1])
-            if board[x[0], x[1]] == 0:
-                return x
-            x = p + numpy.array([1, -2])
-            if board[x[0], x[1]] == 0:
-                return x
-            x = p + numpy.array([1, 1])
-            if board[x[0], x[1]] == 0:
-                return x
+    def complete_path(group, board):
+        for c in group:
+            if c[2] == 1:
+                p1, p2 = PathAI.get_common_neighbours(c[0], c[1])
+                if board[p1] == -1 and board[p2] == -1:
+                    return p1
 
-        if side == [-1, 0]:
-            x = p + numpy.array([-2, 1])
-            if board[x[0], x[1]] == 0:
-                return x
-            x = p + numpy.array([-1, 2])
-            if board[x[0], x[1]] == 0:
-                return x
-            x = p + numpy.array([-1, -1])
-            if board[x[0], x[1]] == 0:
-                return x
+    @staticmethod
+    def get_next(side, board, p):
+        side = numpy.array(side).tolist()
+        p = numpy.array(p)
 
         if side == [0, 1]:
-            x = p + numpy.array([-1, 2])
-            if board[x[0], x[1]] == 0:
-                return x
-            x = p + numpy.array([-2, 1])
-            if board[x[0], x[1]] == 0:
-                return x
-            x = p + numpy.array([1, 1])
-            if board[x[0], x[1]] == 0:
+            i = 0
+        elif side == [1, 1]:
+            i = 1
+        elif side == [1, -1]:
+            i = 2
+        elif side == [0, -1]:
+            i = 3
+        elif side == [-1, -1]:
+            i = 4
+        elif side == [-1, 1]:
+            i = 5
+
+        def check(a):
+            return 1 <= a[0] < board.shape[0] - 1 > a[1] >= 1 and board[a[0], a[1]] == -1
+
+        p1 = numpy.array(PathAI.NEIGHBORS_2[i]) + p
+        p2 = numpy.array(PathAI.NEIGHBORS_2[i - 1]) + p
+        p3 = numpy.array(PathAI.NEIGHBORS_2[(i + 1) % 6]) + p
+        possibilities = [p1]
+        possibilities += PathAI.get_common_neighbours(p1, p)
+        possibilities += PathAI.get_common_neighbours(p2, p)
+        possibilities += PathAI.get_common_neighbours(p3, p)
+        possibilities += [p2]
+        possibilities += [p3]
+
+        for x in possibilities:
+            if check(x):
                 return x
 
-        if side == [0, -1]:
-            x = p + numpy.array([1, -2])
-            if board[x[0], x[1]] == 0:
-                return x
-            x = p + numpy.array([-1, -1])
-            if board[x[0], x[1]] == 0:
-                return x
-            x = p + numpy.array([2, -1])
-            if board[x[0], x[1]] == 0:
-                return x
+        print("Error: No next to play")
 
+    @staticmethod
     def get_common_neighbours(p1, p2):
         """
         Get common neighbours of points p1 and p2
@@ -180,8 +222,8 @@ class PathAI:
         :param p2: point 2
         :return: list of tuple
         """
-        x, y = p1
-        l1 = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1), (x - 1, y + 1), (x + 1, y - 1)]
-        x, y = p2
-        l2 = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1), (x - 1, y + 1), (x + 1, y - 1)]
+        i, j = p1
+        l1 = [(i + x, j + y) for x, y in PathAI.NEIGHBORS_1]
+        i, j = p2
+        l2 = [(i + x, j + y) for x, y in PathAI.NEIGHBORS_1]
         return [k for k in l1 if k in l2]
