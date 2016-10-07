@@ -81,7 +81,9 @@ class PathAI:
                             else:
                                 # for a, b in self.get_common_neighbours([i, j], p):
                                 #    self.renderer.create_hexagon(a, b, "green", transparent=True)
-                                couples.append(((i, j), p, 1))
+                                p1, p2 = PathAI.get_common_neighbours((i, j), p)
+                                if board[p1] == -1 and board[p2] == -1:
+                                    couples.append(((i, j), p, 1))
 
         # Group couples
         groups = [[k] for k in couples]
@@ -176,6 +178,7 @@ class PathAI:
                 p1, p2 = PathAI.get_common_neighbours(c[0], c[1])
                 if board[p1] == -1 and board[p2] == -1:
                     return p1
+        print("No path completion found")
 
     @staticmethod
     def get_next(side, board, p):
