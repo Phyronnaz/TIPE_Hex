@@ -8,10 +8,10 @@ class HexGame:
         :param board: Board to load
         :param size: Size of the game to create
         """
-        self.board = board if board is not None else numpy.zeros((size, size))
-        self.winner = 0
+        self.board = board if board is not None else -numpy.ones((size, size))
+        self.winner = -1
         self.size = size
-        self.next_player = 1
+        self.next_player = 0
 
     def play_move(self, move_x, move_y, player):
         """
@@ -21,9 +21,9 @@ class HexGame:
         :param player: player playing
         :return: Whether or not the move succeed
         """
-        if player == self.next_player and 0 <= move_x < self.size > move_y >= 0 and self.board[move_x, move_y] == 0:
+        if 0 <= move_x < self.size > move_y >= 0 and self.board[move_x, move_y] != player == self.next_player:
             self.board[move_x, move_y] = player
-            self.next_player = 3 - player
+            self.next_player = 1 - player
             return True
         else:
             return False
@@ -46,29 +46,29 @@ class HexGame:
     def get_winner(self):
         """
         Get the winner of the game
-        :return: 0 if nobody win, 1 for players 1 and 2 for players 2
+        :return: -1 if nobody win, 0 for players 0 and 1 for players 1
         """
-        if self.winner == 0:
-            if self.has_win(1):
+        if self.winner == -1:
+            if self.has_win(0):
+                self.winner = 0
+            elif self.has_win(1):
                 self.winner = 1
-            elif self.has_win(2):
-                self.winner = 2
         return self.winner
 
     def has_win(self, player):
         """
-        Check if a players has win
-        :param player: int corresponding to the players (1 or 2)
-        :return: Whether or not players has win
+        Check if a player has win
+        :param player: int corresponding to the player (0 or 1)
+        :return: Whether or not player has win
         """
         checked = numpy.zeros(self.board.shape, dtype=bool)
         pile = []
 
         # Append edges
         for a in range(self.size):
-            if player == 1 and self.board[0, a] == 1:
+            if player == 0 and self.board[0, a] == 0:
                 pile.append((0, a))
-            elif player == 2 and self.board[a, 0] == 2:
+            elif player == 1 and self.board[a, 0] == 1:
                 pile.append((a, 0))
 
         # Process tiles
@@ -77,7 +77,7 @@ class HexGame:
 
             if 0 <= x < self.size and 0 <= y < self.size and self.board[x, y] == player and not checked[x, y]:
 
-                if (x == self.size - 1 and player == 1) or (y == self.size - 1 and player == 2):
+                if (x == self.size - 1 and player == 0) or (y == self.size - 1 and player == 1):
                     return True
 
                 checked[x, y] = True

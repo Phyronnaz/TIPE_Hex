@@ -21,7 +21,7 @@ class PathAI:
         :return: 0 : fail, 1 :  success, 2 : wait
         """
         self.renderer.clear_lines()
-        groups = [self.get_groups(hex_game.board, 1), self.get_groups(hex_game.board, 2)]
+        groups = [self.get_groups(hex_game.board, 0), self.get_groups(hex_game.board, 1)]
 
         if len(groups[0]) > 0 and len(groups[1]) > 0:
             scores = [[], []]
@@ -42,10 +42,10 @@ class PathAI:
             print(score[0])
             print(score[1])
             print("///////////////////////////")
-            if score[player - 1] < score[2 - player]:
-                move = self.counter(bests[2 - player], hex_game.board, player)
+            if score[player] < score[1 - player]:
+                move = self.counter(bests[1 - player], hex_game.board, player)
             else:
-                move = self.continue_path(bests[player - 1], hex_game.board, player)
+                move = self.continue_path(bests[player], hex_game.board, player)
         else:
             if hex_game.get_tile(5, 5) == 0:
                 move = (5, 5)
@@ -110,24 +110,24 @@ class PathAI:
         return move
 
     def continue_path(self, group, board, player):
-        k = player - 1
         l = []
         for c in group:
             l.append(c[0])
             l.append(c[1])
-        maximum = max(l, key=lambda t: t[k])
-        minimum = min(l, key=lambda t: t[k])
-        if minimum[k] > 10 - maximum[k]:
+        maximum = max(l, key=lambda t: t[player])
+        minimum = min(l, key=lambda t: t[player])
+        if minimum[player] > 10 - maximum[player]:
             side = [0, 0]
-            side[k] = -1
+            side[player] = -1
             move = self.get_next(side, board, minimum)
         else:
             side = [0, 0]
-            side[k] = 1
+            side[player] = 1
             move = self.get_next(side, board, maximum)
         return move
 
-    def get_next(self, side, board, p):
+    @staticmethod
+    def get_next(side, board, p):
         p = numpy.array(p)
         if side == [1, 0]:
             x = p + numpy.array([2, -1])

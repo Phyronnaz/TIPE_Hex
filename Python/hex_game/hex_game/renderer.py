@@ -23,8 +23,8 @@ class Renderer:
         self.min_y = 0
         self.max_x = 0
         self.max_y = 0
-        self.xoffset = 0
-        self.yoffset = 0
+        self.x_offset = 0
+        self.y_offset = 0
 
         # Initialize Tk and Canvas
         self.window = tk.Tk()
@@ -144,7 +144,7 @@ class Renderer:
         x *= self.scale
         y *= self.scale
         y, x = r.dot(numpy.array([x, y]))
-        return x + self.xoffset, y + self.yoffset
+        return x + self.x_offset, y + self.y_offset
 
     def recenter(self):
         """
@@ -154,8 +154,8 @@ class Renderer:
         for (p, l) in self.polygons:
             m = [l[i] - (self.min_x if i % 2 == 0 else self.min_y) for i in range(len(l))]
             self.canvas.coords(p, *m)
-        self.xoffset = -self.min_x
-        self.yoffset = -self.min_y
+        self.x_offset = -self.min_x
+        self.y_offset = -self.min_y
 
     def mainloop(self):
         """
@@ -165,13 +165,13 @@ class Renderer:
         for i in range(self.hex_game.size):
             for j in range(self.hex_game.size):
                 p = self.hex_game.get_tile(i, j)
-                if p == 0:
+                if p == -1:
                     c = 'white'
                     ac = 'grey'
-                elif p == 1:
+                elif p == 0:
                     c = 'blue'
                     ac = 'cyan'
-                elif p == 2:
+                elif p == 1:
                     c = 'red'
                     ac = 'pink'
 
