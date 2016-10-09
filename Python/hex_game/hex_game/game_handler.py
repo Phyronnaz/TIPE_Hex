@@ -11,7 +11,7 @@ class GameHandler:
         """
         self.next_player = 0
         self.hex_game = HexGame(size=size)
-        self.renderer = Renderer(self.update, self.hex_game, rotation=3.14 / 6, debug_text=True)
+        self.renderer = Renderer(self.update, self.hex_game, debug_text=True)
         self.players = [player1, player2]
         for p in self.players:
             p.init(self.renderer)

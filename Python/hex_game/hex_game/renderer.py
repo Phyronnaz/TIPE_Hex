@@ -4,7 +4,7 @@ import numpy
 
 
 class Renderer:
-    def __init__(self, update_delegate, hex_game, scale=25, rotation=45, debug_text=False):
+    def __init__(self, update_delegate, hex_game, scale=25, rotation=numpy.pi / 6, debug_text=False):
         """
         Create new Renderer
         :param update_delegate: function to call on update_delegate
