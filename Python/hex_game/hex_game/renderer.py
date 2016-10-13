@@ -177,4 +177,4 @@ class Renderer:
 
                 self.canvas.itemconfig(int(self.hexagons[i][j]), fill=c, activefill=ac)
 
-        self.window.after(15, self.mainloop)
+        self.window.after(30, self.mainloop)

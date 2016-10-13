@@ -2,13 +2,11 @@ import random
 
 import numpy
 
+import hex_game.tools as tools
 from hex_game.player_human import HumanPlayer
 
 
 class PathAI:
-    NEIGHBORS_1 = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
-    NEIGHBORS_2 = [(-1, 2), (1, 1), (2, -1), (1, -2), (-1, -1), (-2, 1)]
-
     def __init__(self):
         self.human = HumanPlayer()
 
@@ -21,232 +19,131 @@ class PathAI:
         Play a move
         :param player: Player playing
         :param hex_game: Hex Game to play on
-        :return: 0 : fail, 1 :  success, 2 : wait
+        :return: 0 : fail, 1 : success, 2 : wait
         """
         self.renderer.clear_lines()
+        print("///////////////////////////")
 
-        groups = [self.get_groups(hex_game.board, k) for k in [0, 1]]
+        groups = [tools.get_groups(hex_game.board, k) for k in [0, 1]]
+        scores, best_indices = tools.get_scores(hex_game.board, groups=groups, best=True)
 
-        if len(groups[0]) > 0 and len(groups[1]) > 0:
-            scores = [[], []]
+        if -1 not in best_indices:
+            best_groups = [groups[k][best_indices[k]] for k in [0, 1]]
 
+            # Debug groups and scores
+
+            # for c in best_groups[player]:
+            #     if c[2] == 1:
+            #         p = tools.get_common_neighbours(c[0], c[1])[0]
+            #         self.renderer.create_hexagon(p[0] - 1, p[1] - 1, "pink", transparent=True)
             for k in [0, 1]:
                 for g in groups[k]:
-                    l = []
+                    color = "#" + ("%06x" % random.randint(0, 16777215))
                     for c in g:
-                        l.append(c[0])
-                        if len(c) > 1:
-                            l.append(c[1])
+                        self.renderer.create_line(c[0] - numpy.ones(2), c[1] - numpy.ones(2), color)
 
-                    maximum = max(l, key=lambda t: t[k])[k]
-                    minimum = min(l, key=lambda t: t[k])[k]
+            print("Player 0 score : " + str(scores[0]))
+            print("Player 1 score : " + str(scores[1]))
 
-                    scores[k].append(maximum - minimum)
-
-            bests = [groups[k][numpy.argmax(scores[k])] for k in [0, 1]]
-            score = [scores[k][numpy.argmax(scores[k])] for k in [0, 1]]
-            print("Player 0 score : " + str(score[0]))
-            print("Player 1 score : " + str(score[1]))
-            print("///////////////////////////")
-
-            if score[player] >= score[1 - player]:
-                move = PathAI.counter_counter(bests[player], hex_game.board, player)
-                if move is None:
-                    move = PathAI.continue_path(bests[player], hex_game.board, player)
-                if move is None:
-                    move = PathAI.start(hex_game.board, player)
-            else:
-                move = PathAI.counter(bests[1 - player], hex_game.board, player)
+            choice = PathAI.choose_state(hex_game.board, player, scores, best_groups)
+            if choice == 0:
+                move = PathAI.first_move(hex_game.board, player)
+            elif choice == 1:
+                move = PathAI.counter(hex_game.board, player, best_groups[1 - player])
+            elif choice == 2:
+                move = PathAI.counter_counter(hex_game.board, player, best_groups[player])
+            elif choice == 3:
+                move = PathAI.continue_path(hex_game.board, player, best_groups[player])
+            elif choice == 4:
+                move = PathAI.complete_path(hex_game.board, best_groups[player])
         else:
-            move = PathAI.start(hex_game.board, player)
+            move = PathAI.first_move(hex_game.board, player)
 
+        print("///////////////////////////")
         return hex_game.play_move(move[0] - 1, move[1] - 1, player)
 
-    def get_groups(self, board, player):
+    @staticmethod
+    def choose_state(board, player, scores, best_groups):
         """
-        Detect groups of tile on board for player
-        :param board: game board
-        :param player: player to check
-        :return: array of array of (p1, p2, x) tuples where p1, p2 are positions and x the space between p1 and p2
+        Return the state to play
+        :param board: board
+        :param player: player
+        :return: 0 : start, 1 : counter, 2 : counter counter, 3 : continue_path, 4 : complete_path
         """
-        # Generate couples
-        couples = []
-        size = board.shape[0]
-        for i in range(size):
-            for j in range(size):
-                if board[i, j] == player:
-                    if i not in [0, size - 1] and j not in [0, size - 1]:
-                        couples.append([(i, j)])
-                    l0 = [(i + x, j + y) for x, y in self.NEIGHBORS_1]
-                    l1 = [(i + x, j + y) for x, y in self.NEIGHBORS_2]
-                    for p in l0 + l1:
-                        border = (i == 0 and p[0] == 0) or (i == size - 1 and p[0] == size - 1) or \
-                                 (j == 0 and p[1] == 0) or (j == size - 1 and p[1] == size - 1)
-                        if 0 <= p[0] < size and 0 <= p[1] < size and board[p] == player and not border:
-                            # self.renderer.create_hexagon(p2[0], p2[1], "pink", transparent=True)
-                            if p in l0:
-                                couples.append(((i, j), p, 0))
-                            else:
-                                # for a, b in self.get_common_neighbours([i, j], p):
-                                #    self.renderer.create_hexagon(a, b, "green", transparent=True)
-                                p1, p2 = PathAI.get_common_neighbours((i, j), p)
-                                if board[p1] == -1 and board[p2] == -1:
-                                    couples.append(((i, j), p, 1))
+        choice = 0
+        if scores[player] < scores[1 - player]:  # Counter
+            choice = 1
+        elif PathAI.counter_counter(board, player, best_groups[player]) is not None:  # Try counter counter
+            choice = 2
+        elif scores[player] == board.shape[0] - 1:  # Complete path
+            choice = 4
+        else:  # Continue path
+            choice = 3
 
-        # Group couples
-        groups = [[k] for k in couples]
-
-        def fusion(f_groups):
-            for group1 in f_groups:
-                for group2 in f_groups:
-                    if group1 != group2:
-                        for c1 in group1:
-                            for c2 in group2:
-                                s = len(c1) > 1 and len(c2) > 1
-                                if c1[0] == c2[0] or (s and (c1[0] == c2[1] or c1[1] == c2[0] or c1[1] == c2[1])):
-                                    group1.extend(group2)
-                                    f_groups.remove(group2)
-                                    return True
-            return False
-
-        b = True
-        while b:
-            b = fusion(groups)
-
-        # Debug groups
-        for g in groups:
-            color = "#" + ("%06x" % random.randint(0, 16777215))
-            for c in g:
-                if len(c) > 1:
-                    self.renderer.create_line(c[0] - numpy.ones(2), c[1] - numpy.ones(2), color)
-
-        return numpy.array(groups)
+        return choice
 
     @staticmethod
-    def start(board, player):
-        print("Start")
-        for p in [(k, l) for k in range(2, 6) for l in range(6, 9)]:
-            if player == 1:
-                a, b = p
-                p = b, a
-            if board[p] == -1:
-                return p
+    def first_move(board, player):
+        print("First move")
+        return 3, 5
 
     @staticmethod
-    def counter(group, board, player):
+    def counter(board, player, group):
         print("Counter")
         move = (0, 0)
         return move
 
     @staticmethod
-    def counter_counter(group, board, player):
+    def counter_counter(board, player, group):
         for c in group:
-            if len(c) > 1:
-                if c[2] == 1:
-                    p1, p2 = PathAI.get_common_neighbours(c[0], c[1])
-                    if board[p1] == -1 and board[p2] == 1 - player:
-                        print("Counter counter")
-                        return p1
-                    elif board[p2] == -1 and board[p1] == 1 - player:
-                        print("Counter counter")
-                        return p2
+            if c[2] == 1:
+                print(c)
+                p1, p2 = tools.get_common_neighbours(c[0], c[1])
+                if board[p1] == -1 and board[p2] == 1 - player:
+                    print("Counter counter")
+                    return p1
+                elif board[p2] == -1 and board[p1] == 1 - player:
+                    print("Counter counter")
+                    return p2
 
         return None
 
     @staticmethod
-    def continue_path(group, board, player):
+    def continue_path(board, player, group):
         print("Continue path")
         move = None
         size = board.shape[0] - 1
 
         tiles = []
         for c in group:
-            if len(c) > 1:
-                tiles.append(c[0])
+            tiles.append(c[0])
+            if c[2] != -1:
                 tiles.append(c[1])
         if len(tiles) == 0:
             return move
 
-        maximum = max(tiles, key=lambda t: t[player])
+        maximum = max(tiles, key=lambda t: t[player])  # TODO : put in tools
         minimum = min(tiles, key=lambda t: t[player])
 
-        if maximum[player] - minimum[player] == size:
-            print("Complete path")
-            move = PathAI.complete_path(group, board)
-        elif maximum[player] > size - minimum[player] and minimum[player] != 0:
+        if maximum[player] > size - minimum[player] and minimum[player] != 0:
             side = [0, 0]
             side[player] = -1
-            move = PathAI.get_next(side, board, minimum)
+            move = tools.get_next(side, board, minimum)
         elif maximum[player] != board.shape[0] - 1:
             side = [0, 0]
             side[player] = 1
-            move = PathAI.get_next(side, board, maximum)
+            move = tools.get_next(side, board, maximum)
         else:
             print("No move")
 
         return move
 
     @staticmethod
-    def complete_path(group, board):
+    def complete_path(board, group):
+        print("Complete path")
         for c in group:
-            if len(c) > 1:
-                if c[2] == 1:
-                    p1, p2 = PathAI.get_common_neighbours(c[0], c[1])
-                    if board[p1] == -1 and board[p2] == -1:
-                        return p1
+            if c[2] == 1:
+                p1, p2 = tools.get_common_neighbours(c[0], c[1])
+                if board[p1] == -1 and board[p2] == -1:
+                    return p1
         print("No path completion found")
-
-    @staticmethod
-    def get_next(side, board, p):
-        side = numpy.array(side).tolist()
-        p = numpy.array(p)
-
-        if side == [0, 1]:
-            i = 0
-        elif side == [1, 1]:
-            i = 1
-        elif side == [1, -1]:
-            i = 2
-        elif side == [0, -1]:
-            i = 3
-        elif side == [-1, -1]:
-            i = 4
-        elif side == [-1, 1]:
-            i = 5
-        elif side == [-1, 0]:
-            i = 5
-        elif side == [1, 0]:
-            i = 2
-
-        def check(a):
-            return 1 <= a[0] < board.shape[0] - 1 > a[1] >= 1 and board[a[0], a[1]] == -1
-
-        p1 = numpy.array(PathAI.NEIGHBORS_2[i]) + p
-        p2 = numpy.array(PathAI.NEIGHBORS_2[i - 1]) + p
-        p3 = numpy.array(PathAI.NEIGHBORS_2[(i + 1) % 6]) + p
-        possibilities = [p1]
-        possibilities += PathAI.get_common_neighbours(p1, p)
-        possibilities += PathAI.get_common_neighbours(p2, p)
-        possibilities += PathAI.get_common_neighbours(p3, p)
-        possibilities += [p2]
-        possibilities += [p3]
-
-        for x in possibilities:
-            if check(x):
-                return x
-
-        print("Error: No next to play")
-
-    @staticmethod
-    def get_common_neighbours(p1, p2):
-        """
-        Get common neighbours of points p1 and p2
-        :param p1: point 1
-        :param p2: point 2
-        :return: list of tuple
-        """
-        i, j = p1
-        l1 = [(i + x, j + y) for x, y in PathAI.NEIGHBORS_1]
-        i, j = p2
-        l2 = [(i + x, j + y) for x, y in PathAI.NEIGHBORS_1]
-        return [k for k in l1 if k in l2]

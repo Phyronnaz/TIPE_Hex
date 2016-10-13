@@ -22,7 +22,7 @@ class Demo:
 
     def change_player(self, event):
         print("Changing player")
-        self.current_player = 1 - self.current_player
+        self.current_player = (self.current_player + 2) % 3 - 1
 
     def take_screenshot(self, event):
         print("Taking screenshot")
