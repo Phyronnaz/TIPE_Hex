@@ -12,6 +12,9 @@ class NeuralNetworkAI(Player):
         """
         self.neural_network = neural_network if neural_network is not None else numpy.random.rand(size ** 2, size ** 2)
 
+    def init(self, renderer):
+        pass
+
     def play_move(self, player, hex_game):
         """
         Play a move

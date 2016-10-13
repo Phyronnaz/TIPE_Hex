@@ -2,10 +2,12 @@ from hex_game.player import Player
 
 
 class HumanPlayer(Player):
-    def __init__(self, renderer):
+    def __init__(self):
+        self.click_position = None
+
+    def init(self, renderer):
         self.renderer = renderer
         self.renderer.click_delegate.append(self.callback)
-        self.click_position = None
 
     def play_move(self, player, hex_game):
         """
@@ -24,4 +26,5 @@ class HumanPlayer(Player):
     def callback(self, event):
         id = event.widget.find_closest(event.x, event.y)
         s = self.renderer.canvas.gettags(id)
-        self.click_position = int(s[0]), int(s[1])
+        if len(s) >= 2:
+            self.click_position = int(s[0]), int(s[1])
