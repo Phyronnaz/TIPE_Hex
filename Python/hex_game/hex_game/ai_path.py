@@ -128,11 +128,11 @@ class PathAI:
         if maximum[player] > size - minimum[player] and minimum[player] != 0:
             side = [0, 0]
             side[player] = -1
-            move = tools.get_next(side, board, minimum)
+            move = tools.get_next(side, board, minimum, False)
         elif maximum[player] != board.shape[0] - 1:
             side = [0, 0]
             side[player] = 1
-            move = tools.get_next(side, board, maximum)
+            move = tools.get_next(side, board, maximum, False)
         else:
             print("No move")
 

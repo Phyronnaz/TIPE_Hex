@@ -28,7 +28,7 @@ def get_groups(board, player):
                             couples.append(((i, j), p, 0))
                         else:
                             p1, p2 = get_common_neighbours((i, j), p)
-                            if player not in [board[p1], board[p2]]:
+                            if player not in [board[p1], board[p2]] and (board[p1] == -1 or board[p2] == -1):
                                 couples.append(((i, j), p, 1))
 
     # Group couples
@@ -123,9 +123,9 @@ def get_next(side, board, p, far):  # TODO: not checked
         possibilities += [p2]
         possibilities += [p3]
     else:
-        possibilities += numpy.array(NEIGHBORS_1[i]) + p
-        possibilities += numpy.array(NEIGHBORS_1[i - 1]) + p
-        possibilities += numpy.array(NEIGHBORS_1[(i + 1) % 6]) + p
+        possibilities += [numpy.array(NEIGHBORS_1[i]) + p]
+        possibilities += [numpy.array(NEIGHBORS_1[i - 1]) + p]
+        possibilities += [numpy.array(NEIGHBORS_1[(i + 1) % 6]) + p]
 
     for x in possibilities:
         if check(x):
