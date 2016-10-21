@@ -4,19 +4,18 @@ import numpy
 
 
 class Renderer:
-    def __init__(self, update_delegate, hex_game, scale=25, rotation=numpy.pi / 6, debug_text=False):
+    def __init__(self, update_board, board: numpy.ndarray, scale: int = 25, rotation=numpy.pi / 6, debug_text=False):
         """
         Create new Renderer
-        :param update_delegate: function to call on update_delegate
-        :param hex_game: Hex Game to display
+        :param update_board: function to call to get the new board
+        :param board: board to display
         :param scale: scale factor for tiles
-        :param rotation: rotation of the boad in degrees
+        :param rotation: rotation of the board in radians
         """
 
         # Assign variables
-        self.update_delegate = update_delegate
-        self.click_delegate = []
-        self.hex_game = hex_game
+        self.update_board = update_board
+        self.click_delegates = []
         self.scale = scale
         self.rotation = rotation
         self.min_x = 0
@@ -35,7 +34,7 @@ class Renderer:
 
         # Click
         def click(event):
-            for f in self.click_delegate:
+            for f in self.click_delegates:
                 f(event)
 
         self.canvas.bind("<Button-1>", click)
@@ -43,22 +42,14 @@ class Renderer:
         # Initialize arrays
         self.polygons = []
         self.lines = []
-        self.hexagons = numpy.zeros(hex_game.board.shape)
+        self.hexagons = numpy.zeros(board.shape)
+
+        size = board.shape[0]
 
         # Create game hexagons
-        for i in range(hex_game.size):
-            for j in range(hex_game.size):
-                self.hexagons[i][j] = self.create_hexagon(i, j, 'white')
-
-        # Create edges hexagons
-        for x in range(-1, hex_game.size + 1):
-            self.create_hexagon(x, -1, '#f7597c', False)
-        for x in range(-1, hex_game.size + 1):
-            self.create_hexagon(x, hex_game.size, '#f7597c', False)
-        for y in range(-1, hex_game.size + 1):
-            self.create_hexagon(-1, y, '#99dafa', False)
-        for y in range(-1, hex_game.size + 1):
-            self.create_hexagon(hex_game.size, y, '#99dafa', False)
+        for i in range(size):
+            for j in range(size):
+                self.hexagons[i][j] = self.create_hexagon(i, j, 'white', 0 != i != size - 1 != j != 0)
 
         # Recenter
         self.recenter()
@@ -72,12 +63,12 @@ class Renderer:
                 x = sum(x) / len(x)
                 y = sum(y) / len(y)
                 s = self.canvas.gettags(p)
-                if 0 <= int(s[0]) < self.hex_game.size and 0 <= int(s[1]) < self.hex_game.size:
+                if 0 < int(s[0]) < size - 1 and 0 < int(s[1]) < size - 1:
                     self.canvas.create_text(x, y, text=s[0] + "," + s[1], state=tk.DISABLED, tag=s)
 
     def start(self):
         """
-        Start looping
+        Start loop
         """
         self.mainloop()
         self.window.mainloop()
@@ -161,11 +152,18 @@ class Renderer:
         """
         Mainloop for tkinter
         """
-        self.update_delegate()
-        for i in range(self.hex_game.size):
-            for j in range(self.hex_game.size):
-                p = self.hex_game.get_tile(i, j)
-                if p == -1:
+        board = self.update_board()
+        size = board.shape[0]
+        for i in range(size):
+            for j in range(size):
+                p = board[i, j]
+                if i == 0 or i == size - 1:
+                    c = '#99dafa'
+                    ac = c
+                elif j == 0 or j == size - 1:
+                    c = '#f7597c'
+                    ac = c
+                elif p == -1:
                     c = 'white'
                     ac = 'grey'
                 elif p == 0:

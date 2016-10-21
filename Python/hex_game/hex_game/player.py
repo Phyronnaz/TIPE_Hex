@@ -5,19 +5,20 @@ class Player:
     def init(self, renderer):
         pass
 
-    def play_move(self, player, hex_game):
+    def play_move(self, player: int, board: numpy.ndarray) -> bool:
         """
         Play a move
         :param player: Player playing
-        :param hex_game: Hex Game to play on
+        :param board: board to play on
         :return: 0 : fail, 1 :  success, 2 : wait
         """
         tries_count = 0
         has_played = False
-        while not has_played and tries_count < hex_game.size ** 2:
+        size = board.shape[0] - 2
+        while not has_played and tries_count < size ** 2:
             tries_count += 1
-            x = numpy.random.randint(hex_game.size)
-            y = numpy.random.randint(hex_game.size)
-            has_played = hex_game.play_move(x, y, player)
+            x = numpy.random.randint(size)
+            y = numpy.random.randint(size)
+            has_played = hex.play_move(board, x + 1, y + 1, player)
 
         return has_played

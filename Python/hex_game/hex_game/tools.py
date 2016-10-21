@@ -86,53 +86,23 @@ def get_scores(board, groups=None, best=False):
         return best_scores
 
 
-def get_next(side, board, p, far):  # TODO: not checked
-    side = numpy.array(side).tolist()
-    p = numpy.array(p)
-
-    if side == [0, 1]:
-        i = 0
-    elif side == [1, 1]:
-        i = 1
-    elif side == [1, -1]:
-        i = 2
-    elif side == [0, -1]:
-        i = 3
-    elif side == [-1, -1]:
-        i = 4
-    elif side == [-1, 1]:
-        i = 5
-    elif side == [-1, 0]:
-        i = 5
-    elif side == [1, 0]:
-        i = 2
-
-    def check(a):
-        return 1 <= a[0] < board.shape[0] - 1 > a[1] >= 1 and board[a[0], a[1]] == -1
-
-    possibilities = []
-
-    if far:
-        p1 = numpy.array(NEIGHBORS_2[i]) + p
-        p2 = numpy.array(NEIGHBORS_2[i - 1]) + p
-        p3 = numpy.array(NEIGHBORS_2[(i + 1) % 6]) + p
-        possibilities += [p1]
-        possibilities += get_common_neighbours(p1, p)
-        possibilities += get_common_neighbours(p2, p)
-        possibilities += get_common_neighbours(p3, p)
-        possibilities += [p2]
-        possibilities += [p3]
+def get_next(side: [int, int], p: numpy.ndarray, far: bool) -> numpy.ndarray:  # TODO: not checked
+    if not far:
+        side = numpy.array(side)
+        if sum(side) != 1 or (side[0] != 0 and side[0] != 0):
+            raise Exception("Bad argument", side)
+        return p + side
     else:
-        possibilities += [numpy.array(NEIGHBORS_1[i]) + p]
-        possibilities += [numpy.array(NEIGHBORS_1[i - 1]) + p]
-        possibilities += [numpy.array(NEIGHBORS_1[(i + 1) % 6]) + p]
-
-    for x in possibilities:
-        if check(x):
-            return x
-
-    print("Error: No next tile for " + str(p))
-    return None
+        if side == [0, 1]:
+            return p + numpy.array([-1, 2])
+        elif side == [0, -1]:
+            return p - numpy.array([-1, 2])
+        elif side == [1, 0]:
+            return p + numpy.array([2, -1])
+        elif side == [-1, 0]:
+            return p - numpy.array([2, -1])
+        else:
+            raise Exception("Bad argument", side)
 
 
 def get_common_neighbours(p1, p2):

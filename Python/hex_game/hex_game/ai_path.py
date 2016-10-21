@@ -2,6 +2,7 @@ import random
 
 import numpy
 
+import hex_game.hex_game as hex
 import hex_game.tools as tools
 from hex_game.player_human import HumanPlayer
 
@@ -9,23 +10,24 @@ from hex_game.player_human import HumanPlayer
 class PathAI:
     def __init__(self):
         self.human = HumanPlayer()
+        self.renderer = None
 
     def init(self, renderer):
         self.renderer = renderer
         self.human.init(renderer)
 
-    def play_move(self, player, hex_game):
+    def play_move(self, player: int, board: numpy.ndarray) -> bool:
         """
         Play a move
         :param player: Player playing
-        :param hex_game: Hex Game to play on
+        :param board: board to play on
         :return: 0 : fail, 1 : success, 2 : wait
         """
         self.renderer.clear_lines()
         print("///////////////////////////")
 
-        groups = [tools.get_groups(hex_game.board, k) for k in [0, 1]]
-        scores, best_indices = tools.get_scores(hex_game.board, groups=groups, best=True)
+        groups = [tools.get_groups(board, k) for k in [0, 1]]
+        scores, best_indices = tools.get_scores(board, groups=groups, best=True)
 
         if -1 not in best_indices:
             best_groups = [groups[k][best_indices[k]] for k in [0, 1]]
@@ -40,27 +42,27 @@ class PathAI:
                 for g in groups[k]:
                     color = "#" + ("%06x" % random.randint(0, 16777215))
                     for c in g:
-                        self.renderer.create_line(c[0] - numpy.ones(2), c[1] - numpy.ones(2), color)
+                        self.renderer.create_line(c[0], c[1], color)
 
             print("Player 0 score : " + str(scores[0]))
             print("Player 1 score : " + str(scores[1]))
 
-            choice = PathAI.choose_state(hex_game.board, player, scores, best_groups)
+            choice = PathAI.choose_state(board, player, scores, best_groups)
             if choice == 0:
-                move = PathAI.first_move(hex_game.board, player)
+                move = PathAI.first_move(board, player)
             elif choice == 1:
-                move = PathAI.counter(hex_game.board, player, best_groups[1 - player])
+                move = PathAI.counter(board, player, best_groups[1 - player])
             elif choice == 2:
-                move = PathAI.counter_counter(hex_game.board, player, best_groups[player])
+                move = PathAI.counter_counter(board, player, best_groups[player])
             elif choice == 3:
-                move = PathAI.continue_path(hex_game.board, player, best_groups[player])
+                move = PathAI.continue_path(board, player, best_groups[player])
             elif choice == 4:
-                move = PathAI.complete_path(hex_game.board, best_groups[player])
+                move = PathAI.complete_path(board, best_groups[player])
         else:
-            move = PathAI.first_move(hex_game.board, player)
+            move = PathAI.first_move(board, player)
 
         print("///////////////////////////")
-        return hex_game.play_move(move[0] - 1, move[1] - 1, player)
+        return hex.play_move(board, move[0] - 1, move[1] - 1, player)
 
     @staticmethod
     def choose_state(board, player, scores, best_groups):

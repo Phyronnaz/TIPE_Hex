@@ -1,3 +1,3 @@
-from hex_game.demo import Demo
+from hex_game.screenshot import Screenshot
 
-Demo()
+Screenshot()

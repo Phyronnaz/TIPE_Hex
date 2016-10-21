@@ -1,15 +1,15 @@
 import pyscreenshot
 
-from hex_game.demo_hex_game import DemoHexGame
+import hex_game.hex_game as hex
 from hex_game.player_human import HumanPlayer
 from hex_game.renderer import Renderer
 
 
-class Demo:
-    def __init__(self):
+class Screenshot:
+    def __init__(self, size=11):
         self.player = HumanPlayer()
-        self.hex_game = DemoHexGame()
-        self.renderer = Renderer(self.update_delegate, self.hex_game)
+        self.board = hex.init_board(size=size)
+        self.renderer = Renderer(self.update_delegate, self.board)
         self.player.init(self.renderer)
         self.current_player = 0
 
@@ -18,7 +18,8 @@ class Demo:
         self.renderer.start()
 
     def update_delegate(self):
-        self.player.play_move(self.current_player, self.hex_game)
+        self.player.play_move(self.current_player, self.board)
+        return self.board
 
     def change_player(self, event):
         print("Changing player")
