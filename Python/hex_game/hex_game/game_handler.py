@@ -8,7 +8,7 @@ from hex_game.renderer import Renderer
 
 
 class GameHandler:
-    def __init__(self, player1: Type(Player), player2: Type(Player), size: int = 11) -> object:
+    def __init__(self, player1: Type[Player], player2: Type[Player], size: int = 11) -> object:
         """
         Create new Game Handler
         :param player1: player 1
