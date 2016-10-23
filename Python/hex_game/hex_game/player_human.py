@@ -13,11 +13,12 @@ class HumanPlayer(Player):
         self.renderer = renderer
         self.renderer.click_delegates.append(self.callback)
 
-    def play_move(self, player: int, board: numpy.ndarray) -> bool:
+    def play_move(self, player: int, board: numpy.ndarray, cheat: bool = False) -> bool:
         """
         Play a move
         :param player: Player playing
         :param board: board to play on
+        :param cheat: allow to play everywhere
         :return: 0 : fail, 1 :  success, 2 : wait
         """
 
@@ -26,7 +27,11 @@ class HumanPlayer(Player):
         else:
             x, y = self.click_position
             self.click_position = None
-            return 1 if hex.play_move(board, x, y, player) else 2
+            if cheat:
+                board[x, y] = player
+                return 1
+            else:
+                return 1 if hex.play_move(board, x, y, player) else 2
 
     def callback(self, event):
         id = event.widget.find_closest(event.x, event.y)
