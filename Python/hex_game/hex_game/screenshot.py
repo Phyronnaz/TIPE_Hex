@@ -10,7 +10,7 @@ class Screenshot:
     def __init__(self, size=11):
         self.player = HumanPlayer()
         self.board = hex.init_board(size=size)
-        self.renderer = Renderer(update_board=self.update_delegate, size=size)
+        self.renderer = Renderer(update_board=self.update_delegate, size=size, debug_text=True)
         self.player.init(self.renderer)
         self.current_player = 0
 

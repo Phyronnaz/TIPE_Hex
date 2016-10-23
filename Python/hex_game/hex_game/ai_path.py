@@ -1,5 +1,6 @@
-import numpy
 from typing import Tuple, List
+
+import numpy
 
 import hex_game.hex_game as hex
 import hex_game.tools as tools
@@ -48,7 +49,6 @@ class PathAI:
                 moves = PathAI.complete_path(board, best_groups[player])
         else:
             moves = PathAI.first_move(board, player)
-        print(moves)
         move = min(moves)[1]
         return hex.play_move(board, move[0], move[1], player)
 
