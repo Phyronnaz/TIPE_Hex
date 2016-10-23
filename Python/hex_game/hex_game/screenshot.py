@@ -6,10 +6,10 @@ from hex_game.renderer import Renderer
 
 
 class Screenshot:
-    def __init__(self, size=11):
+    def __init__(self, size=11, debug_text=True):
         self.player = HumanPlayer()
         self.board = hex.init_board(size=size)
-        self.renderer = Renderer(update_board=self.update_delegate, size=size)
+        self.renderer = Renderer(update_board=self.update_delegate, size=size, debug_text=debug_text)
         self.player.init(self.renderer)
         self.current_player = 0
 

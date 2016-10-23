@@ -1,7 +1,7 @@
 from typing import Type
 
-import hex_game.debug as debug
 import hex_game.hex_game as hex
+import hex_game.tests.debug as debug
 import hex_game.tools as tools
 from hex_game.player import Player
 from hex_game.renderer import Renderer

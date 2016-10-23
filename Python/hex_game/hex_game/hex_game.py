@@ -42,22 +42,22 @@ def has_win(board: numpy.ndarray, player: int) -> bool:
     """
     checked = numpy.zeros(board.shape, dtype=bool)
     pile = []
-    size = board.shape[0]
 
     # Append edges
-    for a in range(1, size - 1):
-        if player == 0 and board[1, a] == 0:
-            pile.append((1, a))
-        elif player == 1 and board[a, 1] == 1:
-            pile.append((a, 1))
+    for a in range(1, board.shape[0] - 1):
+        if player == 1 and board[a, 0] == 1:
+            pile.append((a, 0))
+    for a in range(1, board.shape[1] - 1):
+        if player == 0 and board[0, a] == 0:
+            pile.append((0, a))
 
     # Process tiles
     while len(pile) != 0:
         x, y = pile.pop()
 
-        if 0 < x < size - 1 > y > 0 and board[x, y] == player and not checked[x, y]:
-
-            if (x == size - 2 and player == 0) or (y == size - 2 and player == 1):
+        in_bounds = 0 <= x < board.shape[0] and 0 <= y < board.shape[1]
+        if in_bounds and board[x, y] == player and not checked[x, y]:
+            if (x == board.shape[0] - 1 and player == 0) or (y == board.shape[1] - 1 and player == 1):
                 return True
 
             checked[x, y] = True
