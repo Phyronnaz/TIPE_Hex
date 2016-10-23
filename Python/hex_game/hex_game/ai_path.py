@@ -1,6 +1,5 @@
-from typing import Tuple, List
-
 import numpy
+from typing import Tuple, List
 
 import hex_game.hex_game as hex
 import hex_game.tools as tools
@@ -156,13 +155,13 @@ class PathAI:
         if move_maximum is None and move_minimum is None:
             raise Exception("No move left")
         elif move_minimum is None:
-            moves += (0, move_maximum)
+            moves.append((0, move_maximum))
         elif move_maximum is None:
-            moves += (0, move_minimum)
+            moves.append((0, move_minimum))
         else:
             x = int(minimum[player] > size - maximum[player])
-            moves += (x, move_maximum)
-            moves += (1 - x, move_minimum)
+            moves.append((x, move_maximum))
+            moves.append((1 - x, move_minimum))
         return moves
 
     @staticmethod
