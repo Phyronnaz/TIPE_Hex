@@ -4,7 +4,7 @@ import numpy
 
 
 class Renderer:
-    def __init__(self, update_board, board: numpy.ndarray, scale: int = 25, rotation=numpy.pi / 6, debug_text=False):
+    def __init__(self, update_board=None, size: int = 11, scale: int = 25, rotation=numpy.pi / 6, debug_text=False):
         """
         Create new Renderer
         :param update_board: function to call to get the new board
@@ -15,9 +15,10 @@ class Renderer:
 
         # Assign variables
         self.update_board = update_board
-        self.click_delegates = []
+        self.size = size + 2
         self.scale = scale
         self.rotation = rotation
+        self.click_delegates = []
         self.min_x = 0
         self.min_y = 0
         self.max_x = 0
@@ -42,14 +43,12 @@ class Renderer:
         # Initialize arrays
         self.polygons = []
         self.lines = []
-        self.hexagons = numpy.zeros(board.shape)
-
-        size = board.shape[0]
+        self.hexagons = numpy.zeros((self.size, self.size))
 
         # Create game hexagons
-        for i in range(size):
-            for j in range(size):
-                self.hexagons[i][j] = self.create_hexagon(i, j, 'white', 0 != i != size - 1 != j != 0)
+        for i in range(self.size):
+            for j in range(self.size):
+                self.hexagons[i][j] = self.create_hexagon(i, j, 'white', 0 != i != self.size - 1 != j != 0)
 
         # Recenter
         self.recenter()
@@ -63,7 +62,7 @@ class Renderer:
                 x = sum(x) / len(x)
                 y = sum(y) / len(y)
                 s = self.canvas.gettags(p)
-                if 0 < int(s[0]) < size - 1 and 0 < int(s[1]) < size - 1:
+                if 0 < int(s[0]) < self.size - 1 and 0 < int(s[1]) < self.size - 1:
                     self.canvas.create_text(x, y, text=s[0] + "," + s[1], state=tk.DISABLED, tag=s)
 
     def start(self):
@@ -99,6 +98,7 @@ class Renderer:
         :param y:
         :param fill_color: string corresponding to the color of the polygon
         :param outline: outline or not
+        :param transparent: transparent or not
         :return:
         """
         l = []
@@ -152,15 +152,14 @@ class Renderer:
         """
         Mainloop for tkinter
         """
-        board = self.update_board()
-        size = board.shape[0]
-        for i in range(size):
-            for j in range(size):
+        board = self.update_board() if self.update_board is not None else -numpy.ones((self.size, self.size))
+        for i in range(self.size):
+            for j in range(self.size):
                 p = board[i, j]
-                if i == 0 or i == size - 1:
+                if i == 0 or i == self.size - 1:
                     c = '#99dafa'
                     ac = c
-                elif j == 0 or j == size - 1:
+                elif j == 0 or j == self.size - 1:
                     c = '#f7597c'
                     ac = c
                 elif p == -1:

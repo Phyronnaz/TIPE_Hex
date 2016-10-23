@@ -7,7 +7,7 @@ class ToolsTest:
     def __init__(self):
         self.side = None
         self.board = hex.init_board()
-        self.renderer = Renderer(self.update, self.board, debug_text=True)
+        self.renderer = Renderer(self.update, self.board.shape[0], debug_text=True)
         self.renderer.canvas.bind("<Left>", lambda event: self.change([0, -1]))
         self.renderer.canvas.bind("<Up>", lambda event: self.change([-1, 0]))
         self.renderer.canvas.bind("<Right>", lambda event: self.change([0, 1]))

@@ -1,3 +1,4 @@
+import numpy
 import pyscreenshot
 
 import hex_game.hex_game as hex
@@ -9,7 +10,7 @@ class Screenshot:
     def __init__(self, size=11):
         self.player = HumanPlayer()
         self.board = hex.init_board(size=size)
-        self.renderer = Renderer(self.update_delegate, self.board)
+        self.renderer = Renderer(update_board=self.update_delegate, size=size)
         self.player.init(self.renderer)
         self.current_player = 0
 
@@ -18,7 +19,10 @@ class Screenshot:
         self.renderer.start()
 
     def update_delegate(self):
-        self.player.play_move(self.current_player, self.board)
+        board = -numpy.ones(self.board.shape)
+        self.player.play_move(self.current_player, board)
+        i, j = max(numpy.argmax(board, axis=0)), max(numpy.argmax(board, axis=1))
+        self.board[i, j] = self.current_player
         return self.board
 
     def change_player(self, event):

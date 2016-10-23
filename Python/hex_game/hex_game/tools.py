@@ -1,10 +1,16 @@
+from typing import List, Tuple
+
 import numpy
 
 NEIGHBORS_1 = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
 NEIGHBORS_2 = [(-1, 2), (1, 1), (2, -1), (1, -2), (-1, -1), (-2, 1)]
 
+Position = Tuple[int, int]
+Couple = Tuple[Position, Position, int]
+Group = List[Couple]
 
-def get_groups(board, player):
+
+def get_groups(board: numpy.ndarray, player: int) -> List[Group]:
     """
     Detect groups of tile on board for player
     :param board: game board
@@ -12,6 +18,7 @@ def get_groups(board, player):
     :return: array of array of (p1, p2, x) tuples where p1, p2 are positions and x the space between p1 and p2
     """
     # Generate couples
+    # Array of (p1, p2, x) where x = -1 if p1 == p2, 0 if p1 and p2 are close and 1 if they are close
     couples = []
     size = board.shape[0]
     for i in range(1, size - 1):
@@ -49,16 +56,16 @@ def get_groups(board, player):
     while fusion(groups):
         pass
 
-    return numpy.array(groups)
+    return groups
 
 
-def get_scores(board, groups=None, best=False):
+def get_scores(board: numpy.ndarray, groups: Tuple[List[Group], List[Group]] = None) -> Tuple[Tuple[int, int],
+                                                                                              Tuple[int, int]]:
     """
     Get score of a board
     :param board: numpy array
     :param groups: precomputed groups
-    :param best : return best groups index
-    :return: [score_player_0, score_player_1] [, best]
+    :return: (score_player_0, score_player_1), (best_player_0, bes-_player_1)
     """
     if groups is None:
         groups = [get_groups(board, k) for k in [0, 1]]
@@ -67,45 +74,53 @@ def get_scores(board, groups=None, best=False):
 
     for k in [0, 1]:
         for g in groups[k]:
-            l = []
-            for c in g:
-                l.append(c[0])
-                if c[2] != -1:
-                    l.append(c[1])
-
-            maximum = max(l, key=lambda t: t[k])[k]
-            minimum = min(l, key=lambda t: t[k])[k]
-
-            scores[k].append(maximum - minimum)
+            minimum, maximum = get_bounds(g, k)
+            scores[k].append(maximum[k] - minimum[k])
 
     best_scores = [scores[k][numpy.argmax(scores[k])] if len(scores[k]) > 0 else 0 for k in [0, 1]]
     bests = [numpy.argmax(scores[k]) if len(scores[k]) > 0 else -1 for k in [0, 1]]
-    if best:
-        return best_scores, bests
-    else:
-        return best_scores
+    return tuple(best_scores), tuple(bests)
 
 
-def get_next(side: [int, int], p: numpy.ndarray, far: bool) -> numpy.ndarray:  # TODO: not checked
+def get_bounds(group: Group, player: int) -> Tuple[Position, Position]:
+    """
+    Get max and min tiles of a group
+    :param group: group
+    :param player: player
+    :return: minimum, maximum
+    """
+    tiles = []
+    for couple in group:
+        tiles.append(couple[0])
+        if couple[2] != -1:
+            tiles.append(couple[1])
+
+    maximum = max(tiles, key=lambda t: t[player])
+    minimum = min(tiles, key=lambda t: t[player])
+
+    return minimum, maximum
+
+
+def get_next(side: Tuple[int, int], position: Position, far: bool) -> Position:
+    position = numpy.array(position)
     if not far:
-        side = numpy.array(side)
-        if sum(side) != 1 or (side[0] != 0 and side[0] != 0):
+        if side not in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
             raise Exception("Bad argument", side)
-        return p + side
+        return tuple(position + numpy.array(side))
     else:
-        if side == [0, 1]:
-            return p + numpy.array([-1, 2])
-        elif side == [0, -1]:
-            return p - numpy.array([-1, 2])
-        elif side == [1, 0]:
-            return p + numpy.array([2, -1])
-        elif side == [-1, 0]:
-            return p - numpy.array([2, -1])
+        if side == (0, 1):
+            return tuple(position + numpy.array([-1, 2]))
+        elif side == (0, -1):
+            return tuple(position - numpy.array([-1, 2]))
+        elif side == (1, 0):
+            return tuple(position + numpy.array([2, -1]))
+        elif side == (-1, 0):
+            return tuple(position - numpy.array([2, -1]))
         else:
             raise Exception("Bad argument", side)
 
 
-def get_common_neighbours(p1, p2):
+def get_common_neighbours(p1: Position, p2: Position) -> List[Position]:
     """
     Get common neighbours of points p1 and p2
     :param p1: point 1

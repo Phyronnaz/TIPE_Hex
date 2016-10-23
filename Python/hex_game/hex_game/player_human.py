@@ -1,9 +1,6 @@
-import random
-
 import numpy
 
 import hex_game.hex_game as hex
-import hex_game.tools as tools
 from hex_game.player import Player
 
 
@@ -23,13 +20,6 @@ class HumanPlayer(Player):
         :param board: board to play on
         :return: 0 : fail, 1 :  success, 2 : wait
         """
-        groups = [tools.get_groups(board, k) for k in [0, 1]]
-        # Debug groups and scores
-        for k in [0, 1]:
-            for g in groups[k]:
-                color = "#" + ("%06x" % random.randint(0, 16777215))
-                for c in g:
-                    self.renderer.create_line(c[0], c[1], color)
 
         if self.click_position is None:
             return 2
