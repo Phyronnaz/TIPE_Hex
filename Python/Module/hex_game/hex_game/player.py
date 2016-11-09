@@ -1,4 +1,4 @@
-import numpy
+from .hex_game import *
 
 
 class Player:
@@ -19,6 +19,6 @@ class Player:
             tries_count += 1
             x = numpy.random.randint(size)
             y = numpy.random.randint(size)
-            has_played = hex.play_move(board, x + 1, y + 1, player)
+            has_played = play_move(board, x + 1, y + 1, player)
 
         return has_played

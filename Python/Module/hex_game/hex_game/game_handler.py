@@ -1,10 +1,10 @@
 from typing import Type
 
-import hex_game.hex_game as hex
-import hex_game.tests.debug as debug
-import hex_game.tools as tools
-from hex_game.player import Player
-from hex_game.renderer import Renderer
+from .hex_game import *
+from .tools import *
+from .debug import *
+from .player import Player
+from .renderer import Renderer
 
 
 class GameHandler:
@@ -16,7 +16,7 @@ class GameHandler:
         """
         self.next_player = 0
         self.winner = -1
-        self.board = hex.init_board(size=size)
+        self.board = init_board(size=size)
         self.renderer = Renderer(update_board=self.update, size=size, debug_text=True)
         self.players = [player1, player2]
         for p in self.players:
@@ -30,7 +30,7 @@ class GameHandler:
 
     def update(self):
         if self.winner == -1:
-            if not hex.has_win(self.board, 1 - self.next_player):
+            if not has_win(self.board, 1 - self.next_player):
                 player_response = self.players[self.next_player].play_move(self.next_player, self.board)
                 if not player_response:
                     raise Exception("Error for player " + str(self.next_player))
@@ -39,7 +39,7 @@ class GameHandler:
                 else:
                     self.renderer.clear_lines()
                     # Debug groups and scores
-                    debug.debug_groups(self.renderer, [tools.get_groups(self.board, k) for k in [0, 1]])
+                    debug_groups(self.renderer, [get_groups(self.board, k) for k in [0, 1]])
                     class_name = str(type(self.players[self.next_player]).__name__)
                     print(class_name + " (Player " + str(self.next_player) + ") played")
                     print("///////////////////////////")

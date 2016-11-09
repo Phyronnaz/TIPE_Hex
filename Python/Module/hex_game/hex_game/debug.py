@@ -1,6 +1,6 @@
 import random
 
-from hex_game.renderer import Renderer
+from .renderer import Renderer
 
 
 def debug_groups(renderer: Renderer, groups):

@@ -2,6 +2,7 @@ from typing import Tuple, List
 
 import numpy
 
+import hex_game.hex_game
 import hex_game.hex_game as hex
 import hex_game.tools as tools
 from hex_game.player_human import HumanPlayer

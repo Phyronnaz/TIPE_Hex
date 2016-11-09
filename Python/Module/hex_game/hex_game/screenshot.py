@@ -1,14 +1,13 @@
 import pyscreenshot
-
-import hex_game.hex_game as hex
-from hex_game.player_human import HumanPlayer
-from hex_game.renderer import Renderer
+from .hex_game import *
+from .player_human import HumanPlayer
+from .renderer import Renderer
 
 
 class Screenshot:
     def __init__(self, size=11, debug_text=True):
         self.player = HumanPlayer()
-        self.board = hex.init_board(size=size)
+        self.board = init_board(size=size)
         self.renderer = Renderer(update_board=self.update_delegate, size=size, debug_text=debug_text)
         self.player.init(self.renderer)
         self.current_player = 0

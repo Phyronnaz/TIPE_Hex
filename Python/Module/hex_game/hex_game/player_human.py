@@ -1,7 +1,7 @@
 import numpy
 
-import hex_game.hex_game as hex
-from hex_game.player import Player
+from .hex_game import *
+from .player import Player
 
 
 class HumanPlayer(Player):
@@ -31,7 +31,7 @@ class HumanPlayer(Player):
                 board[x, y] = player
                 return 1
             else:
-                return 1 if hex.play_move(board, x, y, player) else 2
+                return 1 if play_move(board, x, y, player) else 2
 
     def callback(self, event):
         id = event.widget.find_closest(event.x, event.y)
