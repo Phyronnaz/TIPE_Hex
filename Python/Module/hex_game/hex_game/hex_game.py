@@ -17,7 +17,7 @@ def init_board(size: int = 11, board: numpy.ndarray = None) -> numpy.ndarray:
     return board
 
 
-def play_move(board: numpy.ndarray, x: int, y: int, player: int) -> numpy.ndarray:
+def play_move(board: numpy.ndarray, x: int, y: int, player: int) -> int:
     """
     Make player play a move
     :param board: board
@@ -31,6 +31,23 @@ def play_move(board: numpy.ndarray, x: int, y: int, player: int) -> numpy.ndarra
         return True
     else:
         return False
+
+
+def play_move_copy(board: numpy.ndarray, x: int, y: int, player: int) -> numpy.ndarray:
+    """
+    Make player play a move
+    :param board: board
+    :param x: x position of the move
+    :param y: y position of the move
+    :param player: player playing
+    :return: Whether or not the move succeed
+    """
+    board = numpy.copy(board)
+    if 0 < x < board.shape[0] - 1 > y > 0 and board[x, y] == -1:
+        board[x, y] = player
+        return board
+    else:
+        return None
 
 
 def has_win(board: numpy.ndarray, player: int) -> bool:

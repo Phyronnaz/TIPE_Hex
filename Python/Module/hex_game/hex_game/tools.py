@@ -35,7 +35,7 @@ def get_groups(board: numpy.ndarray, player: int) -> List[Group]:
                             couples.append(((i, j), p, 0))
                         else:
                             p1, p2 = get_common_neighbours((i, j), p)
-                            if player not in [board[p1], board[p2]] and (board[p1] == -1 or board[p2] == -1):
+                            if player not in [board[p1], board[p2]] and (board[p1] == -1 and board[p2] == -1):
                                 couples.append(((i, j), p, 1))
 
     # Group couples

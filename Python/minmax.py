@@ -1,25 +1,47 @@
-import numpy as np
+import numpy
+import hex_game
+from hex_game import Position
 
 
-def minmax(board, depth, play_move, get_score, get_moves, player, root_player):
-    """
+class PlayerMiniMax:
+    def init(self, renderer):
+        pass
 
-    :param board: numpy array
-    :param depth: int
-    :param play_move: param : board, player, move -> board
-    :param get_score: param : board, -> score player0 - score player1
-    :param get_moves: param : board, player -> tuple list
-    :return: score player0-score player1
-    """
-    if depth > 0:
-        moves = get_moves(board, player)
-        scores = np.zeros(len(moves))
+    def play_move(self, player: int, board: numpy.ndarray) -> bool:
+        """
+        Play a move
+        :param player: Player playing
+        :param board: board to play on
+        :return: 0 : fail, 1 :  success, 2 : wait
+        """
+        self.count = 0
+        depth = 23
+        moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
+        move = moves[numpy.argmax(
+            [-self.minimax(hex_game.play_move_copy(board, move[0], move[1], player), depth, 1 - player) for move in
+             moves])]
+        return hex_game.play_move(board, move[0], move[1], player)
 
-        for i in range(len(moves)):
-            new_board = play_move(board, player, moves[i])
-            score = minmax(new_board, depth - 1, play_move, get_score, get_moves, 1 - player, root_player)
-            scores[i] = score[root_player] - score[1 - root_player]
+    def minimax(self, board: numpy.ndarray, depth: int, player: int) -> float:
+        """
 
-        return max(scores)
-    else:
-        return get_score(board)
+        :param board: numpy array
+        :param depth: int
+        :param play_move: param : board, player, move -> board
+        :param get_score: param : board, -> score player0 - score player1
+        :param get_moves: param : board, player -> tuple list
+        :return: score player0-score player1
+        """
+        self.count += 1
+        if self.count % 100 == 0:
+            print(self.count)
+        if depth == 0:
+            return hex_game.get_scores(board)[0][player]
+        else:
+            moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
+            if len(moves) == 0:
+                return hex_game.get_scores(board)[0][player]
+            else:
+                return max(
+                    [-self.minimax(hex_game.play_move_copy(board, move[0], move[1], player), depth - 1, 1 - player)
+                     for move in moves])
