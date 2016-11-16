@@ -55,6 +55,6 @@ class PlayerMiniMax:
             moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
             if len(moves) == 0:
                 return hex_game.get_scores(board)[0][player]
-            else:
+            else: #à compléter
                 
                
