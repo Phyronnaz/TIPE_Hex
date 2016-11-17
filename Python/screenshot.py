@@ -1,5 +1,4 @@
 import pyscreenshot
-from matplotlib.pyplot import matshow
 from poisson import Poisson
 
 from hex_game import *
@@ -11,14 +10,17 @@ class Screenshot:
     def __init__(self, size=11, debug_text=True):
         self.player = HumanPlayer()
         self.board = init_board(size=size)
-        self.renderer = Renderer(update_board=self.update_delegate, size=size, debug_text=debug_text)
+        self.renderer = Renderer(update_board=self.update_delegate, size=size, debug_text=debug_text, scale=30)
         self.player.init(self.renderer)
         self.current_player = 0
+
+        self.polygons = []
+        self.poisson_enabled = False
 
         self.renderer.canvas.bind("<Tab>", self.change_player)
         self.renderer.canvas.bind("<space>", self.take_screenshot)
         self.renderer.canvas.bind("t", self.toggle_text)
-        self.renderer.canvas.bind("p", self.poisson)
+        self.renderer.canvas.bind("p", self.toggle_poisson)
         self.index = 0
         self.text = False
         self.renderer.click_delegates.append(self.create_text)
@@ -55,7 +57,27 @@ class Screenshot:
     def toggle_text(self, event):
         self.text = not self.text
 
-    def poisson(self, event):
+    def toggle_poisson(self, event):
+        if self.poisson_enabled:
+            for p in self.polygons:
+                self.renderer.canvas.delete(p)
+        else:
+            self.poisson()
+        self.poisson_enabled = not self.poisson_enabled
+
+    def poisson(self):
+        def hexa(f):
+            s = str(hex(int(255 * f)))[2:]
+            while len(s) < 2:
+                s = "0" + s
+            while len(s) > 2:
+                s = s[:-1]
+            return s
+
         poisson = Poisson(self.board)
         poisson.iterations(100)
-        matshow(poisson.U)
+        n = poisson.U.shape[0]
+        for i in range(n):
+            for j in range(n):
+                c = "#" + hexa(max(0, poisson.U[i, j])) + "00" + hexa(-min(0, poisson.U[i, j]))
+                self.polygons.append(self.renderer.create_hexagon(i, j, c, outline=False))

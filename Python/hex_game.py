@@ -9,7 +9,7 @@ def init_board(size: int = 11, board: numpy.ndarray = None) -> numpy.ndarray:
     :return board
     """
     if board is None:
-        board = -numpy.ones((size + 2, size + 2))
+        board = -numpy.ones((size + 2, size + 2), dtype=int)
     board[0, :] = 0
     board[-1, :] = 0
     board[:, -1] = 1
