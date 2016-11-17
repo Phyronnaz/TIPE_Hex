@@ -48,3 +48,6 @@ class Poisson:
         for i in range(ni):
             self.gauss_seidel()
         self.U = self.A[1:self.N - 1, 1:self.N - 1]
+
+
+
