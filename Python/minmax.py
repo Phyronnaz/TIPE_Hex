@@ -1,6 +1,6 @@
 import numpy
 import hex_game
-from tools import Position
+from tools import *
 
 
 class PlayerMiniMax:
@@ -15,7 +15,7 @@ class PlayerMiniMax:
         :return: 0 : fail, 1 :  success, 2 : wait
         """
         self.count = 0
-        depth = 23
+        depth = 9000
         moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
         move = moves[numpy.argmax(
             [-self.minimax(hex_game.play_move_copy(board, move[0], move[1], player), depth, 1 - player) for move in
@@ -36,18 +36,18 @@ class PlayerMiniMax:
         if self.count % 100 == 0:
             print(self.count)
         if depth == 0:
-            return hex_game.get_scores(board)[0][player]
+            return get_scores(board)[0][player]
         else:
             moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
             if len(moves) == 0:
-                return hex_game.get_scores(board)[0][player]
+                return get_scores(board)[0][player]
             else:
                 return max(
                     [-self.minimax(hex_game.play_move_copy(board, move[0], move[1], player), depth - 1, 1 - player)
                      for move in moves])
-            
-<<<<<<< Updated upstream
-    def alphabeta(self, board: numpy.ndarray, depth: int, player: int, alpha: float, beta: float) -> float
+
+    def alphabeta(self, board: numpy.ndarray, depth: int, player: int, alpha: float, beta: float):
+
         if depth == 0:
             return hex_game.get_scores(board)[0][player]
         else:
@@ -55,21 +55,13 @@ class PlayerMiniMax:
             if len(moves) == 0:
                 return hex_game.get_scores(board)[0][player]
             else:
-                u = -inf
-                for k in moves:
-                    val = -alphabeta(self, 
-                
-=======
-    # def alphabeta(self, board: numpy.ndarray, depth: int, player: int) -> float:
-    #     if depth == 0:
-    #         return hex_game.get_scores(board)[0][player]
-    #     else:
-    #         return(noeud_max(board, depth, player, -inf, +inf))
-    #     def noeud_max(board: numpy.ndarray, depth: int, player: int, alpha: float, beta: float):
-    #         moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
-    #         if len(moves) == 0:
-    #             return hex_game.get_scores(board)[0][player]
-    #         else: #à compléter
->>>>>>> Stashed changes
-                
-               
+                u = -float.infinity
+                for move in moves:
+                    val = -alphabeta(self, hex_game.play_move_copy(board, move[0], move[1], player), -alpha, -beta)
+                    if val > u:
+                        u = val
+                        if u > alpha:
+                            alpha = u
+                            if alpha >= beta:
+                                return (u)
+                return (u)
