@@ -1,7 +1,7 @@
 from player import Player
 from poisson import Poisson
 from hex_game import *
-from typing import Tuple, List
+import random
 from tools import *
 import numpy
 
@@ -21,7 +21,15 @@ class PoissonAI(Player):
         """
         densities, paths = self.get_path(board, player)
         l = numpy.array([densities[k] for k in paths])
-        move = paths[numpy.argmin(l)]
+        # TODO: check if path emtpy
+        try:
+            move = paths[numpy.argmin(l)]
+        except ValueError:
+            print("!!!!!!!!!!!!!!!!!!!!!!")
+            print("!!!!Empty response!!!!")
+            print("!!!Playing randomly!!!")
+            print("!!!!!!!!!!!!!!!!!!!!!!")
+            move = random.choice([k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0])
         # moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
         # move = moves[numpy.argmax(
         #     [[-1, 1][player] * self.get_norme(play_move_copy(board, moves[i][0], moves[i][1], player)) for i in
@@ -32,7 +40,7 @@ class PoissonAI(Player):
     @staticmethod
     def get_norme(board):
         poisson = Poisson(board)
-        poisson.iterations(50)
+        poisson.iterations(board.shape[0] * 5)
         return poisson.norme()
 
     @staticmethod
@@ -41,7 +49,7 @@ class PoissonAI(Player):
         matrix = numpy.zeros(board.shape, dtype=float)
         paths = [[[] for _ in range(n)] for _ in range(n)]
         poisson = Poisson(board)
-        poisson.iterations(50)
+        poisson.iterations(board.shape[0] * 5)
         U = poisson.U * [-1, 1][player]
         for a in range(n - 1):
             for b in range(n - 1):

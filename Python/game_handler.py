@@ -47,8 +47,9 @@ class GameHandler:
                     class_name = str(type(self.players[self.next_player]).__name__)
                     print(class_name + " (Player " + str(self.next_player) + ") played")
                     print("New Scores:", get_scores(self.board)[0])
-                    self.toggle_poisson()
-                    self.toggle_poisson()
+                    if self.poisson_enabled:
+                        self.toggle_poisson()
+                        self.toggle_poisson()
                     print("///////////////////////////")
                     self.next_player = 1 - self.next_player
             else:
@@ -75,7 +76,7 @@ class GameHandler:
             return s
 
         poisson = Poisson(self.board)
-        poisson.iterations(100)
+        poisson.iterations(self.board.shape[0] * 5)
         n = poisson.U.shape[0]
         for i in range(n):
             for j in range(n):
