@@ -1,6 +1,6 @@
 import numpy
 import hex_game
-from hex_game import Position
+from tools import Position
 
 
 class PlayerMiniMax:
@@ -46,6 +46,7 @@ class PlayerMiniMax:
                     [-self.minimax(hex_game.play_move_copy(board, move[0], move[1], player), depth - 1, 1 - player)
                      for move in moves])
             
+<<<<<<< Updated upstream
     def alphabeta(self, board: numpy.ndarray, depth: int, player: int, alpha: float, beta: float) -> float
         if depth == 0:
             return hex_game.get_scores(board)[0][player]
@@ -58,5 +59,17 @@ class PlayerMiniMax:
                 for k in moves:
                     val = -alphabeta(self, 
                 
+=======
+    # def alphabeta(self, board: numpy.ndarray, depth: int, player: int) -> float:
+    #     if depth == 0:
+    #         return hex_game.get_scores(board)[0][player]
+    #     else:
+    #         return(noeud_max(board, depth, player, -inf, +inf))
+    #     def noeud_max(board: numpy.ndarray, depth: int, player: int, alpha: float, beta: float):
+    #         moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
+    #         if len(moves) == 0:
+    #             return hex_game.get_scores(board)[0][player]
+    #         else: #à compléter
+>>>>>>> Stashed changes
                 
                

@@ -132,3 +132,13 @@ def get_common_neighbours(p1: Position, p2: Position) -> List[Position]:
     i, j = p2
     l2 = [(i + x, j + y) for x, y in NEIGHBORS_1]
     return [k for k in l1 if k in l2]
+
+
+# TODO: improve
+def get_move_count(board: numpy.ndarray) -> int:
+    n = 0
+    for i in range(board.shape[0]):
+        for j in range(board.shape[1]):
+            if board[i, j] in [0, 1]:
+                n += 1
+    return n

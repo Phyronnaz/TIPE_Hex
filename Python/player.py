@@ -1,11 +1,11 @@
-from .hex_game import *
+from hex_game import *
 
 
 class Player:
     def init(self, renderer):
         pass
 
-    def play_move(self, player: int, board: numpy.ndarray) -> bool:
+    def play_move(self, player: int, board: numpy.ndarray) -> int:
         """
         Play a move
         :param player: Player playing

@@ -1,4 +1,4 @@
-from hex_game import GameHandler, HumanPlayer
-from minmax import PlayerMiniMax
+from game_handler import GameHandler
+from player_human import HumanPlayer
 
-GameHandler(HumanPlayer(), PlayerMiniMax(), size=3)
+GameHandler(HumanPlayer(), HumanPlayer(), size=11)

@@ -1,7 +1,7 @@
 import numpy
 
-from .hex_game import *
-from .player import Player
+from hex_game import *
+from player import Player
 
 
 class HumanPlayer(Player):

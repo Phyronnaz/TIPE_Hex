@@ -1,10 +1,10 @@
 from typing import Type
 
-from .hex_game import *
-from .tools import *
-from .debug import *
-from .player import Player
-from .renderer import Renderer
+from hex_game import *
+from tools import *
+from debug import *
+from player import Player
+from renderer import Renderer
 
 
 class GameHandler:

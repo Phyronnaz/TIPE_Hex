@@ -1,7 +1,10 @@
 import pyscreenshot
-from .hex_game import *
-from .player_human import HumanPlayer
-from .renderer import Renderer
+from matplotlib.pyplot import matshow
+from poisson import Poisson
+
+from hex_game import *
+from player_human import HumanPlayer
+from renderer import Renderer
 
 
 class Screenshot:
@@ -15,6 +18,7 @@ class Screenshot:
         self.renderer.canvas.bind("<Tab>", self.change_player)
         self.renderer.canvas.bind("<space>", self.take_screenshot)
         self.renderer.canvas.bind("t", self.toggle_text)
+        self.renderer.canvas.bind("p", self.poisson)
         self.index = 0
         self.text = False
         self.renderer.click_delegates.append(self.create_text)
@@ -50,3 +54,8 @@ class Screenshot:
 
     def toggle_text(self, event):
         self.text = not self.text
+
+    def poisson(self, event):
+        poisson = Poisson(self.board)
+        poisson.iterations(100)
+        matshow(poisson.U)
