@@ -42,6 +42,8 @@ class GameHandler:
                     debug_groups(self.renderer, [get_groups(self.board, k) for k in [0, 1]])
                     class_name = str(type(self.players[self.next_player]).__name__)
                     print(class_name + " (Player " + str(self.next_player) + ") played")
+                    print("New Score:")
+                    print(get_scores(self.board))
                     print("///////////////////////////")
                     self.next_player = 1 - self.next_player
             else:

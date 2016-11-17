@@ -1,5 +1,5 @@
 import numpy
-import hex_game
+from hex_game import *
 from tools import *
 
 
@@ -18,9 +18,9 @@ class PlayerMiniMax:
         depth = 9000
         moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
         move = moves[numpy.argmax(
-            [-self.minimax(hex_game.play_move_copy(board, move[0], move[1], player), depth, 1 - player) for move in
+            [-self.minimax(play_move_copy(board, move[0], move[1], player), depth, 1 - player) for move in
              moves])]
-        return hex_game.play_move(board, move[0], move[1], player)
+        return play_move(board, move[0], move[1], player)
 
     def minimax(self, board: numpy.ndarray, depth: int, player: int) -> float:
         """
@@ -38,30 +38,31 @@ class PlayerMiniMax:
         if depth == 0:
             return get_scores(board)[0][player]
         else:
-            moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
-            if len(moves) == 0:
+            if has_win(board, player) or has_win(board, 1 - player):
                 return get_scores(board)[0][player]
             else:
+                moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
                 return max(
-                    [-self.minimax(hex_game.play_move_copy(board, move[0], move[1], player), depth - 1, 1 - player)
+                    [-self.minimax(play_move_copy(board, move[0], move[1], player), depth - 1, 1 - player)
                      for move in moves])
 
     def alphabeta(self, board: numpy.ndarray, depth: int, player: int, alpha: float, beta: float):
 
         if depth == 0:
-            return hex_game.get_scores(board)[0][player]
+            return get_scores(board)[0][player]
         else:
             moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
             if len(moves) == 0:
-                return hex_game.get_scores(board)[0][player]
+                return get_scores(board)[0][player]
             else:
-                u = -float.infinity
+                u = -float('inf')
                 for move in moves:
-                    val = -alphabeta(self, hex_game.play_move_copy(board, move[0], move[1], player),depth -1, 1-player -alpha, -beta)
+                    val = -self.alphabeta(self, play_move_copy(board, move[0], move[1], player), depth - 1,
+                                     1 - player - alpha, -beta)
                     if val > u:
                         u = val
                         if u > alpha:
                             alpha = u
                             if alpha >= beta:
-                                return (u)
-                return (u)
+                                return u
+                return u
