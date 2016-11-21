@@ -24,7 +24,9 @@ class GameHandler:
         for p in self.players:
             p.init(self.renderer)
 
+        # TODO: lambdas
         self.renderer.canvas.bind("p", self.toggle_poisson)
+        self.renderer.canvas.bind("r", self.restart)
 
         print("///////////////////////////")
         print("Game Started")
@@ -84,3 +86,10 @@ class GameHandler:
                 self.polygons.append(self.renderer.create_hexagon(i, j, c, outline=False))
 
         print("Norme: {}".format(poisson.norme()))
+
+    def restart(self, event=None):
+        self.board = init_board(size=self.board.shape[0] - 2)
+        if self.poisson_enabled:
+            self.toggle_poisson()
+        self.next_player = 0
+        self.winner = -1
