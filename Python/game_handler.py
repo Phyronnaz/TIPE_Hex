@@ -1,7 +1,3 @@
-from typing import Type
-from poisson import Poisson
-from hex_game import *
-from tools import *
 from debug import Debug
 from player import Player
 from renderer import Renderer

@@ -1,8 +1,7 @@
-import numpy
 from hex_game import *
 
 
-def get_groups(board: numpy.ndarray, player: int) -> List[Group]:
+def get_groups(board: numpy.ndarray, player: int) -> list[Group]:
     """
     Detect groups of tile on board for player
     :param board: game board
@@ -51,8 +50,7 @@ def get_groups(board: numpy.ndarray, player: int) -> List[Group]:
     return groups
 
 
-def get_scores(board: numpy.ndarray, groups: Tuple[List[Group], List[Group]] = None) -> Tuple[Tuple[int, int],
-                                                                                              Tuple[int, int]]:
+def get_scores(board: numpy.ndarray, groups: (list[Group], list[Group]) = None) -> ((int, int), (int, int)):
     """
     Get score of a board
     :param board: numpy array
@@ -74,7 +72,7 @@ def get_scores(board: numpy.ndarray, groups: Tuple[List[Group], List[Group]] = N
     return tuple(best_scores), tuple(bests)
 
 
-def get_bounds(group: Group, player: int) -> Tuple[Position, Position]:
+def get_bounds(group: Group, player: int) -> (Position, Position):
     """
     Get max and min tiles of a group
     :param group: group
@@ -93,7 +91,7 @@ def get_bounds(group: Group, player: int) -> Tuple[Position, Position]:
     return minimum, maximum
 
 
-def get_next(side: Tuple[int, int], position: Position, far: bool) -> Position:
+def get_next(side: (int, int), position: Position, far: bool) -> Position:
     position = numpy.array(position)
     if not far:
         if side not in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
@@ -112,7 +110,7 @@ def get_next(side: Tuple[int, int], position: Position, far: bool) -> Position:
             raise Exception("Bad argument", side)
 
 
-def get_common_neighbours(p1: Position, p2: Position) -> List[Position]:
+def get_common_neighbours(p1: Position, p2: Position) -> list[Position]:
     """
     Get common neighbours of points p1 and p2
     :param p1: point 1

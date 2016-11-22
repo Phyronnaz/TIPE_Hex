@@ -1,14 +1,13 @@
 import numpy
-from typing import Tuple, List, Iterator
 
 # Move in real position (visual position + (1, 1))
-Move = Tuple[int, int]
-Position = Tuple[int, int]
-Couple = Tuple[Position, Position, int]
-Group = List[Couple]
-Path = List[Position]
+Move = (int, int)
+Position = (int, int)
+Couple = (Position, Position, int)
+Group = list[Couple]
+Path = list[Position]
 # Zip {move: Move, success: bool, message: str (optional) , player_class: str (optional)}
-PlayerResponse = Iterator[str]
+PlayerResponse = zip(str)
 
 NEIGHBORS_1 = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
 NEIGHBORS_2 = [(-1, 2), (1, 1), (2, -1), (1, -2), (-1, -1), (-2, 1)]
@@ -41,12 +40,11 @@ def play_move(board: numpy.ndarray, move: Move, player: int) -> None:
     board[move] = player
 
 
-def can_play_move(board: numpy.ndarray, move: Move, player: int) -> bool:
+def can_play_move(board: numpy.ndarray, move: Move) -> bool:
     """
     Check if player can play move
     :param board: board
     :param move: move
-    :param player: player playing
     :return: Whether or not he can succeed
     """
     if 0 < move[0] < board.shape[0] - 1 > move[1] > 0 and board[move] == -1:
