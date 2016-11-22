@@ -29,8 +29,7 @@ class Poisson:
         for K in [self.NE, self.E, self.SE, self.SW, self.W, self.NW]:
             K[x, y] = 0
 
-    def norme(self):
-        alpha = 0.01
+    def norme(self, alpha=0.01):
         return numpy.sum(self.U > alpha) - numpy.sum(self.U < -alpha)
 
     def gauss_seidel(self):
@@ -48,6 +47,3 @@ class Poisson:
         for i in range(ni):
             self.gauss_seidel()
         self.U = self.A[1:self.N - 1, 1:self.N - 1]
-
-
-

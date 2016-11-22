@@ -1,15 +1,25 @@
 import numpy
+from typing import Tuple, List, Dict
+
+# Move in real position (visual position + (1, 1))
+Move = Tuple[int, int]
+Position = Tuple[int, int]
+Couple = Tuple[Position, Position, int]
+Group = List[Couple]
+Path = List[Position]
+PlayerResponse = Dict[Move, bool, str]
 
 
-def init_board(size: int = 11, board: numpy.ndarray = None) -> numpy.ndarray:
+
+def init_board(visual_size: int = 11, board: numpy.ndarray = None) -> numpy.ndarray:
     """
     Create new Hex Game
     :param board: Board to load
-    :param size: Size of the game to create
+    :param visual_size: Size of the game to create
     :return board
     """
     if board is None:
-        board = -numpy.ones((size + 2, size + 2), dtype=int)
+        board = -numpy.ones((visual_size + 2, visual_size + 2), dtype=int)
     board[0, :] = 0
     board[-1, :] = 0
     board[:, -1] = 1
@@ -17,39 +27,38 @@ def init_board(size: int = 11, board: numpy.ndarray = None) -> numpy.ndarray:
     return board
 
 
-def play_move(board: numpy.ndarray, x: int, y: int, player: int) -> int:
+def play_move(board: numpy.ndarray, move: Move, player: int) -> bool:
     """
     Make player play a move
     :param board: board
-    :param x: x position of the move
-    :param y: y position of the move
+    :param move: move
     :param player: player playing
     :return: Whether or not the move succeed
     """
-    if 0 < x < board.shape[0] - 1 > y > 0 and board[x, y] == -1:
-        board[x, y] = player
+    if 0 < move[0] < board.shape[0] - 1 > move[1] > 0 and board[move] == -1:
+        board[move] = player
         return True
     else:
         return False
 
 
-def play_move_copy(board: numpy.ndarray, x: int, y: int, player: int) -> numpy.ndarray:
+def play_move_and_copy(board: numpy.ndarray, move: Move, player: int) -> numpy.ndarray:
     """
-    Make player play a move
+    Make player play a move and return new board
     :param board: board
-    :param x: x position of the move
-    :param y: y position of the move
+    :param move: move
     :param player: player playing
     :return: Whether or not the move succeed
     """
-    board = numpy.copy(board)
-    if 0 < x < board.shape[0] - 1 > y > 0 and board[x, y] == -1:
-        board[x, y] = player
-        return board
+    if 0 < move[0] < board.shape[0] - 1 > move[1] > 0 and board[move] == -1:
+        new_board = board.copy()
+        new_board[move] = player
+        return new_board
     else:
         return None
 
 
+# TODO: optimized way in game.py
 def has_win(board: numpy.ndarray, player: int) -> bool:
     """
     Check if a player has win

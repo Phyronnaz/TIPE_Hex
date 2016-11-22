@@ -7,10 +7,10 @@ from renderer import Renderer
 
 
 class Screenshot:
-    def __init__(self, size=11, debug_text=True):
+    def __init__(self, visual_size=11, debug_text=True):
         self.player = HumanPlayer()
-        self.board = init_board(size=size)
-        self.renderer = Renderer(update_board=self.update_delegate, size=size, debug_text=debug_text, scale=30)
+        self.board = init_board(visual_size=visual_size)
+        self.renderer = Renderer(update_board=self.update_delegate, visual_size=visual_size, debug_text=debug_text, scale=30)
         self.player.init(self.renderer)
         self.current_player = 0
 

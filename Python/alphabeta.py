@@ -18,7 +18,7 @@ class PlayerAlphaBeta:
         depth = 9000
         moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
         move = moves[numpy.argmax(
-            [-self.alphabeta(hex_game.play_move_copy(board, move[0], move[1], player), depth, 1 - player, -float.infinity, float.infinity) for move in
+            [-self.alphabeta(hex_game.play_move_and_copy(board, move[0], move[1], player), depth, 1 - player, -float.infinity, float.infinity) for move in
              moves])]
         return hex_game.play_move(board, move[0], move[1], player)
 
@@ -35,7 +35,7 @@ class PlayerAlphaBeta:
             else:
                 u = -float.infinity
                 for move in moves:
-                    val = -alphabeta(self, hex_game.play_move_copy(board, move[0], move[1], player),depth -1, 1-player -alpha, -beta)
+                    val = -alphabeta(self, hex_game.play_move_and_copy(board, move[0], move[1], player), depth - 1, 1 - player - alpha, -beta)
                     if val > u:
                         u = val
                         if u > alpha:

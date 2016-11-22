@@ -1,5 +1,3 @@
-import numpy
-
 from hex_game import *
 from player import Player
 
@@ -11,29 +9,22 @@ class HumanPlayer(Player):
 
     def init(self, renderer):
         self.renderer = renderer
-        self.renderer.click_delegates.append(self.callback)
+        self.renderer.click_delegates.append(self.click)
 
-    def play_move(self, player: int, board: numpy.ndarray, cheat: bool = False) -> bool:
-        """
-        Play a move
-        :param player: Player playing
-        :param board: board to play on
-        :param cheat: allow to play everywhere
-        :return: 0 : fail, 1 :  success, 2 : wait
-        """
-
+    def play_move(self, player: int, board: numpy.ndarray) -> PlayerResponse:
         if self.click_position is None:
-            return 2
+            success = False
+            message = "Waiting for click"
+            move = None
         else:
-            x, y = self.click_position
+            move = self.click_position
             self.click_position = None
-            if cheat:
-                board[x, y] = player
-                return 1
-            else:
-                return 1 if play_move(board, x, y, player) else 2
+            success = play_move(board, move, player)
+            message = "Click"
 
-    def callback(self, event):
+        return {'move': move, 'success': success, 'message': message}
+
+    def click(self, event):
         id = event.widget.find_closest(event.x, event.y)
         s = self.renderer.canvas.gettags(id)
         if len(s) >= 2:

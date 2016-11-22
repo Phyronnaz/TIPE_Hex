@@ -1,13 +1,8 @@
-from typing import List, Tuple
-
 import numpy
+from hex_game import *
 
 NEIGHBORS_1 = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
 NEIGHBORS_2 = [(-1, 2), (1, 1), (2, -1), (1, -2), (-1, -1), (-2, 1)]
-
-Position = Tuple[int, int]
-Couple = Tuple[Position, Position, int]
-Group = List[Couple]
 
 
 def get_groups(board: numpy.ndarray, player: int) -> List[Group]:

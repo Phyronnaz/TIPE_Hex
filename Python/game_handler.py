@@ -8,18 +8,16 @@ from renderer import Renderer
 
 
 class GameHandler:
-    def __init__(self, player1: Type[Player], player2: Type[Player], size: int = 11, scale: float = 30) -> object:
+    def __init__(self, player1: Type[Player], player2: Type[Player], visual_size: int = 11, scale: float = 30) -> object:
         """
         Create new Game Handler
         :param player1: player 1
         :param player2: player 2
         """
-        self.polygons = []
-        self.poisson_enabled = False
         self.next_player = 0
         self.winner = -1
-        self.board = init_board(size=size)
-        self.renderer = Renderer(update_board=self.update, size=size, debug_text=True, scale=scale)
+        self.board = init_board(visual_size=visual_size)
+        self.renderer = Renderer(update_board=self.update, visual_size=visual_size, debug_text=True, scale=scale)
         self.players = [player1, player2]
         for p in self.players:
             p.init(self.renderer)
@@ -88,7 +86,7 @@ class GameHandler:
         print("Norme: {}".format(poisson.norme()))
 
     def restart(self, event=None):
-        self.board = init_board(size=self.board.shape[0] - 2)
+        self.board = init_board(visual_size=self.board.shape[0] - 2)
         if self.poisson_enabled:
             self.toggle_poisson()
         self.next_player = 0

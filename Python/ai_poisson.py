@@ -1,17 +1,10 @@
 from player import Player
 from poisson import Poisson
 from hex_game import *
-import random
 from tools import *
 import numpy
 
-Path = List[Position]
-
-
 class PoissonAI(Player):
-    def init(self, renderer):
-        pass
-
     def play_move(self, player: int, board: numpy.ndarray) -> int:
         """
         Play a move
@@ -32,7 +25,7 @@ class PoissonAI(Player):
         #     move = random.choice([k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0])
         moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
         move = moves[numpy.argmax(
-            [PoissonAI.get_score(play_move_copy(board, moves[i][0], moves[i][1], player), player) for i in
+            [PoissonAI.get_score(play_move_and_copy(board, moves[i][0], moves[i][1], player), player) for i in
              range(len(moves))])]
         print("Poisson move: " + str(move))
         return play_move(board, move[0], move[1], player)

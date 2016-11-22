@@ -6,7 +6,7 @@ from ..renderer import Renderer
 class ToolsTest:
     def __init__(self):
         self.side = None
-        self.board = init_board(size=11)
+        self.board = init_board(visual_size=11)
         self.renderer = Renderer(self.update, 11, debug_text=True)
         self.renderer.canvas.bind("<Left>", lambda event: self.change((0, -1)))
         self.renderer.canvas.bind("<Up>", lambda event: self.change((-1, 0)))

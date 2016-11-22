@@ -2,23 +2,25 @@ from hex_game import *
 
 
 class Player:
-    def init(self, renderer):
-        pass
-
-    def play_move(self, player: int, board: numpy.ndarray) -> int:
+    def play_move(self, player: int, board: numpy.ndarray) -> PlayerResponse:
         """
         Play a move
         :param player: Player playing
         :param board: board to play on
-        :return: 0 : fail, 1 :  success, 2 : wait
+        :return: {move: Move, success: bool, message: string}
         """
-        tries_count = 0
+        trial_count = 0
         has_played = False
-        size = board.shape[0] - 2
-        while not has_played and tries_count < size ** 2:
-            tries_count += 1
-            x = numpy.random.randint(size)
-            y = numpy.random.randint(size)
-            has_played = play_move(board, x + 1, y + 1, player)
+        visual_size = board.shape[0] - 2
 
-        return has_played
+        x = numpy.random.randint(visual_size) + 1
+        y = numpy.random.randint(visual_size) + 1
+
+        move = (x, y)
+
+        while not has_played and trial_count <= visual_size ** 2:
+            move = (move[0] % visual_size + 1, move[1] % visual_size + 1)
+            trial_count += 1
+            has_played = play_move(board, move, player)
+
+        return {'move': move, 'success': has_played, 'message': ""}

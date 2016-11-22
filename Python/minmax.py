@@ -18,7 +18,7 @@ class PlayerMiniMax:
         depth = 9000
         moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
         move = moves[numpy.argmax(
-            [-self.minimax(play_move_copy(board, move[0], move[1], player), depth, 1 - player) for move in
+            [-self.minimax(play_move_and_copy(board, move[0], move[1], player), depth, 1 - player) for move in
              moves])]
         return play_move(board, move[0], move[1], player)
 
@@ -43,7 +43,7 @@ class PlayerMiniMax:
             else:
                 moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
                 return max(
-                    [-self.minimax(play_move_copy(board, move[0], move[1], player), depth - 1, 1 - player)
+                    [-self.minimax(play_move_and_copy(board, move[0], move[1], player), depth - 1, 1 - player)
                      for move in moves])
 
     def alphabeta(self, board: numpy.ndarray, depth: int, player: int, alpha: float, beta: float):
@@ -57,8 +57,8 @@ class PlayerMiniMax:
             else:
                 u = -float('inf')
                 for move in moves:
-                    val = -self.alphabeta(self, play_move_copy(board, move[0], move[1], player), depth - 1,
-                                     1 - player - alpha, -beta)
+                    val = -self.alphabeta(self, play_move_and_copy(board, move[0], move[1], player), depth - 1,
+                                          1 - player - alpha, -beta)
                     if val > u:
                         u = val
                         if u > alpha:
