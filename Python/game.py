@@ -53,7 +53,7 @@ class Game:
             else:
                 raise Exception("Player {} ({}) failed and is not an human. Player message: {}"
                                 .format(player, player_class, message))
-        elif not can_play_move(self.board, move, player):
+        elif not can_play_move(self.board, move):
             raise Exception("Error for player {} ({}): Player tries to cheat. Player message: {}"
                             .format(player, player_class, message))
         else:
