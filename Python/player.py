@@ -21,6 +21,6 @@ class Player:
         while not has_played and trial_count <= visual_size ** 2:
             move = (move[0] % visual_size + 1, move[1] % visual_size + 1)
             trial_count += 1
-            has_played = play_move(board, move, player)
+            has_played = can_play_move(board, move, player)
 
-        return {'move': move, 'success': has_played, 'message': ""}
+        return {'move': move, 'success': has_played, 'message': "Playing randomly"}

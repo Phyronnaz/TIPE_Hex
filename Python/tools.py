@@ -1,9 +1,6 @@
 import numpy
 from hex_game import *
 
-NEIGHBORS_1 = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
-NEIGHBORS_2 = [(-1, 2), (1, 1), (2, -1), (1, -2), (-1, -1), (-2, 1)]
-
 
 def get_groups(board: numpy.ndarray, player: int) -> List[Group]:
     """
@@ -129,7 +126,6 @@ def get_common_neighbours(p1: Position, p2: Position) -> List[Position]:
     return [k for k in l1 if k in l2]
 
 
-# TODO: improve
 def get_move_count(board: numpy.ndarray) -> int:
     n = 0
     for i in range(board.shape[0]):

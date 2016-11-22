@@ -1,5 +1,5 @@
 import numpy
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Iterator
 
 # Move in real position (visual position + (1, 1))
 Move = Tuple[int, int]
@@ -7,8 +7,11 @@ Position = Tuple[int, int]
 Couple = Tuple[Position, Position, int]
 Group = List[Couple]
 Path = List[Position]
-PlayerResponse = Dict[Move, bool, str]
+# Zip {move: Move, success: bool, message: str (optional) , player_class: str (optional)}
+PlayerResponse = Iterator[str]
 
+NEIGHBORS_1 = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
+NEIGHBORS_2 = [(-1, 2), (1, 1), (2, -1), (1, -2), (-1, -1), (-2, 1)]
 
 
 def init_board(visual_size: int = 11, board: numpy.ndarray = None) -> numpy.ndarray:
@@ -27,16 +30,26 @@ def init_board(visual_size: int = 11, board: numpy.ndarray = None) -> numpy.ndar
     return board
 
 
-def play_move(board: numpy.ndarray, move: Move, player: int) -> bool:
+def play_move(board: numpy.ndarray, move: Move, player: int) -> None:
     """
-    Make player play a move
+    Make player play move
     :param board: board
     :param move: move
     :param player: player playing
     :return: Whether or not the move succeed
     """
+    board[move] = player
+
+
+def can_play_move(board: numpy.ndarray, move: Move, player: int) -> bool:
+    """
+    Check if player can play move
+    :param board: board
+    :param move: move
+    :param player: player playing
+    :return: Whether or not he can succeed
+    """
     if 0 < move[0] < board.shape[0] - 1 > move[1] > 0 and board[move] == -1:
-        board[move] = player
         return True
     else:
         return False
@@ -58,7 +71,6 @@ def play_move_and_copy(board: numpy.ndarray, move: Move, player: int) -> numpy.n
         return None
 
 
-# TODO: optimized way in game.py
 def has_win(board: numpy.ndarray, player: int) -> bool:
     """
     Check if a player has win

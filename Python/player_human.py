@@ -1,5 +1,6 @@
 from hex_game import *
 from player import Player
+from debug import Debug
 
 
 class HumanPlayer(Player):
@@ -14,12 +15,12 @@ class HumanPlayer(Player):
     def play_move(self, player: int, board: numpy.ndarray) -> PlayerResponse:
         if self.click_position is None:
             success = False
-            message = "Waiting for click"
+            message = Debug.WARNING + "Waiting for click"
             move = None
         else:
             move = self.click_position
             self.click_position = None
-            success = play_move(board, move, player)
+            success = can_play_move(board, move, player)
             message = "Click"
 
         return {'move': move, 'success': success, 'message': message}

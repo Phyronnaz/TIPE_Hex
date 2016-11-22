@@ -1,34 +1,28 @@
 from player import Player
 from poisson import Poisson
-from hex_game import *
+from debug import Debug
 from tools import *
 import numpy
+import random
+
 
 class PoissonAI(Player):
-    def play_move(self, player: int, board: numpy.ndarray) -> int:
-        """
-        Play a move
-        :param player: Player playing
-        :param board: board to play on
-        :return: 0 : fail, 1 :  success, 2 : wait
-        """
-        # densities, paths = self.get_path(board, player)
-        # l = numpy.array([densities[k] for k in paths])
-        # # TODO: check if path emtpy
-        # try:
-        #     move = paths[numpy.argmin(l)]
-        # except ValueError:
-        #     print("!!!!!!!!!!!!!!!!!!!!!!")
-        #     print("!!!!Empty response!!!!")
-        #     print("!!!Playing randomly!!!")
-        #     print("!!!!!!!!!!!!!!!!!!!!!!")
-        #     move = random.choice([k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0])
-        moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
-        move = moves[numpy.argmax(
-            [PoissonAI.get_score(play_move_and_copy(board, moves[i][0], moves[i][1], player), player) for i in
-             range(len(moves))])]
-        print("Poisson move: " + str(move))
-        return play_move(board, move[0], move[1], player)
+    def play_move(self, player: int, board: numpy.ndarray) -> PlayerResponse:
+        densities, paths = self.get_path(board, player)
+        l = numpy.array([densities[k] for k in paths])
+        # TODO: check if path emtpy
+        try:
+            message = "Playing minimum of the path"
+            move = paths[numpy.argmin(l)]
+        except ValueError:
+            message = Debug.FAIL + "Empty response. Playing randomly!"
+            possibles_moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
+            move = tuple(random.choice(possibles_moves))
+        # moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
+        # move = moves[numpy.argmax(
+        #     [PoissonAI.get_score(play_move_and_copy(board, moves[i], player), player) for i in
+        #      range(len(moves))])]
+        return {'move': move, 'success': True, 'message': message}
 
     @staticmethod
     def get_norme(board):

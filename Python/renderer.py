@@ -41,16 +41,16 @@ class Renderer:
 
         # Initialize arrays
         self.texts = []
-        self.board_hexagon = []
+        self.board_hexagons = []
         self.hexagons = []
         self.lines = []
-        self.hexagons = numpy.zeros((self.real_size, self.real_size))
+        self.hexagons_array = numpy.zeros((self.real_size, self.real_size))
 
         # Create game hexagons
         for i in range(self.real_size):
             for j in range(self.real_size):
                 outline = 0 != i != self.real_size - 1 != j != 0
-                self.hexagons[i][j] = self.create_hexagon(i, j, 'white', outline=outline, board_hexagon=True)
+                self.hexagons_array[i][j] = self.create_hexagon(i, j, 'white', outline=outline, board_hexagon=True)
 
         # Recenter
         self.recenter()
@@ -86,7 +86,7 @@ class Renderer:
                     c = 'red'
                     ac = 'pink'
 
-                self.canvas.itemconfig(int(self.hexagons[i][j]), fill=c, activefill=ac)
+                self.canvas.itemconfig(int(self.hexagons_array[i][j]), fill=c, activefill=ac)
 
         self.window.after(30, self.mainloop)
 
@@ -152,15 +152,15 @@ class Renderer:
         """
            Delete all hexagons (except board ones)
        """
-        for h in self.hexagons:
-            self.canvas.delete(h)
+        for (p, l) in self.hexagons:
+            self.canvas.delete(p)
 
     def show_texts(self):
         """
-        Show cases texts
+        Show cases indices
         """
         if len(self.texts) == 0:
-            for (p, l) in self.board_hexagon:
+            for (p, l) in self.board_hexagons:
                 l = self.canvas.coords(p)
                 x = l[::2]
                 y = l[1::2]
@@ -172,10 +172,11 @@ class Renderer:
 
     def hide_texts(self):
         """
-        Hide cases texts
+        Hide cases indices
         """
         for t in self.texts:
             self.canvas.delete(t)
+        self.texts.clear()
 
     def get_coords(self, x, y):
         """
@@ -196,7 +197,7 @@ class Renderer:
         Recenter polygons
         """
         self.canvas.config(width=self.max_x - self.min_x, height=self.max_y - self.min_y)
-        for (p, l) in self.hexagons + self.board_hexagon:
+        for (p, l) in (self.hexagons + self.board_hexagons):
             m = [l[i] - (self.min_x if i % 2 == 0 else self.min_y) for i in range(len(l))]
             self.canvas.coords(p, *m)
         self.x_offset = -self.min_x
