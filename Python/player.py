@@ -1,3 +1,5 @@
+import random
+from tools import *
 from hex_game import *
 
 
@@ -9,18 +11,17 @@ class Player:
         :param board: board to play on
         :return: {move: Move, success: bool, message: string}
         """
-        trial_count = 0
         has_played = False
-        visual_size = board.shape[0] - 2
 
-        x = numpy.random.randint(visual_size) + 1
-        y = numpy.random.randint(visual_size) + 1
+        moves = get_possibles_moves(board)
+        random.shuffle(moves)
+        move = None
+        for m in moves:
+            has_played = can_play_move(board, m)
+            if has_played:
+                move = m
+                break
 
-        move = (x, y)
+        message = "Playing randomly"
 
-        while not has_played and trial_count <= visual_size ** 2:
-            move = (move[0] % visual_size + 1, move[1] % visual_size + 1)
-            trial_count += 1
-            has_played = can_play_move(board, move, player)
-
-        return {'move': move, 'success': has_played, 'message': "Playing randomly"}
+        return {'move': move, 'success': has_played, 'message': message}

@@ -33,44 +33,41 @@ class PoissonAI(Player):
     @staticmethod
     def get_path(board: numpy.ndarray, player: int) -> Tuple[numpy.ndarray, Path]:
         n = board.shape[0]
-        matrix = numpy.zeros(board.shape, dtype=float)
+        board = board if player == 0 else board.T
+
+        weights = numpy.zeros(board.shape, dtype=float)
         paths = [[[] for _ in range(n)] for _ in range(n)]
+
         poisson = Poisson(board)
         poisson.iterations(board.shape[0] * 5)
-        U = poisson.U * [-1, 1][player]
-        for a in range(n - 1):
-            for b in range(n - 1):
-                x, y = (a, b) if player == 0 else (b, a)
-                if board[x, y] == 1 - player:
-                    matrix[x, y] = -float('inf')
-                else:
-                    if player == 0 and y != 0:
-                        if x == 0:
-                            matrix[x, y] = U[x, y]
+        U = poisson.U * [-1, 1][player]  # player cases > 0
+
+        def try_to_update(x: int, y: int):
+            down = [(x - 1, y)] if y == 11 else [(x - 1, y), (x - 1, y + 1)]
+            sides = [(x, y - 1), (x, y + 1)]
+            l = sides + down
+            i = numpy.argmax([weights[l[i]] for i in range(len(l))])
+            old_weight = weights[x, y]
+            m = l[i]
+            weights[x, y] = U[x, y] + weights[m]
+            paths[x][y] = [(x, y)] + paths[m[0]][m[1]]
+            return old_weight == weights[x, y]
+
+        for x in range(1, n - 1):
+            has_changed = True
+            while has_changed:
+                has_changed = False
+                for y in range(1, n - 1):
+                    if board[x, y] == 1 - player:
+                        weights[x, y] = -float('inf')
+                    else:
+                        if x == 1:
+                            weights[x, y] = U[x, y]
                             paths[x][y] = [(x, y)]
                         else:
-                            if y == 11:
-                                m = (x - 1, y)
-                            else:
-                                i = numpy.argmax([U[x - 1, y], U[x - 1, y + 1]])
-                                m = (x - 1, y) if i == 0 else (x - 1, y + 1)
-                            matrix[x, y] = matrix[m] + U[x, y]
-                            paths[x][y] = paths[m[0]][m[1]] + [(x, y)]
-                    elif player == 1 and x != 0:
-                        if y == 0:
-                            matrix[x, y] = U[x, y]
-                            paths[x][y] = [(x, y)]
-                        else:
-                            if x == 11:
-                                m = (x, y - 1)
-                            else:
-                                i = numpy.argmax([U[x, y - 1], U[x + 1, y - 1]])
-                                m = (x, y - 1) if i == 0 else (x + 1, y - 1)
-                            matrix[x, y] = matrix[m] + U[x, y]
-                            paths[x][y] = paths[m[0]][m[1]] + [(x, y)]
-        f = lambda i: ((i, n - 2) if player == 1 else (n - 2, i))
-        max_i = numpy.argmax([matrix[f(i)] for i in range(n)])
-        return U, paths[f(max_i)[0]][f(max_i)[1]]
+                            has_changed = not try_to_update(x, y)
+        max_i = numpy.argmax([weights[(n - 2, i)] for i in range(n)])
+        return U, paths[n - 2][max_i]
 
     @staticmethod
     def get_score(board: numpy.ndarray, player: int) -> int:

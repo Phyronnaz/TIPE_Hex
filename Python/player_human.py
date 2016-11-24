@@ -20,7 +20,7 @@ class HumanPlayer(Player):
         else:
             move = self.click_position
             self.click_position = None
-            success = can_play_move(board, move, player)
+            success = can_play_move(board, move)
             message = "Click"
 
         return {'move': move, 'success': success, 'message': message}

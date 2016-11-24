@@ -14,8 +14,8 @@ class Debug:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-    debug_groups = True
-    debug_poisson = True
+    debug_groups = False
+    debug_poisson = False
     debug_indices = True
     debug_text = True
 

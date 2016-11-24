@@ -1,5 +1,5 @@
 import numpy
-from typing import Tuple, List, FrozenSet
+from typing import Tuple, List, Union, Dict
 
 # Move in real position (visual position + (1, 1))
 Move = Tuple[int, int]
@@ -8,7 +8,7 @@ Couple = Tuple[Position, Position, int]
 Group = List[Couple]
 Path = List[Position]
 # Zip {move: Move, success: bool, message: str (optional) , player_class: str (optional)}
-PlayerResponse = FrozenSet[str]
+PlayerResponse = Dict[str, Union[Move, bool, str]]
 
 NEIGHBORS_1 = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
 NEIGHBORS_2 = [(-1, 2), (1, 1), (2, -1), (1, -2), (-1, -1), (-2, 1)]
