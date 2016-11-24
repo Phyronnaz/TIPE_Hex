@@ -23,10 +23,10 @@ def init_board(visual_size: int = 11, board: numpy.ndarray = None) -> numpy.ndar
     """
     if board is None:
         board = -numpy.ones((visual_size + 2, visual_size + 2), dtype=int)
-    board[0, :] = 0
-    board[-1, :] = 0
-    board[:, -1] = 1
-    board[:, 0] = 1
+    board[0, 1:-1] = 0
+    board[-1, 1:-1] = 0
+    board[1:-1, -1] = 1
+    board[1:-1  , 0] = 1
     return board
 
 

@@ -21,15 +21,6 @@ class PlayerMiniMax:
         return {'move': move, 'success': success, 'message': message}
 
     def negamax(self, board: numpy.ndarray, depth: int, player: int) -> float:
-        """
-
-        :param board: numpy array
-        :param depth: int
-        :param play_move: param : board, player, move -> board
-        :param get_score: param : board, -> score player0 - score player1
-        :param get_moves: param : board, player -> tuple list
-        :return: score player0-score player1
-        """
         self.count += 1
         if self.count % 1000 == 0:
             print(self.count)

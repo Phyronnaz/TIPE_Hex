@@ -54,14 +54,15 @@ class Game:
                 raise Exception("Player {} ({}) failed and is not an human. Player message: {}"
                                 .format(player, player_class, message))
         elif not can_play_move(self.board, move):
-            raise Exception("Error for player {} ({}): Player tries to cheat. Player message: {}"
-                            .format(player, player_class, message))
+            raise Exception("Error for player {} ({}): Player tries to cheat. Payer move: {}. Player message: {}"
+                            .format(player, player_class, move, message))
         else:
-            self.moves.append((move, message, player))
+            new_response = {"success": success, "move": move, "message": message, "player_class": player_class}
+            self.moves.append(new_response)
             play_move(self.board, move, player)
             if check_for_winner:
                 self.check_for_winner(move, player)
-            return {"success": success, "move": move, "message": message, "player_class": player_class}
+            return new_response
 
     # TODO: do crash test against other method
     def check_for_winner(self, move: Move, player: int) -> None:

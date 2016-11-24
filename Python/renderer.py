@@ -1,9 +1,10 @@
 import tkinter as tk
 import numpy
+from resizing_canvas import ResizingCanvas
 
 
 class Renderer:
-    def __init__(self, update_board=None, visual_size: int = 11, scale: int = 25, rotation=numpy.pi / 6):
+    def __init__(self, update_board=None, visual_size: int = 11, rotation=numpy.pi / 6):
         """
         Create new Renderer
         :param update_board: function to call to get the new board
@@ -15,22 +16,18 @@ class Renderer:
         # Assign variables
         self.update_board = update_board
         self.real_size = visual_size + 2
-        self.scale = scale
         self.rotation = rotation
         self.click_delegates = []
-        self.min_x = 0
-        self.min_y = 0
-        self.max_x = 0
-        self.max_y = 0
-        self.x_offset = 0
-        self.y_offset = 0
 
         # Initialize Tk and Canvas
         self.window = tk.Tk()
-        self.canvas = tk.Canvas(self.window)
+        self.canvas = ResizingCanvas(self.window, self.real_size)
         self.canvas.pack(fill=tk.BOTH, expand=tk.YES)
         self.canvas.focus_set()
         self.canvas.update()
+
+        self.x_offset = self.canvas.relative_scale
+        self.y_offset = self.canvas.relative_scale
 
         # Click
         def click(event):
@@ -47,48 +44,71 @@ class Renderer:
         self.hexagons_array = numpy.zeros((self.real_size, self.real_size))
 
         # Create game hexagons
+        s = self.real_size
         for i in range(self.real_size):
             for j in range(self.real_size):
                 outline = 0 != i != self.real_size - 1 != j != 0
                 self.hexagons_array[i][j] = self.create_hexagon(i, j, 'white', outline=outline, board_hexagon=True)
 
-        # Recenter
-        self.recenter()
-
-    def start(self):
+    def start(self, loop=True):
         """
         Start loop
         """
-        self.mainloop()
-        self.window.mainloop()
+        if loop:
+            self.update()
+            self.window.mainloop()
+        else:  # Update once
+            self.update(False)
 
-    def mainloop(self):
+    def set_board(self, board, white=False):
+        """
+        Print board. White if player0 = 0 and player1 = 1 (else player0 = -1 and player1 = 1)
+        """
+        if white:
+            for i in range(self.real_size):
+                for j in range(self.real_size):
+                    p = board[i, j]
+                    if i == 0 or i == self.real_size - 1:
+                        c = '#99dafa'
+                        ac = c
+                    elif j == 0 or j == self.real_size - 1:
+                        c = '#f7597c'
+                        ac = c
+                    elif p == -1:
+                        c = 'white'
+                        ac = 'grey'
+                    elif p == 0:
+                        c = 'blue'
+                        ac = 'cyan'
+                    elif p == 1:
+                        c = 'red'
+                        ac = 'pink'
+
+                    self.canvas.itemconfig(int(self.hexagons_array[i][j]), fill=c, activefill=ac)
+        else:
+            def hexa(f):
+                s = str(hex(int(255 * f)))[2:]
+                while len(s) < 2:
+                    s = "0" + s
+                while len(s) > 2:
+                    s = s[:-1]
+                return s
+
+            n = board.shape[0]
+
+            for i in range(n):
+                for j in range(n):
+                    c = "#" + hexa(max(0, board[i, j])) + "00" + hexa(-min(0, board[i, j]))
+                    self.canvas.itemconfig(int(self.hexagons_array[i][j]), fill=c, activefill=c)
+
+    def update(self, after=True):
         """
         Mainloop for tkinter
         """
         board = self.update_board() if self.update_board is not None else -numpy.ones((self.real_size, self.real_size))
-        for i in range(self.real_size):
-            for j in range(self.real_size):
-                p = board[i, j]
-                if i == 0 or i == self.real_size - 1:
-                    c = '#99dafa'
-                    ac = c
-                elif j == 0 or j == self.real_size - 1:
-                    c = '#f7597c'
-                    ac = c
-                elif p == -1:
-                    c = 'white'
-                    ac = 'grey'
-                elif p == 0:
-                    c = 'blue'
-                    ac = 'cyan'
-                elif p == 1:
-                    c = 'red'
-                    ac = 'pink'
-
-                self.canvas.itemconfig(int(self.hexagons_array[i][j]), fill=c, activefill=ac)
-
-        self.window.after(30, self.mainloop)
+        self.set_board(board, True)
+        if after:
+            self.window.after(30, self.update)
 
     def create_line(self, p1, p2, color="yellow"):
         """
@@ -116,23 +136,21 @@ class Renderer:
         :param board_hexagon: wether or not this hexagon is part of the board
         :return:
         """
-        l = []
-        for a in range(6):
-            p_x = numpy.sin(a * numpy.pi / 3)
-            p_y = numpy.cos(a * numpy.pi / 3)
-            p_x += (2 * x + y) * numpy.sin(numpy.pi / 3)
-            p_y += y * (2 - numpy.cos(5 * numpy.pi / 3))
-            p_x, p_y = self.get_coords(p_x, p_y)
-            l.append(p_x)
-            l.append(p_y)
-
-            self.min_x = min(self.min_x, p_x)
-            self.min_y = min(self.min_y, p_y)
-            self.max_x = max(self.max_x, p_x)
-            self.max_y = max(self.max_y, p_y)
+        if not board_hexagon:
+            l=self.canvas.coords(int(self.hexagons_array[x, y]))
+        else:
+            l = []
+            for a in range(6):
+                p_x = numpy.sin(a * numpy.pi / 3)
+                p_y = numpy.cos(a * numpy.pi / 3)
+                p_x += (2 * x + y) * numpy.sin(numpy.pi / 3)
+                p_y += y * (2 - numpy.cos(5 * numpy.pi / 3))
+                p_x, p_y = self.get_coords(p_x, p_y)
+                l.append(p_x)
+                l.append(p_y)
 
         o = 'black' if outline else ''
-        t = str(x) + " " + str(y)
+        t = str(x) + " " + str(y) + " all"
         s = "gray50" if transparent else ""
         p = self.canvas.create_polygon(l, outline=o, fill=fill_color, tag=t, stipple=s)
         if board_hexagon:
@@ -185,20 +203,10 @@ class Renderer:
         :param y: y coordinate in hex game
         :return: x, y coordinates in tkinter
         """
+        # self.scale *= self.canvas.relative_scale
         r = numpy.array([[numpy.cos(self.rotation), -numpy.sin(self.rotation)],
                          [numpy.sin(self.rotation), numpy.cos(self.rotation)]])
-        x *= self.scale
-        y *= self.scale
+        x *= self.canvas.relative_scale
+        y *= self.canvas.relative_scale
         y, x = r.dot(numpy.array([x, y]))
         return x + self.x_offset, y + self.y_offset
-
-    def recenter(self):
-        """
-        Recenter polygons
-        """
-        self.canvas.config(width=self.max_x - self.min_x, height=self.max_y - self.min_y)
-        for (p, l) in (self.hexagons + self.board_hexagons):
-            m = [l[i] - (self.min_x if i % 2 == 0 else self.min_y) for i in range(len(l))]
-            self.canvas.coords(p, *m)
-        self.x_offset = -self.min_x
-        self.y_offset = -self.min_y

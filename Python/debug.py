@@ -15,52 +15,70 @@ class Debug:
     UNDERLINE = '\033[4m'
 
     debug_groups = False
-    debug_poisson = False
+    debug_poisson = True
     debug_indices = True
     debug_text = True
 
-    def __init__(self, renderer: Renderer):
-        self.renderer = renderer
-        self.polygons = []
+    renderers = []
+    polygons = []
 
-    def update(self, board: numpy.ndarray):
-        self.renderer.clear_lines()
-        self.renderer.clear_hexagons()
+    @staticmethod
+    def init(renderer: Renderer):
+        Debug.renderers.append(renderer)
+
+    @staticmethod
+    def create_renderer():
+        r = Renderer(visual_size=Debug.renderers[0].real_size - 2)
+        r.start(False)
+        Debug.renderers.append(r)
+
+    @staticmethod
+    def clear():
+        for r in Debug.renderers:
+            r.clear_lines()
+            r.clear_hexagons()
+
+    @staticmethod
+    def update(board: numpy.ndarray):
         if Debug.debug_groups:
-            self._display_groups(board)
+            Debug._display_groups(board)
         if Debug.debug_poisson:
-            self._display_poisson(board)
+            Debug._display_poisson(board)
         if Debug.debug_indices:
-            self.renderer.show_texts()
+            Debug.renderers[0].show_texts()
         else:
-            self.renderer.hide_texts()
+            Debug.renderers[0].hide_texts()
 
-    def _display_groups(self, board: numpy.ndarray):
+    @staticmethod
+    def _display_groups(board: numpy.ndarray):
         groups = [get_groups(board, k) for k in [0, 1]]
         for k in [0, 1]:
             for g in groups[k]:
                 color = "#" + ("%06x" % random.randint(0, 16777215))
                 for c in g:
-                    self.renderer.create_line(c[0], c[1], color)
+                    Debug.renderers[0].create_line(c[0], c[1], color)
 
-    def _display_poisson(self, board: numpy.ndarray):
-        def hexa(f):
-            s = str(hex(int(255 * f)))[2:]
-            while len(s) < 2:
-                s = "0" + s
-            while len(s) > 2:
-                s = s[:-1]
-            return s
-
+    @staticmethod
+    def _display_poisson(board: numpy.ndarray):
         poisson = Poisson(board)
         poisson.iterations(board.shape[0] * 5)
-        n = poisson.U.shape[0]
-        for i in range(n):
-            for j in range(n):
-                c = "#" + hexa(max(0, poisson.U[i, j])) + "00" + hexa(-min(0, poisson.U[i, j]))
-                self.renderer.create_hexagon(i, j, c, outline=False)
+        Debug.display_array(poisson.U, renderer=1)
 
-    def start_text(self):
+    @staticmethod
+    def display_array(array: numpy.ndarray, renderer=0):
+        array = array.copy()
+        array[array == -float("inf")] = -0.001
+        array[array == float("inf")] = 0.001
+        array[array == 0.001] = numpy.abs(array).max()
+        array[array == -0.001] = -numpy.abs(array).max()
+        array[0, 0] = 1
+        array = array / numpy.abs(array).max()
+        while renderer > len(Debug.renderers) - 1:
+            Debug.create_renderer()
+        Debug.renderers[renderer].set_board(array)
+
+    @staticmethod
+    def start_text():
         if Debug.debug_text:
             print("""
    ____                            ____  _             _           _
@@ -70,9 +88,10 @@ class Debug:
   \____|\__,_|_| |_| |_|\___|     |____/ \__\__,_|_|   \__\___|\__,_|
 
             """)
-            self.print_line()
+            Debug.print_line()
 
-    def update_text(self, player: int, winner: int, player_response: PlayerResponse):
+    @staticmethod
+    def update_text(player: int, winner: int, player_response: PlayerResponse):
         if Debug.debug_text:
             move, success = player_response["move"], player_response["success"]
             message, player_class = player_response["message"], player_response["player_class"]
@@ -85,19 +104,23 @@ class Debug:
                   .format(player, player_class_bold, move_bold, message_bold))
 
             if winner != -1:
-                self.print_line()
+                Debug.print_line()
                 print(Debug.BOLD + Debug.HEADER + "Player {} ({}) won.".format(player, player_class) + Debug.ENDC)
-                self.print_line()
-                self.end_text()
+                Debug.print_line()
+                Debug.end_text()
 
-            self.print_line()
+            Debug.print_line()
 
-    def print_line(self):
-        print(Debug.OKBLUE)
+    @staticmethod
+    def print_line(start=True, end=True):
+        if start:
+            print(Debug.OKBLUE)
         print("---------------------------------------------------------------------------------------")
-        print(Debug.ENDC)
+        if end:
+            print(Debug.ENDC)
 
-    def end_text(self):
+    @staticmethod
+    def end_text():
         if Debug.debug_text:
             print("""
    ____                            _____           _          _
@@ -107,5 +130,25 @@ class Debug:
   \____|\__,_|_| |_| |_|\___|     |_____|_| |_|\__,_|\___|\__,_|
 
             """)
-            self.print_line()
+            Debug.print_line()
 
+    @staticmethod
+    def print_moves(moves: List[PlayerResponse]):
+        print(Debug.BOLD + "Moves:" + Debug.ENDC)
+        for player_response in moves:
+            move, success = player_response["move"], player_response["success"]
+            message, player_class = player_response["message"], player_response["player_class"]
+
+            player_class_bold = Debug.BOLD + player_class + Debug.ENDC
+            move_bold = Debug.BOLD + str(move) + Debug.ENDC
+            message_bold = Debug.BOLD + message + Debug.ENDC
+
+            print("Player {} played successfully at {}. Player message: {}"
+                  .format(player_class_bold, move_bold, message_bold))
+        Debug.print_line()
+
+    @staticmethod
+    def debug_path(path: List[Move]):
+        for move in path:
+            i, j = move
+            Debug.renderers[0].create_hexagon(i, j, "pink", outline=False, transparent=True)

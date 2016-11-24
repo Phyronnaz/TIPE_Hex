@@ -15,12 +15,14 @@ class Player:
 
         moves = get_possibles_moves(board)
         random.shuffle(moves)
+
         move = None
         for m in moves:
             has_played = can_play_move(board, m)
             if has_played:
                 move = m
                 break
+
 
         message = "Playing randomly"
 
