@@ -9,7 +9,6 @@ class PlayerMiniMax:
         self.count = 0
         depth = 900000
         moves = get_possibles_moves(board)
-        print(moves)
         scores = [-self.negamax(play_move_and_copy(board, moves[i], player), depth - 1, 1 - player)
                   for i in range(len(moves))]
         move = moves[numpy.argmax(scores)]
