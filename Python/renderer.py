@@ -4,24 +4,21 @@ from resizing_canvas import ResizingCanvas
 
 
 class Renderer:
-    def __init__(self, update_board=None, visual_size: int = 11, rotation=numpy.pi / 6):
+    def __init__(self, visual_size: int = 11, rotation=numpy.pi / 6):
         """
         Create new Renderer
-        :param update_board: function to call to get the new board
-        :param board: board to display
-        :param scale: scale factor for tiles
+        :param visual_size: size of the board
         :param rotation: rotation of the board in radians
         """
 
         # Assign variables
-        self.update_board = update_board
         self.real_size = visual_size + 2
         self.rotation = rotation
         self.click_delegates = []
 
         # Initialize Tk and Canvas
-        self.window = tk.Tk()
-        self.canvas = ResizingCanvas(self.window, self.real_size)
+        self.master = tk.Tk()
+        self.canvas = ResizingCanvas(self.master, self.real_size)
         self.canvas.pack(fill=tk.BOTH, expand=tk.YES)
         self.canvas.focus_set()
         self.canvas.update()
@@ -49,16 +46,6 @@ class Renderer:
             for j in range(self.real_size):
                 outline = 0 != i != self.real_size - 1 != j != 0
                 self.hexagons_array[i][j] = self.create_hexagon(i, j, 'white', outline=outline, board_hexagon=True)
-
-    def start(self, loop=True):
-        """
-        Start loop
-        """
-        if loop:
-            self.update()
-            self.window.mainloop()
-        else:  # Update once
-            self.update(False)
 
     def set_board(self, board, white=False):
         """
@@ -100,15 +87,6 @@ class Renderer:
                 for j in range(n):
                     c = "#" + hexa(max(0, board[i, j])) + "00" + hexa(-min(0, board[i, j]))
                     self.canvas.itemconfig(int(self.hexagons_array[i][j]), fill=c, activefill=c)
-
-    def update(self, after=True):
-        """
-        Mainloop for tkinter
-        """
-        board = self.update_board() if self.update_board is not None else -numpy.ones((self.real_size, self.real_size))
-        self.set_board(board, True)
-        if after:
-            self.window.after(30, self.update)
 
     def create_line(self, p1, p2, color="black", arrow=False):
         """

@@ -1,6 +1,6 @@
 from hex_game import *
 from player import Player
-from debug import Debug
+from display import Display
 
 
 class HumanPlayer(Player):
@@ -8,14 +8,14 @@ class HumanPlayer(Player):
         self.click_position = None
         self.renderer = None
 
-    def init(self, renderer):
-        self.renderer = renderer
-        self.renderer.click_delegates.append(self.click)
-
     def play_move(self, player: int, board: numpy.ndarray) -> PlayerResponse:
+        if self.renderer is None:
+            self.renderer = Display.renderers[0]
+            self.renderer.click_delegates.append(self.click)
+
         if self.click_position is None:
             success = False
-            message = Debug.WARNING + "Waiting for click"
+            message = Display.WARNING + "Waiting for click"
             move = None
         else:
             move = self.click_position

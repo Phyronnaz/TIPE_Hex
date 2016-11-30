@@ -1,6 +1,6 @@
 from player import Player
 from poisson import Poisson
-from debug import Debug
+from display import Display
 from tools import *
 import numpy
 import random
@@ -15,7 +15,7 @@ class PoissonAI(Player):
             message = "Playing minimum of the path"
             move = path[numpy.argmin(l)]
         except ValueError:
-            message = Debug.FAIL + "Empty response. Playing randomly!"
+            message = Display.FAIL + "Empty response. Playing randomly!"
             possibles_moves = get_possibles_moves(board)
             move = tuple(random.choice(possibles_moves))
         # moves = [k for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
@@ -86,8 +86,8 @@ class PoissonAI(Player):
         u, path = (U, paths[n - 2][max_i]) if player == 0 else (U.T, [(k[1], k[0]) for k in paths[n - 2][max_i]])
 
         # Debug
-        Debug.display_poisson_ai(-weights if player == 0 else weights.T)
-        Debug.display_path(path)
+        Display.display_poisson_ai(-weights if player == 0 else weights.T)
+        Display.display_path(path)
 
         return u, path
 

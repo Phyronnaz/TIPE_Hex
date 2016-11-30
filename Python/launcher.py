@@ -5,4 +5,5 @@ from ai_poisson import PoissonAI
 from player import Player
 from alphabeta import PlayerAlphaBeta
 
-GameHandler(PoissonAI(), HumanPlayer(), visual_size=11)
+
+GameHandler(PoissonAI(), HumanPlayer(), rate=50)
