@@ -9,7 +9,6 @@ import random
 class PoissonAI(Player):
     def play_move(self, player: int, board: numpy.ndarray) -> PlayerResponse:
         weights, path = self.get_path(board, player)
-        Debug.debug_path(path)
         l = numpy.array([weights[path[i]] for i in range(len(path))])
         # TODO: check if path emtpy
         try:
@@ -49,9 +48,14 @@ class PoissonAI(Player):
             sides = []
             if y != 11:
                 down += [(x - 1, y + 1)]
-                sides += [(x, y + 1)]
+                p = (x, y + 1)
+                if (x, y) not in paths[p[0]][p[1]]:
+                    sides += [p]
+
             if x != 1:
-                sides += [(x, y - 1)]
+                p = (x, y - 1)
+                if (x, y) not in paths[p[0]][p[1]]:
+                    sides += [p]
             l = sides + down
             i = numpy.argmax([weights[l[i]] / (4 if l[i] in sides else 1) for i in range(len(l))])
             old_weight = weights[x, y]
@@ -79,12 +83,13 @@ class PoissonAI(Player):
                                 weights[x, y] = weights[x, y]
         max_i = numpy.argmax([weights[(n - 2, i)] for i in range(n)])
 
-        Debug.display_array(-weights if player == 0 else weights.T, renderer=2)
+        u, path = (U, paths[n - 2][max_i]) if player == 0 else (U.T, [(k[1], k[0]) for k in paths[n - 2][max_i]])
 
-        if player == 0:
-            return U, paths[n - 2][max_i]
-        else:
-            return U.T, [(k[1], k[0]) for k in paths[n - 2][max_i]]
+        # Debug
+        Debug.display_poisson_ai(-weights if player == 0 else weights.T)
+        Debug.display_path(path)
+
+        return u, path
 
     @staticmethod
     def get_score(board: numpy.ndarray, player: int) -> int:

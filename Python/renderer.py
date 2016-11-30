@@ -110,20 +110,28 @@ class Renderer:
         if after:
             self.window.after(30, self.update)
 
-    def create_line(self, p1, p2, color="yellow"):
+    def create_line(self, p1, p2, color="black", arrow=False):
         """
         Create line between p1 and p2
         :param p1: p1 in hex coordinate
         :param p2: p2 in hex coordinate
         :param color: color of the line
+        :param arrow: display arrow
         """
-        x1 = (2 * p1[0] + p1[1]) * numpy.sin(numpy.pi / 3)
-        y1 = p1[1] * (2 - numpy.cos(5 * numpy.pi / 3))
-        x2 = (2 * p2[0] + p2[1]) * numpy.sin(numpy.pi / 3)
-        y2 = p2[1] * (2 - numpy.cos(5 * numpy.pi / 3))
-        x1, y1 = self.get_coords(x1, y1)
-        x2, y2 = self.get_coords(x2, y2)
-        self.lines.append(self.canvas.create_line(x1, y1, x2, y2, state=tk.DISABLED, fill=color, width=self.scale / 5))
+
+        l1 = self.canvas.coords(int(self.hexagons_array[p1]))
+        l2 = self.canvas.coords(int(self.hexagons_array[p2]))
+
+        x1 = sum(l1[::2]) / len(l1[::2])
+        x2 = sum(l2[::2]) / len(l2[::2])
+
+        y1 = sum(l1[1::2]) / len(l1[1::2])
+        y2 = sum(l2[1::2]) / len(l2[1::2])
+
+        arrow = tk.LAST if arrow else tk.NONE
+
+        self.lines.append(self.canvas.create_line(x1, y1, x2, y2, state=tk.DISABLED, fill=color,
+                                                  width=5, arrow=arrow, arrowshape=(13, 13, 7)))
 
     def create_hexagon(self, x, y, fill_color, outline=True, transparent=False, board_hexagon=False):
         """
@@ -137,7 +145,7 @@ class Renderer:
         :return:
         """
         if not board_hexagon:
-            l=self.canvas.coords(int(self.hexagons_array[x, y]))
+            l = self.canvas.coords(int(self.hexagons_array[x, y]))
         else:
             l = []
             for a in range(6):

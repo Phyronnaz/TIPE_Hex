@@ -15,9 +15,11 @@ class Debug:
     UNDERLINE = '\033[4m'
 
     debug_groups = False
-    debug_poisson = True
+    debug_poisson = False
     debug_indices = True
     debug_text = True
+    debug_path = False
+    debug_poisson_ai = False
 
     renderers = []
     polygons = []
@@ -27,10 +29,10 @@ class Debug:
         Debug.renderers.append(renderer)
 
     @staticmethod
-    def create_renderer():
+    def _create_renderer():
         r = Renderer(visual_size=Debug.renderers[0].real_size - 2)
         r.start(False)
-        Debug.renderers.append(r)
+        return r
 
     @staticmethod
     def clear():
@@ -62,10 +64,10 @@ class Debug:
     def _display_poisson(board: numpy.ndarray):
         poisson = Poisson(board)
         poisson.iterations(board.shape[0] * 5)
-        Debug.display_array(poisson.U, renderer=1)
+        Debug._display_array(poisson.U, renderer=1)
 
     @staticmethod
-    def display_array(array: numpy.ndarray, renderer=0):
+    def _display_array(array: numpy.ndarray, renderer=0):
         array = array.copy()
         array[array == -float("inf")] = -0.001
         array[array == float("inf")] = 0.001
@@ -74,7 +76,9 @@ class Debug:
         array[0, 0] = 1
         array = array / numpy.abs(array).max()
         while renderer > len(Debug.renderers) - 1:
-            Debug.create_renderer()
+            Debug.renderers.append(None)
+        if Debug.renderers[renderer] is None:
+            Debug.renderers[renderer] = Debug._create_renderer()
         Debug.renderers[renderer].set_board(array)
 
     @staticmethod
@@ -148,7 +152,16 @@ class Debug:
         Debug.print_line()
 
     @staticmethod
-    def debug_path(path: List[Move]):
-        for move in path:
-            i, j = move
-            Debug.renderers[0].create_hexagon(i, j, "pink", outline=False, transparent=True)
+    def display_path(path: List[Move]):
+        if Debug.debug_path:
+            last_move = path[0]
+            for move in path:
+                i, j = move
+                Debug.renderers[0].create_hexagon(i, j, "pink", outline=False, transparent=True)
+                Debug.renderers[0].create_line(last_move, move, arrow=True)
+                last_move = move
+
+    @staticmethod
+    def display_poisson_ai(array: numpy.ndarray):
+        if Debug.debug_poisson_ai:
+            Debug._display_array(array, 2)
