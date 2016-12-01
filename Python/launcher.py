@@ -6,4 +6,4 @@ from player import Player
 from alphabeta import PlayerAlphaBeta
 
 
-GameHandler(PoissonAI(), HumanPlayer(), rate=50)
+GameHandler(PoissonAI(), HumanPlayer())

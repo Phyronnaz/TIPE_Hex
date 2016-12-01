@@ -36,8 +36,9 @@ class Display:
     @staticmethod
     def clear():
         for r in Display.renderers:
-            r.clear_lines()
-            r.clear_hexagons()
+            if r is not None:
+                r.clear_lines()
+                r.clear_hexagons()
 
     @staticmethod
     def update(board: numpy.ndarray):

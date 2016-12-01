@@ -9,11 +9,17 @@ import random
 class PoissonAI(Player):
     def play_move(self, player: int, board: numpy.ndarray) -> PlayerResponse:
         weights, path = self.get_path(board, player)
+        weights_other, path_other = self.get_path(board, player)
+
         l = numpy.array([weights[path[i]] for i in range(len(path))])
+        l_other = numpy.array([weights_other[path_other[i]] for i in range(len(path_other))])
+
+        current_l = l if l.sum() > l_other.sum() else l_other
+
         # TODO: check if path emtpy
         try:
             message = "Playing minimum of the path"
-            move = path[numpy.argmin(l)]
+            move = path[numpy.argmin(current_l)]
         except ValueError:
             message = Display.FAIL + "Empty response. Playing randomly!"
             possibles_moves = get_possibles_moves(board)
