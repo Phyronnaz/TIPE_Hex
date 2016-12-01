@@ -48,6 +48,7 @@ class GameHandler:
             c.pack()
 
         self.canvas.pack()
+        self.canvas.focus_set()
         self.canvas.update()
 
         # Setup renderer

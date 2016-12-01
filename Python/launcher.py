@@ -6,4 +6,4 @@ from player import Player
 from alphabeta import PlayerAlphaBeta
 
 
-GameHandler(HumanPlayer(), PlayerMiniMax())
+GameHandler(HumanPlayer(), PlayerAlphaBeta(), visual_size=3, rate=50)

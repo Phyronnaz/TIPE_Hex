@@ -138,4 +138,4 @@ def get_possibles_moves(board: numpy.ndarray) -> List[Move]:
     """
     Get all possibles moves
     """
-    return [tuple(k) for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] != k[1] != 0]
+    return [tuple(k) for k in numpy.argwhere(board == -1) if 0 != k[0] != board.shape[0] - 1 != k[1] != 0]

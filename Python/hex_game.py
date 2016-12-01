@@ -67,6 +67,7 @@ def play_move_and_copy(board: numpy.ndarray, move: Move, player: int) -> numpy.n
         new_board[move] = player
         return new_board
     else:
+        raise Exception("Invalid move: {}".format(move))
         return None
 
 

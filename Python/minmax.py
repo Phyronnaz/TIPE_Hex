@@ -3,6 +3,7 @@ from hex_game import *
 from tools import *
 from ai_poisson import PoissonAI
 
+# TODO: Game with better win (far)
 
 class PlayerMiniMax:
     def play_move(self, player: int, board: numpy.ndarray) -> PlayerResponse:

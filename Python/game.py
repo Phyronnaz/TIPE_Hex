@@ -29,7 +29,7 @@ class Game:
 
         self.board.flags["WRITEABLE"] = False
 
-        response = self.players[player].play_move(player, self.board.copy())
+        response = self.players[player].play_move(player, self.board)
 
         try:
             move = response["move"]

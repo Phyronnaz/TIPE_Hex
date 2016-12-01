@@ -2,7 +2,7 @@
 <project version="4">
   <component name="WebServers">
     <option name="servers">
-      <webServer id="1d03be42-a8b2-4283-97b0-f56bf2918783" name="Jupyter" url="http://jupyter.ddns.net">
+      <webServer id="49027ba5-25dc-448a-b250-04fee96b3266" name="Jupyter" url="http://jupyter.ddns.net">
         <fileTransfer host="jupyter.ddns.net" port="22" accessType="SFTP">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" />

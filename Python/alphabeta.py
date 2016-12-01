@@ -10,7 +10,7 @@ class PlayerAlphaBeta(Player):
 
     def play_move(self, player: int, board: numpy.ndarray) -> PlayerResponse:
         self.count = 0
-        depth = 2
+        depth = 10
         moves = get_possibles_moves(board)
         scores = [-self.alphabeta(play_move_and_copy(board, moves[i], player), depth - 1, 1 - player, -float('inf'),
                                   float('inf'))
@@ -24,6 +24,10 @@ class PlayerAlphaBeta(Player):
         return {'move': move, 'success': success, 'message': message}
 
     def alphabeta(self, board: numpy.ndarray, depth: int, player: int, alpha: float, beta: float):
+        self.count += 1
+        if self.count % 1000 == 0:
+            print(self.count)
+
         if depth == 0:
             return get_scores(board)[0][player]
         else:
