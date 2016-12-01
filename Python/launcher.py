@@ -6,4 +6,4 @@ from player import Player
 from alphabeta import PlayerAlphaBeta
 
 
-GameHandler(PoissonAI(), HumanPlayer())
+GameHandler(HumanPlayer(), PlayerMiniMax())
