@@ -1,6 +1,6 @@
 import tkinter
 import numpy
-from hex_game import play_move, can_play_move, init_board, has_win
+from hex_game.main import play_move, can_play_move, init_board, has_win
 
 
 class ResizingCanvas(tkinter.Canvas):

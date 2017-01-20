@@ -1,9 +1,10 @@
 import numpy
-from hex_game import get_move_random
+from hex_game.main import get_move_random
 
 
 class RandomPlayer:
-    def __init__(self, state=None):
+    def __init__(self, state=None, verbose=False):
+        self.verbose = verbose
         self.state = numpy.random.RandomState() if state is None else state
         self.count = 0
 
@@ -14,5 +15,6 @@ class RandomPlayer:
         :param board: board to play on
         """
         self.count += 1
-        print("Random called %s time" % self.count)
+        if self.verbose:
+            print("Random called %s time" % self.count)
         return get_move_random(board, self.state)

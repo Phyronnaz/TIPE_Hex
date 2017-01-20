@@ -1,5 +1,5 @@
 import numpy
-from negamax import get_move_negamax
+from hex_game.negamax import get_move_negamax
 
 
 class NegaMaxPlayer:

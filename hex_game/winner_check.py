@@ -1,5 +1,5 @@
 import numpy
-from hex_game import NEIGHBORS_1
+from hex_game.main import NEIGHBORS_1
 
 
 def init_winner_matrix_and_counter(size: int):
@@ -46,7 +46,7 @@ def check_for_winner(move: (int, int), player: int, winner_matrix: numpy.ndarray
 
     # Find same team neighbors of the last move
     all_neighbors = [winner_matrix[move[0] + n[0], move[1] + n[1]] for n in NEIGHBORS_1]
-    player_neighbors = numpy.array(list(set([k for k in all_neighbors if k * p > 0])))
+    player_neighbors = numpy.unique([k for k in all_neighbors if k * p > 0])
 
     if len(player_neighbors) == 0:  # Last move alone
         winner_matrix[move] = winner_counter * p

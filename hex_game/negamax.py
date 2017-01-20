@@ -1,6 +1,6 @@
 import numpy
-from hex_game import play_move_and_copy, get_possibles_moves
-from winner_check import late_init_winner_matrix_and_counter, check_for_winner
+from hex_game.main import *
+from hex_game.winner_check import *
 
 
 def get_move_negamax(board: numpy.ndarray, player: int, depth: int):

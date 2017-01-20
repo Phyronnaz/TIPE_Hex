@@ -6,7 +6,7 @@ size = 11
 
 win_count_has_win = 0
 win_count_winner_check = 0
-n = 10000
+n = 100
 
 player = RandomPlayer()
 
