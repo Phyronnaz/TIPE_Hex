@@ -5,6 +5,8 @@ from bokeh.plotting import output_file, show, figure, gridplot
 from bokeh.palettes import Category10
 import numpy
 
+#TODO: numpy.savez
+
 epochs = 250000
 
 path = "/home/admin/saves/2017-01-20/"
@@ -13,12 +15,12 @@ for size in [5]:
     figs = [0, 1]
     for early_reward in [False]:
         loss_array = []
-        l = [0.01, 0.5, 1]
+        l = [0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
         for gamma in l:
             model, loss = learn(size=size, epochs=epochs, gamma=gamma, player=0, early_reward=early_reward)
             loss_array.append(loss)
 
-            name = "size-{}_gamma-{}_player-{}_early_reward-{}".format(size, gamma, 0, early_reward)
+            name = "size-{}_gamma-{}_player-{}_early_reward-{}_epochs-{}".format(size, gamma, 0, early_reward, epochs)
 
             model.save(path + name + ".model")
             numpy.savetxt(path + name + ".npy", loss)
