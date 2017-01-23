@@ -3,7 +3,7 @@
   <component name="WebServers">
     <option name="servers">
       <webServer id="49027ba5-25dc-448a-b250-04fee96b3266" name="Jupyter" url="http://jupyter.ddns.net">
-        <fileTransfer host="jupyter.ddns.net" port="22" accessType="SFTP">
+        <fileTransfer host="jupyter.ddns.net" port="22" privateKey="$USER_HOME$/.ssh/id_rsa" accessType="SFTP" keyPair="true">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" />
           </advancedOptions>
