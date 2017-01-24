@@ -75,7 +75,7 @@ def learn(size=3, epochs=25000, gamma=0.8, first_player=True, early_reward=False
                 split_board = get_splitted_board(board, player)
                 # Get move
                 qval = model.predict(split_board, batch_size=1)
-                random_move = random.random() < epsilon
+                random_move = random.random() < epsilon and abs(epoch % 1000) > 10
                 action = np.random.randint(0, size ** 2) if random_move else np.argmax(qval)
                 move = action // size, action % size
 
@@ -138,7 +138,7 @@ def learn(size=3, epochs=25000, gamma=0.8, first_player=True, early_reward=False
         # Log
         if epoch % 1000 == 0 and epoch != 0:
             t = round((epochs - epoch) * (time.time() - start_time) / epoch, 0)
-            t_s = datetime.datetime.fromtimestamp(t).strftime('%M:%S')
+            t_s = datetime.datetime.fromtimestamp(t).strftime('%H:%M:%S')
             print("Game #: %s | Remaining time %s" % (epoch, t_s))
 
         epsilon -= 1 / epochs
