@@ -1,5 +1,5 @@
 import numpy
-from hex_game.main import get_move_random
+from hex_game.main import get_random_move
 
 
 class RandomPlayer:
@@ -17,4 +17,4 @@ class RandomPlayer:
         self.count += 1
         if self.verbose:
             print("Random called %s time" % self.count)
-        return get_move_random(board, self.state)
+        return get_random_move(board, self.state)

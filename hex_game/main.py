@@ -103,7 +103,7 @@ def get_possibles_moves(board: numpy.ndarray) -> list((int, int)):
     return [tuple(k) for k in numpy.argwhere(board == -1)]
 
 
-def get_move_random(board: numpy.random, state: numpy.random.RandomState):
+def get_random_move(board: numpy.random, state: numpy.random.RandomState):
     has_played = False
 
     moves = get_possibles_moves(board)
