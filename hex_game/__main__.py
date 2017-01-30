@@ -8,15 +8,15 @@ import keras.models
 #     learn(size=5, epochs=250000, gamma=gamma, first_player=False, early_reward=early_reward,
 #           save_path="/notebooks/admin/saves", save=True)
 
-# learn(size=5, epochs=100000, gamma=0.9, first_player=True, early_reward=False,
-#       save_path="/notebooks/admin/saves/tests", save=True, load_model_path="/notebooks/admin/model.model",
-#       initial_epoch=1000000, initial_epsilon=1)
+learn(size=5, epochs=2000000, gamma=0.9, first_player=True, early_reward=False,
+      save_path="/notebooks/admin/saves/tests_2", save=True, load_model_path="",
+      initial_epoch=0, initial_epsilon=1)
+
+
+# model = keras.models.load_model("/notebooks/admin/model.model")
 #
-
-model = keras.models.load_model("/notebooks/admin/model.model")
-
-a = HumanPlayer()
-b = QPlayer(model)
-game = Game(size=5, player0=b, player1=a)
-a.init(game)
-game.start()
+# a = HumanPlayer()
+# b = QPlayer(model)
+# game = Game(size=5, player0=b, player1=a)
+# a.init(game)
+# game.start()
