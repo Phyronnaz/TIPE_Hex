@@ -18,6 +18,6 @@ class QPlayer:
         qval = self.model.predict(get_splitted_board(board, player), batch_size=1)
         action = numpy.argmax(qval)
 
-        move = action // size, action % size
+        move = (action // size, action % size) if player == 0 else (action % size, action // size)
         print("Q AI played at " + str(move))
         return move

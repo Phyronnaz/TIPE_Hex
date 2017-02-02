@@ -1,4 +1,5 @@
 import random
+import os
 import time
 import datetime
 import numpy as np
@@ -34,7 +35,7 @@ def print_time(epochs, epoch, start_time):
 
 
 def learn(size=3, epochs=25000, gamma=0.8, save_path="/notebooks/admin/saves", save=True, load_model_path="",
-          initial_epoch=0, initial_epsilon=1):
+          initial_epoch=0, initial_epsilon=1, random_epochs=0):
     """
     Train the model
     :param size: size of the game
@@ -76,66 +77,81 @@ def learn(size=3, epochs=25000, gamma=0.8, save_path="/notebooks/admin/saves", s
             print_time(epochs, epoch - initial_epoch, start_time)
 
         # Epsilon
-        epsilon -= 1 / epochs
+        epsilon -= initial_epsilon / epochs
 
         board = init_board(size)
         winner_matrix, winner_counter = init_winner_matrix_and_counter(size)
         winner = -1
         move_count = 0
         player = 0
-        while winner == -1:
-            # Save board
-            split_board = get_splitted_board(board, player)
-            # Get move
-            qval = model.predict(split_board, batch_size=1)
-            random_move = random.random() < epsilon and abs(epoch % 1000) > 100
-            action = np.random.randint(0, size ** 2) if random_move else np.argmax(qval)
-            move = action // size, action % size
+        random_state = np.random.RandomState(epoch)
+        while winner != 2 and winner != player:
+            if random_epochs < epoch or player == 1:
+                # Save board
+                split_board = get_splitted_board(board, player)
+                # Get move
+                qval = model.predict(split_board, batch_size=1)
+                random_move = random.random() < epsilon and abs(epoch % 1000) > 100
+                action = np.random.randint(0, size ** 2) if random_move else np.argmax(qval)
+                move = (action // size, action % size) if player == 0 else (action % size, action // size)
 
-            # Play move
-            if can_play_move(board, move):
-                board[move] = player
-                winner, winner_counter = check_for_winner(move, player, winner_matrix, winner_counter)
+                if winner == -1:
+                    # Play move
+                    if can_play_move(board, move):
+                        board[move] = player
+                        winner, winner_counter = check_for_winner(move, player, winner_matrix, winner_counter)
+                    else:
+                        winner = 2
+
+                # Observe reward
+                if winner == -1:
+                    reward = 0
+                elif winner == player:
+                    reward = 2 * size ** 2
+                elif winner == 1 - player:
+                    reward = -2 * size ** 2
+                elif winner == 2:
+                    reward = -2 * size ** 2
+
+                # Get max_Q(S',a)
+                newQ = model.predict(get_splitted_board(board, player), batch_size=1)
+                maxQ = np.max(newQ)
+
+                # Get update
+                if winner == -1:
+                    update = reward + gamma * maxQ
+                else:
+                    update = reward
+
+                # Fit the model
+                qval[0][action] = update
+                history = History()
+                model.fit(split_board, qval, batch_size=1, nb_epoch=1, verbose=0, callbacks=[history])
+
+                loss = history.history["loss"][0]
             else:
-                winner = 2
+                # Random
+                if winner == -1:
+                    move = get_random_move(board, random_state)
+                    board[move] = player
+                    winner, winner_counter = check_for_winner(move, player, winner_matrix, winner_counter)
 
-            # Observe reward
-            if winner == -1:
-                reward = 0
-            elif winner == 0:
-                reward = 2 * size ** 2
-            elif winner == 1:
-                reward = -2 * size ** 2
-            elif winner == 2:
-                reward = -2 * size ** 2
-
-            # Get max_Q(S',a)
-            newQ = model.predict(get_splitted_board(board, player), batch_size=1)
-            maxQ = np.max(newQ)
-
-            # Get update
-            if winner == -1:
-                update = reward + gamma * maxQ
-            else:
-                update = reward
-
-            # Fit the model
-            qval[0][action] = update
-            history = History()
-            model.fit(split_board, qval, batch_size=1, nb_epoch=1, verbose=0, callbacks=[history])
+                random_move = np.nan
+                loss = np.nan
+                reward = np.nan
 
             # Log
             epoch_array[array_counter] = epoch
             winner_array[array_counter] = winner
             epsilon_array[array_counter] = epsilon
             random_move_array[array_counter] = random_move
-            loss_array[array_counter] = history.history["loss"][0]
+            loss_array[array_counter] = loss
             reward_array[array_counter] = reward
             move_count_array[array_counter] = move_count
 
             array_counter += 1
             move_count += 1
-            player = (1 - player) % 2
+            player = 1 - player
 
     # Dataframe
     df = pd.DataFrame(dict(size=size,
@@ -151,6 +167,9 @@ def learn(size=3, epochs=25000, gamma=0.8, save_path="/notebooks/admin/saves", s
 
     # Save
     if save:
+        for directory in [save_path + "/models", save_path + "/stats"]:
+            if not os.path.exists(directory):
+                os.makedirs(directory)
         content = size, gamma, epochs, datetime.datetime.now().isoformat()
         name = "size-{}-gamma-{}-epochs-{}-date-{}".format(*content)
         model.save(save_path + "/models/" + name + ".model")
