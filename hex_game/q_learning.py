@@ -4,16 +4,14 @@ import time
 import datetime
 import numpy as np
 import pandas as pd
-import keras.models
-from keras.models import Sequential
-from keras.layers.core import Dense, Dropout, Activation
-from keras.optimizers import RMSprop
-from keras.callbacks import History
-from keras.utils.visualize_util import plot
+# import keras.models
+# from keras.models import Sequential
+# from keras.layers.core import Dense, Dropout, Activation
+# from keras.optimizers import RMSprop
+# from keras.callbacks import History
+# from keras.utils.visualize_util import plot
 from hex_game.main import *
 from hex_game.winner_check import *
-from hex_game.utils import *
-from hex_game.game import *
 
 
 def init_model(size):
@@ -32,6 +30,25 @@ def print_time(epochs, epoch, start_time):
     t = round((epochs - epoch) * (time.time() - start_time) / epoch, 0)
     t_s = datetime.datetime.fromtimestamp(t).strftime('%H:%M:%S')
     print("Game #: %s | Remaining time %s" % (epoch, t_s))
+
+
+def get_split_board(board, player):
+    if player == 1:
+        board = board.T
+    size = board.shape[0]
+    t = numpy.zeros((3, size, size))
+    t[0] = board == 0
+    t[1] = board == 1 + player
+    t[2] = board == 2 - player
+    return t.reshape(1, size ** 2 * 3)
+
+
+def get_move_q_learning(board, player, model, size, random_move=False):
+    split_board = get_split_board(board, player)
+    qval = model.predict(split_board, batch_size=1)
+    action = np.random.randint(0, size ** 2) if random_move else np.argmax(qval)
+    move = (action // size, action % size) if player == 0 else (action % size, action // size)
+    return move, split_board, qval, action
 
 
 def learn(size=3, epochs=25000, gamma=0.8, save_path="/notebooks/admin/saves", save=True, load_model_path="",
@@ -70,6 +87,7 @@ def learn(size=3, epochs=25000, gamma=0.8, save_path="/notebooks/admin/saves", s
     start_time = time.time()
 
     print("{} epochs, gamma={}, size={}".format(epochs, gamma, size))
+    print("Start time: " + datetime.datetime.fromtimestamp(start_time).strftime('%D %H:%M:%S'))
 
     for epoch in range(initial_epoch, initial_epoch + epochs):
         # Print time left
@@ -87,13 +105,9 @@ def learn(size=3, epochs=25000, gamma=0.8, save_path="/notebooks/admin/saves", s
         random_state = np.random.RandomState(epoch)
         while winner != 2 and winner != player:
             if random_epochs < epoch or player == 1:
-                # Save board
-                split_board = get_splitted_board(board, player)
                 # Get move
-                qval = model.predict(split_board, batch_size=1)
                 random_move = random.random() < epsilon and abs(epoch % 1000) > 100
-                action = np.random.randint(0, size ** 2) if random_move else np.argmax(qval)
-                move = (action // size, action % size) if player == 0 else (action % size, action // size)
+                move, split_board, qval, action = get_move_q_learning(board, player, model, size, random_move)
 
                 if winner == -1:
                     # Play move
@@ -114,7 +128,7 @@ def learn(size=3, epochs=25000, gamma=0.8, save_path="/notebooks/admin/saves", s
                     reward = -2 * size ** 2
 
                 # Get max_Q(S',a)
-                newQ = model.predict(get_splitted_board(board, player), batch_size=1)
+                newQ = model.predict(get_split_board(board, player), batch_size=1)
                 maxQ = np.max(newQ)
 
                 # Get update

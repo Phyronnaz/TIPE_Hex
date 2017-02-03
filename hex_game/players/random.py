@@ -1,5 +1,5 @@
 import numpy
-from hex_game.main import get_random_move
+from hex_game.main   import get_random_move
 
 
 class RandomPlayer:
