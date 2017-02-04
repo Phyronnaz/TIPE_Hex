@@ -1,23 +1,21 @@
-# import keras.models
+import keras.models
 import numpy as np
 from hex_game.main import play_move, can_play_move, init_board, get_random_move
 from hex_game.winner_check import check_for_winner, init_winner_matrix_and_counter
-from q_learning import get_move_q_learning
-from negamax import get_move_negamax
+from hex_game.q_learning import get_move_q_learning
+from hex_game.negamax import get_move_negamax
 
 
 class Game:
-    def __init__(self, size, players, display_Q):
+    def __init__(self, size, players):
         """
         Create Game
         :param size: size of the board
         :param players: list of "Name", "Paramater" ("Human", "" or "Minimax", 12 or "Q leaning", model_path)
-        :param display_Q: function display_ai(player, q_values)
         """
         # Assign variables
         self.size = size
         self.players = players
-        self.display_Q = display_Q
 
         # Init game
         self.board = init_board(size)
@@ -25,14 +23,17 @@ class Game:
         self.winner_matrix, self.winner_c = init_winner_matrix_and_counter(size)
         self.winner = -1
 
-        a, b = players[0]
-        c, d = players[1]
-        self.models = [None, None]
+        self.aux_boards = [np.zeros((size, size)), np.zeros((size, size))]
 
-        if a == "Q learning":
-            self.models[0] = keras.models.load_model(b)
-        if c == "Q learning":
-            self.models[0] = keras.models.load_model(c)
+        self.models = [None, None]
+        self.depths = [0, 0]
+        self.random_states = [np.random.RandomState(), np.random.RandomState()]
+
+        for i in range(2):
+            if players[i][0] == "Minimax":
+                self.depths[i] = players[i][1]
+            elif players[i][0] == "Q learning":
+                self.models[i] = keras.models.load_model(players[i][1])
 
     def play_move(self, move):
         if self.winner == -1:
@@ -41,21 +42,24 @@ class Game:
                 self.winner, self.winner_c = check_for_winner(move, self.player, self.winner_matrix, self.winner_c)
                 self.player = 1 - self.player
                 return move
-        return None
+            else:
+                print("Failed to play!")
 
     def play(self):
-        p, q = self.players[self.player]
-        if p == "Human":
-            return None
-        elif p == "Minimax":
-            return self.play_move(get_move_negamax(self.board, self.player, q))
-        elif p == "Random":
-            return self.play_move(get_random_move(self.board, np.random.RandomState()))
-        elif p == "Q learning":
-            move, _, _, q_val = get_move_q_learning(self.board, self.player, self.models[self.player])
-            self.display_Q(self.player, q_val.reshape((self.size, self.size)))
-            return self.play_move(move)
-        return None
+        name, _ = self.players[self.player]
+        if name == "Human":
+            return
+        elif name == "Minimax":
+            move, values = get_move_negamax(self.board, self.player, self.depths[self.player])
+            self.aux_boards[self.player] = values
+            self.play_move(move)
+        elif name == "Random":
+            self.play_move(get_random_move(self.board, self.random_states[self.player]))
+        elif name == "Q learning":
+            move, q_values = get_move_q_learning(self.board, self.player, self.models[self.player])
+            t = q_values.reshape((self.size, self.size))
+            self.aux_boards[self.player] = t if self.player == 0 else t.T
+            self.play_move(move)
 
     def click(self, x, y):
         if self.players[self.player][0] == "Human":

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'PycharmProjects/TIPE_Hex/TIPE_Hex_QT/mainwindow.ui'
+# Form implementation generated from reading ui file 'TIPE_Hex_QT/mainwindow.ui'
 #
-# Created by: PyQt5 UI code generator 5.7.1
+# Created by: PyQt5 UI code generator 5.5.1
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -139,7 +139,7 @@ class Ui_TIPE(object):
         self.horizontalLayout.addWidget(self.graphicsViewPlayer2)
         TIPE.setCentralWidget(self.centralWidget)
         self.menuBar = QtWidgets.QMenuBar(TIPE)
-        self.menuBar.setGeometry(QtCore.QRect(0, 0, 1083, 19))
+        self.menuBar.setGeometry(QtCore.QRect(0, 0, 1083, 16))
         self.menuBar.setObjectName("menuBar")
         self.menuFile = QtWidgets.QMenu(self.menuBar)
         self.menuFile.setObjectName("menuFile")
@@ -150,9 +150,9 @@ class Ui_TIPE(object):
         self.statusBar = QtWidgets.QStatusBar(TIPE)
         self.statusBar.setObjectName("statusBar")
         TIPE.setStatusBar(self.statusBar)
-        self.actionLoad = QtWidgets.QAction(TIPE)
-        self.actionLoad.setObjectName("actionLoad")
-        self.menuFile.addAction(self.actionLoad)
+        self.actionOpen = QtWidgets.QAction(TIPE)
+        self.actionOpen.setObjectName("actionOpen")
+        self.menuFile.addAction(self.actionOpen)
         self.menuBar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi(TIPE)
@@ -189,7 +189,7 @@ class Ui_TIPE(object):
         item.setText(_translate("TIPE", "&"))
         self.listWidget.setSortingEnabled(__sortingEnabled)
         self.menuFile.setTitle(_translate("TIPE", "File"))
-        self.actionLoad.setText(_translate("TIPE", "Load"))
+        self.actionOpen.setText(_translate("TIPE", "Open"))
 
 
 if __name__ == "__main__":

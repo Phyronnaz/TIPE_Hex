@@ -36,16 +36,19 @@ class HexView(QGraphicsView):
         if 0 <= x < self.size > y >= 0:
             self.callback(x, y)
 
-    def set_board(self, board, rgb=False):
+    def set_board(self, board):
         for i in range(self.size):
             for j in range(self.size):
-                if rgb:
-                    self.polygons[i, j].setColorRGB(*board[i, j])
+                if board[i, j] == 0:
+                    r, g, b, a = 0, 0, 0, 0
+                elif board[i, j] < 0:
+                    r, g, b, a = 255, 0, 0, -board[i, j] * 255
                 else:
-                    self.polygons[i, j].setColor(board[i, j])
+                    r, g, b, a = 0, 0, 255, board[i, j] * 255
+                self.polygons[i, j].setColorRGB(r, g, b, a)
 
     def set_color(self, x, y, color):
-        self.polygons[x, y].set_color(*color)
+        self.polygons[x, y].set_color(color)
 
 
 class QGraphicsPolygonItemClick(QGraphicsPolygonItem):
@@ -77,5 +80,5 @@ class QGraphicsPolygonItemClick(QGraphicsPolygonItem):
     def setColor(self, color):
         self.setBrush(QColor(color))
 
-    def setColorRGB(self, r, g, b):
-        self.setBrush(QColor(r, g, b))
+    def setColorRGB(self, r, g, b, a):
+        self.setBrush(QColor(r, g, b, a))

@@ -8,6 +8,7 @@ def get_move_negamax(board: numpy.ndarray, player: int, depth: int):
 
     moves = get_possibles_moves(board)
     scores = len(moves) * [0]
+    values = numpy.zeros(board.shape)
     for i in range(len(moves)):
         wm = numpy.copy(winner_matrix)
         new_board = play_move_and_copy(board, moves[i], player)
@@ -18,8 +19,8 @@ def get_move_negamax(board: numpy.ndarray, player: int, depth: int):
             scores[i] = float('inf')
         else:
             scores[i] = -float('inf')
-        print("Move {}: Score {}".format(moves[i], scores[i]))
-    return moves[numpy.argmax(scores)]
+        values[moves[i]] = scores[i]
+    return moves[numpy.argmax(scores)], values
 
 
 def negamax(board: numpy.ndarray, winner_matrix: numpy.ndarray, winner_counter: int, depth: int, player: int) -> float:

@@ -312,14 +312,14 @@
      <x>0</x>
      <y>0</y>
      <width>1083</width>
-     <height>19</height>
+     <height>16</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionLoad"/>
+    <addaction name="actionOpen"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -332,9 +332,9 @@
    </attribute>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <action name="actionLoad">
+  <action name="actionOpen">
    <property name="text">
-    <string>Load</string>
+    <string>Open</string>
    </property>
   </action>
  </widget>
