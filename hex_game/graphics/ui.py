@@ -3,17 +3,19 @@ import numpy as np
 from PyQt5.QtCore import QDir
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QVBoxLayout
 
 from hex_game.game import Game
 from hex_game.graphics.mainwindow import Ui_TIPE
 from hex_game.graphics.hex_view import HexView
 from PyQt5 import QtCore, QtGui, QtWidgets
+from hex_game.graphics.plot import MyDynamicMplCanvas, MyStaticMplCanvas
 
 
 class UI:
-    def __init__(self, size):
+    def __init__(self):
         # Variables
-        self.size = size
+        self.size = -1
         self.game = None
         self.models = []
 
@@ -23,8 +25,11 @@ class UI:
         self.Ui_TIPE.setupUi(self.TIPE)
         self.TIPE.show()
 
-        # Graphics views fix
-        self._fix_graphics_views()
+        l = QVBoxLayout(self.Ui_TIPE.widget)
+        sc = MyStaticMplCanvas(self.Ui_TIPE.widget, width=5, height=4, dpi=100)
+        dc = MyDynamicMplCanvas(self.Ui_TIPE.widget, width=5, height=4, dpi=100)
+        l.addWidget(sc)
+        l.addWidget(dc)
 
         # Initial states
         self.Ui_TIPE.pushButtonViewDefault.setChecked(True)
@@ -34,6 +39,8 @@ class UI:
         self.Ui_TIPE.pushButtonPlay.setEnabled(False)
 
         # Connect actions
+        self.Ui_TIPE.spinBoxSize.valueChanged.connect(self.update_size)
+
         self.Ui_TIPE.comboBoxPlayer1.activated.connect(self.update_combo_box)
         self.Ui_TIPE.comboBoxPlayer2.activated.connect(self.update_combo_box)
 
@@ -42,44 +49,48 @@ class UI:
         self.Ui_TIPE.pushButtonViewPlayer2.clicked.connect(self.update_graphics_views)
 
         self.Ui_TIPE.pushButtonPlay.clicked.connect(self.play_button)
+        self.Ui_TIPE.pushButtonPlay.setShortcut("Space")
         self.Ui_TIPE.pushButtonNewGame.clicked.connect(self.new_game)
 
         self.Ui_TIPE.actionOpen.triggered.connect(self.open)
         self.Ui_TIPE.actionOpen.setShortcut("Ctrl+O")
 
         # Launch update functions
-        self.update_graphics_views()
         self.update_progress_bar(-1)
         self.update_models_list()
         self.update_combo_box()
+        self.update_size()
 
-    def _fix_graphics_views(self):
+        # Set initial tab
+        self.Ui_TIPE.tabWidget.setCurrentIndex(0)
+
+    def reload_graphics_views(self):
         hints = QtGui.QPainter.Antialiasing | QtGui.QPainter.HighQualityAntialiasing | \
                 QtGui.QPainter.SmoothPixmapTransform | QtGui.QPainter.TextAntialiasing
         size = self.size
-        self.Ui_TIPE.horizontalLayout.removeWidget(self.Ui_TIPE.graphicsViewDefault)
-        self.Ui_TIPE.graphicsViewDefault.hide()
-        self.Ui_TIPE.graphicsViewDefault = HexView(size, self.click, self.Ui_TIPE.centralWidget)
+        self.Ui_TIPE.horizontalLayoutPlayTab.removeWidget(self.Ui_TIPE.graphicsViewDefault)
+        self.Ui_TIPE.graphicsViewDefault.deleteLater()
+        self.Ui_TIPE.graphicsViewDefault = HexView(size, self.click, self.Ui_TIPE.playTab)
         self.Ui_TIPE.graphicsViewDefault.setEnabled(True)
         self.Ui_TIPE.graphicsViewDefault.setRenderHints(hints)
         self.Ui_TIPE.graphicsViewDefault.setObjectName("graphicsViewDefault")
-        self.Ui_TIPE.horizontalLayout.addWidget(self.Ui_TIPE.graphicsViewDefault)
+        self.Ui_TIPE.horizontalLayoutPlayTab.addWidget(self.Ui_TIPE.graphicsViewDefault)
 
-        self.Ui_TIPE.horizontalLayout.removeWidget(self.Ui_TIPE.graphicsViewPlayer1)
-        self.Ui_TIPE.graphicsViewPlayer1.hide()
-        self.Ui_TIPE.graphicsViewPlayer1 = HexView(size, self.click, self.Ui_TIPE.centralWidget)
+        self.Ui_TIPE.horizontalLayoutPlayTab.removeWidget(self.Ui_TIPE.graphicsViewPlayer1)
+        self.Ui_TIPE.graphicsViewPlayer1.deleteLater()
+        self.Ui_TIPE.graphicsViewPlayer1 = HexView(size, self.click, self.Ui_TIPE.playTab)
         self.Ui_TIPE.graphicsViewPlayer1.setEnabled(True)
         self.Ui_TIPE.graphicsViewPlayer1.setRenderHints(hints)
         self.Ui_TIPE.graphicsViewPlayer1.setObjectName("graphicsViewPlayer1")
-        self.Ui_TIPE.horizontalLayout.addWidget(self.Ui_TIPE.graphicsViewPlayer1)
+        self.Ui_TIPE.horizontalLayoutPlayTab.addWidget(self.Ui_TIPE.graphicsViewPlayer1)
 
-        self.Ui_TIPE.horizontalLayout.removeWidget(self.Ui_TIPE.graphicsViewPlayer2)
-        self.Ui_TIPE.graphicsViewPlayer2.hide()
-        self.Ui_TIPE.graphicsViewPlayer2 = HexView(size, self.click, self.Ui_TIPE.centralWidget)
+        self.Ui_TIPE.horizontalLayoutPlayTab.removeWidget(self.Ui_TIPE.graphicsViewPlayer2)
+        self.Ui_TIPE.graphicsViewPlayer2.deleteLater()
+        self.Ui_TIPE.graphicsViewPlayer2 = HexView(size, self.click, self.Ui_TIPE.playTab)
         self.Ui_TIPE.graphicsViewPlayer2.setEnabled(True)
         self.Ui_TIPE.graphicsViewPlayer2.setRenderHints(hints)
         self.Ui_TIPE.graphicsViewPlayer2.setObjectName("graphicsViewPlayer2")
-        self.Ui_TIPE.horizontalLayout.addWidget(self.Ui_TIPE.graphicsViewPlayer2)
+        self.Ui_TIPE.horizontalLayoutPlayTab.addWidget(self.Ui_TIPE.graphicsViewPlayer2)
 
     def open(self):
         dlg = QFileDialog()
@@ -89,6 +100,13 @@ class UI:
             filenames = dlg.selectedFiles()
             self.models += filenames
             self.update_models_list()
+
+    def update_size(self):
+        self.size = self.Ui_TIPE.spinBoxSize.value()
+        self.reload_graphics_views()
+        self.update_graphics_views()
+        self.game = None
+        self.update_game()
 
     def update_combo_box(self):
         if self.Ui_TIPE.comboBoxPlayer1.currentIndex() == 1:
@@ -154,12 +172,14 @@ class UI:
 
     def update_game(self):
         self.update_boards()
-        self.Ui_TIPE.pushButtonPlay.setEnabled(self.game is not None and self.game.winner == -1)
+        b = self.game is not None and self.game.winner == -1 and self.game.players[self.game.player][0] != "Human"
+        self.Ui_TIPE.pushButtonPlay.setEnabled(b)
 
     def update_boards(self):
-        self.Ui_TIPE.graphicsViewDefault.set_board(self.get_board(self.game.board, q=False))
-        self.Ui_TIPE.graphicsViewPlayer1.set_board(self.get_board(self.game.aux_boards[0], q=True))
-        self.Ui_TIPE.graphicsViewPlayer2.set_board(self.get_board(-self.game.aux_boards[1], q=True))
+        if self.game is not None:
+            self.Ui_TIPE.graphicsViewDefault.set_board(self.get_board(self.game.board, q=False))
+            self.Ui_TIPE.graphicsViewPlayer1.set_board(self.get_board(self.game.aux_boards[0], q=True))
+            self.Ui_TIPE.graphicsViewPlayer2.set_board(self.get_board(-self.game.aux_boards[1], q=True))
 
     @staticmethod
     def get_board(board, q):

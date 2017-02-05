@@ -15,5 +15,5 @@ from hex_game.q_learning import learn
 
 
 app = QtWidgets.QApplication(sys.argv)
-ui = UI(3)
+ui = UI()
 sys.exit(app.exec_())

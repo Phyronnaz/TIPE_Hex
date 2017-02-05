@@ -39,12 +39,12 @@ class HexView(QGraphicsView):
     def set_board(self, board):
         for i in range(self.size):
             for j in range(self.size):
-                if board[i, j] == 0:
+                if board[i, j] == 0 or np.isnan(board[i, j]):
                     r, g, b, a = 0, 0, 0, 0
                 elif board[i, j] < 0:
-                    r, g, b, a = 255, 0, 0, -board[i, j] * 255
+                    r, g, b, a = 255, 0, 0, -int(board[i, j] * 255)
                 else:
-                    r, g, b, a = 0, 0, 255, board[i, j] * 255
+                    r, g, b, a = 0, 0, 255, int(board[i, j] * 255)
                 self.polygons[i, j].setColorRGB(r, g, b, a)
 
     def set_color(self, x, y, color):
