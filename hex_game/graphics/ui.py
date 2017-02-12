@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5.QtWidgets import QVBoxLayout
 
+from hex_game.graphics.debug import Debug
+from hex_game.graphics.ui_play import PlayUI
 from hex_game.game import Game
 from hex_game.graphics.mainwindow import Ui_TIPE
 from hex_game.graphics.hex_view import HexView
@@ -15,9 +17,6 @@ from hex_game.graphics.plot import MyDynamicMplCanvas, MyStaticMplCanvas
 class UI:
     def __init__(self):
         # Variables
-        self.size = -1
-        self.game = None
-        self.models = []
 
         # Window
         self.TIPE = QtWidgets.QMainWindow()
@@ -25,72 +24,29 @@ class UI:
         self.Ui_TIPE.setupUi(self.TIPE)
         self.TIPE.show()
 
-        l = QVBoxLayout(self.Ui_TIPE.widget)
-        sc = MyStaticMplCanvas(self.Ui_TIPE.widget, width=5, height=4, dpi=100)
-        dc = MyDynamicMplCanvas(self.Ui_TIPE.widget, width=5, height=4, dpi=100)
-        l.addWidget(sc)
-        l.addWidget(dc)
+        # Subclasses
+        self.playUI = PlayUI(self.Ui_TIPE)
+
+        # Debug
+        Debug.set_debug_play_text(self.Ui_TIPE.plainTextEditDebugPlay)
+
+
+        # l = QVBoxLayout(self.Ui_TIPE.widget)
+        # sc = MyStaticMplCanvas(self.Ui_TIPE.widget, width=5, height=4, dpi=100)
+        # dc = MyDynamicMplCanvas(self.Ui_TIPE.widget, width=5, height=4, dpi=100)
+        # l.addWidget(sc)
+        # l.addWidget(dc)
 
         # Initial states
-        self.Ui_TIPE.pushButtonViewDefault.setChecked(True)
-        self.Ui_TIPE.pushButtonViewPlayer1.setChecked(False)
-        self.Ui_TIPE.pushButtonViewPlayer2.setChecked(False)
-
-        self.Ui_TIPE.pushButtonPlay.setEnabled(False)
 
         # Connect actions
-        self.Ui_TIPE.spinBoxSize.valueChanged.connect(self.update_size)
-
-        self.Ui_TIPE.comboBoxPlayer1.activated.connect(self.update_combo_box)
-        self.Ui_TIPE.comboBoxPlayer2.activated.connect(self.update_combo_box)
-
-        self.Ui_TIPE.pushButtonViewDefault.clicked.connect(self.update_graphics_views)
-        self.Ui_TIPE.pushButtonViewPlayer1.clicked.connect(self.update_graphics_views)
-        self.Ui_TIPE.pushButtonViewPlayer2.clicked.connect(self.update_graphics_views)
-
-        self.Ui_TIPE.pushButtonPlay.clicked.connect(self.play_button)
-        self.Ui_TIPE.pushButtonPlay.setShortcut("Space")
-        self.Ui_TIPE.pushButtonNewGame.clicked.connect(self.new_game)
-
         self.Ui_TIPE.actionOpen.triggered.connect(self.open)
         self.Ui_TIPE.actionOpen.setShortcut("Ctrl+O")
 
         # Launch update functions
-        self.update_progress_bar(-1)
-        self.update_models_list()
-        self.update_combo_box()
-        self.update_size()
 
         # Set initial tab
         self.Ui_TIPE.tabWidget.setCurrentIndex(0)
-
-    def reload_graphics_views(self):
-        hints = QtGui.QPainter.Antialiasing | QtGui.QPainter.HighQualityAntialiasing | \
-                QtGui.QPainter.SmoothPixmapTransform | QtGui.QPainter.TextAntialiasing
-        size = self.size
-        self.Ui_TIPE.horizontalLayoutPlayTab.removeWidget(self.Ui_TIPE.graphicsViewDefault)
-        self.Ui_TIPE.graphicsViewDefault.deleteLater()
-        self.Ui_TIPE.graphicsViewDefault = HexView(size, self.click, self.Ui_TIPE.playTab)
-        self.Ui_TIPE.graphicsViewDefault.setEnabled(True)
-        self.Ui_TIPE.graphicsViewDefault.setRenderHints(hints)
-        self.Ui_TIPE.graphicsViewDefault.setObjectName("graphicsViewDefault")
-        self.Ui_TIPE.horizontalLayoutPlayTab.addWidget(self.Ui_TIPE.graphicsViewDefault)
-
-        self.Ui_TIPE.horizontalLayoutPlayTab.removeWidget(self.Ui_TIPE.graphicsViewPlayer1)
-        self.Ui_TIPE.graphicsViewPlayer1.deleteLater()
-        self.Ui_TIPE.graphicsViewPlayer1 = HexView(size, self.click, self.Ui_TIPE.playTab)
-        self.Ui_TIPE.graphicsViewPlayer1.setEnabled(True)
-        self.Ui_TIPE.graphicsViewPlayer1.setRenderHints(hints)
-        self.Ui_TIPE.graphicsViewPlayer1.setObjectName("graphicsViewPlayer1")
-        self.Ui_TIPE.horizontalLayoutPlayTab.addWidget(self.Ui_TIPE.graphicsViewPlayer1)
-
-        self.Ui_TIPE.horizontalLayoutPlayTab.removeWidget(self.Ui_TIPE.graphicsViewPlayer2)
-        self.Ui_TIPE.graphicsViewPlayer2.deleteLater()
-        self.Ui_TIPE.graphicsViewPlayer2 = HexView(size, self.click, self.Ui_TIPE.playTab)
-        self.Ui_TIPE.graphicsViewPlayer2.setEnabled(True)
-        self.Ui_TIPE.graphicsViewPlayer2.setRenderHints(hints)
-        self.Ui_TIPE.graphicsViewPlayer2.setObjectName("graphicsViewPlayer2")
-        self.Ui_TIPE.horizontalLayoutPlayTab.addWidget(self.Ui_TIPE.graphicsViewPlayer2)
 
     def open(self):
         dlg = QFileDialog()
@@ -98,118 +54,6 @@ class UI:
 
         if dlg.exec_():
             filenames = dlg.selectedFiles()
-            self.models += filenames
-            self.update_models_list()
-
-    def update_size(self):
-        self.size = self.Ui_TIPE.spinBoxSize.value()
-        self.reload_graphics_views()
-        self.update_graphics_views()
-        self.game = None
-        self.update_game()
-
-    def update_combo_box(self):
-        if self.Ui_TIPE.comboBoxPlayer1.currentIndex() == 1:
-            self.Ui_TIPE.labelMinimaxDepthPlayer1.show()
-            self.Ui_TIPE.spinBoxMinimaxDepthPlayer1.show()
-        else:
-            self.Ui_TIPE.labelMinimaxDepthPlayer1.hide()
-            self.Ui_TIPE.spinBoxMinimaxDepthPlayer1.hide()
-
-        if self.Ui_TIPE.comboBoxPlayer2.currentIndex() == 1:
-            self.Ui_TIPE.labelMinimaxDepthPlayer2.show()
-            self.Ui_TIPE.spinBoxMinimaxDepthPlayer2.show()
-        else:
-            self.Ui_TIPE.labelMinimaxDepthPlayer2.hide()
-            self.Ui_TIPE.spinBoxMinimaxDepthPlayer2.hide()
-
-    def update_models_list(self):
-        names = [m.split("/")[-1] for m in self.models]
-
-        self.Ui_TIPE.listWidget.clear()
-        self.Ui_TIPE.listWidget.addItems(names)
-
-        self.Ui_TIPE.comboBoxPlayer1.clear()
-        self.Ui_TIPE.comboBoxPlayer2.clear()
-
-        players = ["Human", "Minimax", "Random"] + names
-
-        self.Ui_TIPE.comboBoxPlayer1.addItems(players)
-        self.Ui_TIPE.comboBoxPlayer2.addItems(players)
-
-    def update_graphics_views(self):
-        if self.Ui_TIPE.pushButtonViewDefault.isChecked():
-            self.Ui_TIPE.graphicsViewDefault.show()
-        else:
-            self.Ui_TIPE.graphicsViewDefault.hide()
-
-        if self.Ui_TIPE.pushButtonViewPlayer1.isChecked():
-            self.Ui_TIPE.graphicsViewPlayer1.show()
-        else:
-            self.Ui_TIPE.graphicsViewPlayer1.hide()
-
-        if self.Ui_TIPE.pushButtonViewPlayer2.isChecked():
-            self.Ui_TIPE.graphicsViewPlayer2.show()
-        else:
-            self.Ui_TIPE.graphicsViewPlayer2.hide()
-
-    def update_progress_bar(self, value):
-        if value >= 0:
-            self.Ui_TIPE.progressBarMinimax.show()
-            self.Ui_TIPE.progressBarMinimax.setValue(value)
-        else:
-            self.Ui_TIPE.progressBarMinimax.hide()
-
-    def play_button(self):
-        if self.game is not None:
-            self.game.play()
-            self.update_game()
-
-    def click(self, x, y):
-        if self.game is not None:
-            self.game.click(x, y)
-            self.update_game()
-
-    def update_game(self):
-        self.update_boards()
-        b = self.game is not None and self.game.winner == -1 and self.game.players[self.game.player][0] != "Human"
-        self.Ui_TIPE.pushButtonPlay.setEnabled(b)
-
-    def update_boards(self):
-        if self.game is not None:
-            self.Ui_TIPE.graphicsViewDefault.set_board(self.get_board(self.game.board, q=False))
-            self.Ui_TIPE.graphicsViewPlayer1.set_board(self.get_board(self.game.aux_boards[0], q=True))
-            self.Ui_TIPE.graphicsViewPlayer2.set_board(self.get_board(-self.game.aux_boards[1], q=True))
-
-    @staticmethod
-    def get_board(board, q):
-        t = np.zeros(shape=board.shape)
-        m = abs(board).max() if abs(board).max() != 0 else 1
-        for i in range(board.shape[0]):
-            for j in range(board.shape[1]):
-                if q:
-                    t[i, j] = board[i, j] / m
-                else:
-                    if board[i, j] == -1:
-                        t[i, j] = 0
-                    elif board[i, j] == 0:
-                        t[i, j] = 1
-                    else:
-                        t[i, j] = -1
-        return t
-
-    def new_game(self):
-        combos = self.Ui_TIPE.comboBoxPlayer1.currentIndex(), self.Ui_TIPE.comboBoxPlayer2.currentIndex()
-        depths = self.Ui_TIPE.spinBoxMinimaxDepthPlayer1.value(), self.Ui_TIPE.spinBoxMinimaxDepthPlayer2.value()
-        players = [None, None]
-        for i in range(2):
-            if combos[i] == 0:
-                players[i] = "Human", ""
-            elif combos[i] == 1:
-                players[i] = "Minimax", depths[i]
-            elif combos[i] == 2:
-                players[i] = "Random", ""
-            else:
-                players[i] = "Q learning", self.models[combos[i] - 3]
-        self.game = Game(self.size, players)
-        self.update_game()
+            for f in filenames:
+                if f[len(f) - 6:len(f)] == ".model":
+                    self.playUI.add_model(f)
