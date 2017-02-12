@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1313</width>
-    <height>883</height>
+    <width>766</width>
+    <height>805</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="playTab">
        <attribute name="title">
@@ -228,7 +228,7 @@
            </widget>
           </item>
           <item row="11" column="0">
-           <widget class="QListWidget" name="listWidget">
+           <widget class="QListWidget" name="listWidgetModels">
             <item>
              <property name="text">
               <string>test</string>
@@ -370,6 +370,33 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="resultsTab">
+       <attribute name="title">
+        <string>Results</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayoutResultsTab">
+        <item>
+         <widget class="QListWidget" name="listWidgetResults">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayoutResults">
+          <item>
+           <widget class="QWidget" name="widgetPlot" native="true"/>
+          </item>
+          <item>
+           <widget class="QWidget" name="widgetToolbar" native="true"/>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
       <widget class="QWidget" name="trainTab">
        <attribute name="title">
         <string>Train</string>
@@ -395,8 +422,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1313</width>
-     <height>19</height>
+     <width>766</width>
+     <height>16</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

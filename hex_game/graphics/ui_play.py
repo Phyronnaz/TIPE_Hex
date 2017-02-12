@@ -104,8 +104,8 @@ class PlayUI:
     def update_models_list(self):
         names = [m.split("/")[-1] for m in self.models]
 
-        self.Ui_TIPE.listWidget.clear()
-        self.Ui_TIPE.listWidget.addItems(names)
+        self.Ui_TIPE.listWidgetModels.clear()
+        self.Ui_TIPE.listWidgetModels.addItems(names)
 
         self.Ui_TIPE.comboBoxPlayer1.clear()
         self.Ui_TIPE.comboBoxPlayer2.clear()
