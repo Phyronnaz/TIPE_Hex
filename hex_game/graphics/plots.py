@@ -9,7 +9,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 
-class StaticMplCanvas(FigureCanvas):
+class ResultsPlot(FigureCanvas):
     """Simple canvas with a sine plot."""
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -69,23 +69,47 @@ class StaticMplCanvas(FigureCanvas):
         self.winner.cla()
         self.name_plots()
 
-# class DynamicMplCanvas(MplCanvas):
-#     """A canvas that updates itself every second with a new plot."""
-#
-#     def __init__(self, *args, **kwargs):
-#         MplCanvas.__init__(self, *args, **kwargs)
-#         timer = QtCore.QTimer(self)
-#         timer.timeout.connect(self.update_figure)
-#         timer.start(1000)
-#
-#         self.compute_initial_figure()
-#
-#     def compute_initial_figure(self):
-#         self.axes.plot([0, 1, 2, 3], [1, 2, 0, 4], 'r')
-#
-#     def update_figure(self):
-#         # Build a list of 4 random integers between 0 and 10 (both inclusive)
-#         l = [random.randint(0, 10) for i in range(4)]
-#         self.axes.cla()
-#         self.axes.plot([0, 1, 2, 3], l, 'r')
-#         self.draw()
+
+class TrainPlot(FigureCanvas):
+    """Simple canvas with a sine plot."""
+
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
+        self.loss = self.fig.add_subplot(121)
+        self.winner = self.fig.add_subplot(122)
+        self.fig.set_tight_layout(True)
+
+        FigureCanvas.__init__(self, self.fig)
+        self.setParent(parent)
+        FigureCanvas.setSizePolicy(self, QSizePolicy.Expanding, QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+        self.names = []
+        self.enabled = []
+        self.colors = []
+        self.name_plots()
+
+    def name_plots(self):
+        # Loss
+        self.loss.set_title("Loss")
+        self.loss.set_xlabel("epoch")
+        self.loss.set_ylabel("loss")
+
+        # Winner
+        self.winner.set_title("Winner")
+        self.winner.set_xlabel("epoch")
+        self.winner.set_ylabel("percentage")
+
+        labels = ["Player 0", "Player 1", "error"]
+        markers = ["v", "o", "P"]
+        colors = ["black", "black", "black"]
+        lines = []
+        for i in range(len(colors)):
+            lines.append(mlines.Line2D([], [], color=colors[i], label=labels[i], marker=markers[i]))
+        self.winner.legend(handles=lines)
+
+        self.draw()
+
+    def clear(self):
+        self.loss.cla()
+        self.winner.cla()
+        self.name_plots()

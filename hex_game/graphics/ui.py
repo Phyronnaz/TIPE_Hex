@@ -1,12 +1,15 @@
 import numpy as np
 
+import os
 from PyQt5.QtCore import QDir
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import QVBoxLayout
 
+from hex_game.graphics.ui_train import TrainUI
 from hex_game.graphics.ui_results import ResultsUI
-from hex_game.graphics.debug import Debug
+from hex_game.graphics import debug
 from hex_game.graphics.ui_play import PlayUI
 from hex_game.game import Game
 from hex_game.graphics.mainwindow import Ui_TIPE
@@ -16,38 +19,50 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 class UI:
     def __init__(self):
-        # Variables
-
         # Window
         self.TIPE = QtWidgets.QMainWindow()
-        self.Ui_TIPE = Ui_TIPE()
-        self.Ui_TIPE.setupUi(self.TIPE)
+        self.ui = Ui_TIPE()
+        self.ui.setupUi(self.TIPE)
+        self.TIPE.setWindowTitle("TIPE Hex")
         self.TIPE.show()
 
         # Subclasses
-        self.playUI = PlayUI(self.Ui_TIPE)
-        self.resultsUI = ResultsUI(self.Ui_TIPE)
+        self.playUI = PlayUI(self.ui)
+        self.resultsUI = ResultsUI(self.ui)
+        self.tainUI = TrainUI(self.ui)
 
         # Debug
-        Debug.set_debug_play_text(self.Ui_TIPE.plainTextEditDebugPlay)
+        self.ui.plainTextEditDebugPlay.clear()
+        debug.debug_play_text = self.ui.plainTextEditDebugPlay
 
         # Connect actions
-        self.Ui_TIPE.actionOpen.triggered.connect(self.open)
-        self.Ui_TIPE.actionOpen.setShortcut("Ctrl+O")
+        self.ui.actionOpen.triggered.connect(self.open)
+        self.ui.actionOpen.setShortcut("Ctrl+O")
 
         # Launch update functions
 
         # Set initial tab
-        self.Ui_TIPE.tabWidget.setCurrentIndex(0)
+        self.ui.tabWidget.setCurrentIndex(0)
 
     def open(self):
-        dlg = QFileDialog()
-        dlg.setFileMode(QFileDialog.AnyFile)
+        if self.ui.tabWidget.currentIndex() == 0:
+            filter = "Model (*.model);;Stats (*.hdf5)"
+        else:
+            filter = "Stats (*.hdf5);;Model (*.model)"
 
-        if dlg.exec_():
-            filenames = dlg.selectedFiles()
-            for f in filenames:
-                if f[len(f) - 6:len(f)] == ".model":
-                    self.playUI.add_model(f)
-                else:
-                    self.resultsUI.add_result(f)
+        dialog = QFileDialog()
+        dialog.setFileMode(QFileDialog.ExistingFiles)
+        dialog.setNameFilter(filter)
+        if dialog.exec_():
+            fileNames = dialog.selectedFiles()
+            for f in fileNames:
+                if os.path.exists(f):
+                    if dialog.selectedNameFilter() == "Model (*.model)":
+                        self.playUI.add_model(f)
+                    else:
+                        self.resultsUI.add_result(f)
+                elif f != "":
+                    msgBox = QMessageBox()
+                    msgBox.setText("File does not exist")
+                    msgBox.setWindowTitle("Error")
+                    msgBox.exec_()

@@ -1,12 +1,10 @@
 import random
-import os
 import datetime
 import numpy as np
 import pandas as pd
 import keras.models
-from dateutil.tz import tzlocal
 from keras.models import Sequential
-from keras.layers.core import Dense, Dropout, Activation
+from keras.layers.core import Dense, Activation
 from keras.optimizers import RMSprop
 from keras.callbacks import History
 from keras.utils.visualize_util import plot
@@ -24,13 +22,6 @@ def init_model(size):
     rms = RMSprop()
     model.compile(loss='mse', optimizer=rms)
     return model
-
-
-def print_time(epochs, epoch, start_time):
-    t = (datetime.datetime.now() - start_time) * (epochs - epoch) / epoch
-    remaining_time = str(datetime.timedelta(seconds=round(t.seconds, 0)))
-    elapsed_time = str(datetime.timedelta(seconds=round((datetime.datetime.now() - start_time).seconds, 0)))
-    print("Game #: %s | Remaining time %s | Elapsed time %s" % (epoch, remaining_time, elapsed_time))
 
 
 def get_split_board(board, player):
@@ -53,31 +44,28 @@ def get_move_q_learning(board, player, model):
     return move, q_values
 
 
-def learn(size=3, epochs=25000, gamma=0.8, save_path="/notebooks/admin/saves", save=True, load_model_path="",
-          initial_epoch=0, initial_epsilon=1, random_epochs=0):
+def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path="", thread=None):
     """
     Train the model
     :param size: size of the game
     :param epochs: number of games
     :param gamma: gamma for Q learning
-    :param first_player: is AI beginning?
-    :param save_path: path of the save folder
-    :param save: save results?
-    :param load_model_path: "" if no model to begin with
-    :param initial_epoch: initial epoch
-    :param initial_epsilon: initial epsilon
+    :param start_epoch: start epoch
+    :param end_epoch: end epoch
+    :param initial_model_path: path of the model to start with
     :param random_epochs: number of epochs AI plays against random player
+    :param thread: thread object
     :return: model, dataframe
     """
 
-    if load_model_path == "":
+    if initial_model_path == "":
         model = init_model(size)
     else:
-        model = keras.models.load_model(load_model_path)
+        model = keras.models.load_model(initial_model_path)
 
-    epsilon = initial_epsilon
+    epsilon = 1
 
-    n = epochs * size ** 2
+    n = (end_epoch - start_epoch) * size ** 2
     epoch_array = np.zeros(n)
     winner_array = np.zeros(n)
     epsilon_array = np.zeros(n)
@@ -88,19 +76,40 @@ def learn(size=3, epochs=25000, gamma=0.8, save_path="/notebooks/admin/saves", s
 
     array_counter = 0
 
+    last_array_counter = 0
+
     start_time = datetime.datetime.now()
 
-    print("{} epochs with {} random, gamma={}, size={}, initial epsilon={}".format(epochs, random_epochs, gamma, size,
-                                                                                   initial_epsilon))
-    print("Start time: " + start_time.strftime('%D %H:%M:%S'))
+    for epoch in range(start_epoch, end_epoch + 1):
+        # Log
+        if epoch % 100 == 0 and epoch != start_epoch:
+            elapsed = int((datetime.datetime.now() - start_time).seconds)
+            total = int(elapsed * (end_epoch - start_epoch) / (epoch - start_epoch))
+            elapsed_time = datetime.timedelta(seconds=elapsed)
+            remaining_time = datetime.timedelta(seconds=total - elapsed)
+            # print("Game #: %s | Remaining time %s | Elapsed time %s" % (epoch, remaining_time, elapsed_time))
 
-    for epoch in range(initial_epoch, initial_epoch + epochs):
-        # Print time left
-        if epoch % 1000 == 0 and epoch != initial_epoch:
-            print_time(epochs, epoch - initial_epoch, start_time)
+            if thread is not None and epoch % 1000 == 0:
+                l = last_array_counter
+                a = array_counter
+                loss = loss_array[l:a][(epoch_array[l:a] % 1000 < 100) & \
+                                       (loss_array[l:a] != 0) & \
+                                       np.logical_not(np.isnan(loss_array[l:a]))].mean()
+                w = winner_array[l:a][epoch_array[l:a] % 1000 < 100]
+                c = (w != -1).sum()
+                player0 = (w == 0).sum() / c * 100
+                player1 = (w == 1).sum() / c * 100
+                error = (w == 2).sum() / c * 100
+                thread.log(epoch, loss, player0, player1, error)
+                thread.set_time(elapsed_time, remaining_time)
+                last_array_counter = array_counter
+
+        # Break
+        if epoch >= end_epoch or (thread is not None and thread.stop):
+            break
 
         # Epsilon
-        epsilon -= initial_epsilon / epochs
+        epsilon = max(0.1, epsilon - 1 / end_epoch)
 
         board = init_board(size)
         winner_matrix, winner_counter = init_winner_matrix_and_counter(size)
@@ -178,9 +187,7 @@ def learn(size=3, epochs=25000, gamma=0.8, save_path="/notebooks/admin/saves", s
             player = 1 - player
 
     # Dataframe
-    df = pd.DataFrame(dict(size=size,
-                           gamma=gamma,
-                           epoch=epoch_array[:array_counter],
+    df = pd.DataFrame(dict(epoch=epoch_array[:array_counter],
                            winner=winner_array[:array_counter],
                            epsilon=epsilon_array[:array_counter],
                            random_move=random_move_array[:array_counter],
@@ -188,15 +195,5 @@ def learn(size=3, epochs=25000, gamma=0.8, save_path="/notebooks/admin/saves", s
                            reward=reward_array[:array_counter],
                            move_count=move_count_array[:array_counter]
                            ))
-
-    # Save
-    if save:
-        for directory in [save_path + "/models", save_path + "/stats"]:
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-        content = size, gamma, epochs, datetime.datetime.now().isoformat()
-        name = "size-{}-gamma-{}-epochs-{}-date-{}".format(*content)
-        model.save(save_path + "/models/" + name + ".model")
-        df.to_hdf(save_path + "/stats/" + name + ".h5", 'df', complevel=9, complib='blosc')
 
     return model, df

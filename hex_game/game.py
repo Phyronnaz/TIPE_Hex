@@ -4,7 +4,7 @@ from hex_game.main import play_move, can_play_move, init_board, get_random_move
 from hex_game.winner_check import check_for_winner, init_winner_matrix_and_counter
 from hex_game.q_learning import get_move_q_learning
 from hex_game.negamax import get_move_negamax
-from hex_game.graphics.debug import Debug
+from hex_game.graphics import debug
 
 
 class Game:
@@ -44,10 +44,10 @@ class Game:
                 self.winner, self.winner_c = check_for_winner(move, self.player, self.winner_matrix, self.winner_c)
                 self.player = 1 - self.player
             else:
-                Debug.debug_play("Failed to play!")
+                debug.debug_play("Failed to play!")
         if self.winner != -1 and not self.ended:
             self.ended = True
-            Debug.debug_play("Winner: Player %s" % self.winner)
+            debug.debug_play("Winner: Player %s" % self.winner)
 
     def play(self):
         name, _ = self.players[self.player]

@@ -5,35 +5,36 @@ from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5.QtWidgets import QVBoxLayout
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 
-from hex_game.graphics.plot import StaticMplCanvas
-from hex_game.graphics.debug import Debug
+from hex_game.graphics.plots import ResultsPlot
 from hex_game.game import Game
 from hex_game.graphics.hex_view import HexView
 from PyQt5 import QtGui
+from hex_game.graphics.mainwindow import Ui_TIPE
+from matplotlib import cm
 
 
 class ResultsUI:
-    def __init__(self, Ui_TIPE):
-        self.Ui_TIPE = Ui_TIPE
+    def __init__(self, Ui_TIPE: Ui_TIPE):
+        self.ui = Ui_TIPE
         self.create_plots()
-        self.widgetPlot = self.Ui_TIPE.widgetPlot
+        self.widgetPlot = self.ui.widgetResultsPlot
         self.dataframes = dict()
-        self.Ui_TIPE.listWidgetResults.itemChanged.connect(self.update_results_list)
+        self.ui.listWidgetResults.itemChanged.connect(self.update_results_list)
 
     def create_plots(self):
-        self.Ui_TIPE.verticalLayoutResults.removeWidget(self.Ui_TIPE.widgetPlot)
-        self.Ui_TIPE.verticalLayoutResults.removeWidget(self.Ui_TIPE.widgetToolbar)
+        self.ui.verticalLayoutResults.removeWidget(self.ui.widgetResultsPlot)
+        self.ui.verticalLayoutResults.removeWidget(self.ui.widgetResultsToolbar)
 
-        self.Ui_TIPE.widgetPlot.deleteLater()
-        self.Ui_TIPE.widgetToolbar.deleteLater()
+        self.ui.widgetResultsPlot.deleteLater()
+        self.ui.widgetResultsToolbar.deleteLater()
 
-        self.Ui_TIPE.widgetPlot = StaticMplCanvas(self.Ui_TIPE.resultsTab, width=3, height=3, dpi=100)
-        self.Ui_TIPE.widgetPlot.setObjectName("widgetPlot")
-        self.Ui_TIPE.verticalLayoutResults.addWidget(self.Ui_TIPE.widgetPlot)
+        self.ui.widgetResultsPlot = ResultsPlot(self.ui.resultsTab, width=3, height=3, dpi=100)
+        self.ui.widgetResultsPlot.setObjectName("widgetResultsPlot")
+        self.ui.verticalLayoutResults.addWidget(self.ui.widgetResultsPlot)
 
-        self.Ui_TIPE.widgetToolbar = NavigationToolbar(self.Ui_TIPE.widgetPlot, self.Ui_TIPE.resultsTab)
-        self.Ui_TIPE.widgetToolbar.setObjectName("widgetToolbar")
-        self.Ui_TIPE.verticalLayoutResults.addWidget(self.Ui_TIPE.widgetToolbar)
+        self.ui.widgetResultsToolbar = NavigationToolbar(self.ui.widgetResultsPlot, self.ui.resultsTab)
+        self.ui.widgetResultsToolbar.setObjectName("widgetResultsToolbar")
+        self.ui.verticalLayoutResults.addWidget(self.ui.widgetResultsToolbar)
 
     def add_result(self, result):
         name = result.split("/")[-1].split("\\")[-1]
@@ -41,27 +42,27 @@ class ResultsUI:
 
         self.widgetPlot.names.append(name)
         self.widgetPlot.enabled.append(True)
-        self.widgetPlot.colors.append(np.random.rand(3,1))
+        self.widgetPlot.colors.append(cm.get_cmap("Set1")(len(self.widgetPlot.colors)))
 
-        item = QListWidgetItem(name, self.Ui_TIPE.listWidgetResults)
+        item = QListWidgetItem(name, self.ui.listWidgetResults)
         item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
         item.setCheckState(QtCore.Qt.Checked)
 
     def update_results_list(self, item):
         if item.checkState():
-            self.plot(self.dataframes[item.text()], self.Ui_TIPE.listWidgetResults.row(item))
+            self.plot(self.dataframes[item.text()], self.ui.listWidgetResults.row(item))
         else:
             self.reload_plots()
 
     def reload_plots(self):
         self.widgetPlot.clear()
-        for row in range(self.Ui_TIPE.listWidgetResults.count()):
-            item = self.Ui_TIPE.listWidgetResults.item(row)
+        for row in range(self.ui.listWidgetResults.count()):
+            item = self.ui.listWidgetResults.item(row)
             if item.checkState():
                 self.plot(self.dataframes[item.text()], row)
 
     def plot(self, df, row):
-        epochs = df.epoch[len(df.epoch) - 1]
+        epochs = df.epoch.max()
         color = self.widgetPlot.colors[row]
         self.widgetPlot.enabled[row] = True
 
@@ -69,25 +70,30 @@ class ResultsUI:
         self.widgetPlot.epsilon.plot(df["epoch"], df["epsilon"], c=color)
 
         # Winner
-        t = df[(df.winner != -1) & (df.epoch % 1000 < 100)][['epoch', 'winner', 'reward']]
-        t = t.set_index(['epoch'])
-        t['player 0'] = (t['winner'] == 0) & ((t['reward'] >= 0) | (t['reward'] == np.nan))
-        t['player 1'] = (t['winner'] == 1) & ((t['reward'] >= 0) | (t['reward'] == np.nan))
-        t['error'] = t['winner'] == 2
-        t.drop('winner', 1, inplace=True)
-        t.drop('reward', 1, inplace=True)
-        k = int(epochs / 25000) * 1000
-        t = t.groupby(pd.cut(t.index, np.arange(0, epochs + k, k))).sum()
-        t.index = [i * k for i in range(len(t))]
-        self.widgetPlot.winner.plot(t.index, t["player 0"] / (k / 1000), 'v-',
-                                    t.index, t["player 1"] / (k / 1000), 'o-',
-                                    t.index, t["error"] / (k / 1000), 'P-',
+        k = int(round(len(df.index) / 25000 + 0.5) * 1000)
+        c = int(len(df.index) / k) - 1
+
+        player0 = np.zeros(c)
+        player1 = np.zeros(c)
+        error = np.zeros(c)
+        index = np.zeros(c)
+        for i in range(c):
+            index[i] = k * i
+            w = df.winner[i * k:(i + 1) * k][df.epoch[i * k:(i + 1) * k] % 1000 < 100]
+            c = (w != -1).sum()
+            player0[i] = (w == 0).sum() / c * 100
+            player1[i] = (w == 1).sum() / c * 100
+            error[i] = (w == 2).sum() / c * 100
+
+        self.widgetPlot.winner.plot(index, player0, 'v-',
+                                    index, player1, 'o-',
+                                    index, error, 'P-',
                                     c=color)
 
         # Loss
         self.widgetPlot.loss.plot(df["epoch"][df.loss.notnull() & df.random_move == False],
                                   df["loss"][df.loss.notnull() & df.random_move == False],
-                                  'ro', alpha=0.1, markersize=0.1, c=color)
+                                  'ro', alpha=1, markersize=1, c=color)
 
         # Draw
         self.widgetPlot.draw()
