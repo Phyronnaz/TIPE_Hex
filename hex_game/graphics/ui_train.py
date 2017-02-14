@@ -124,7 +124,7 @@ class TrainUI:
     def update_save_folder(self):
         # Gamma approximation error fix
         self.ui.doubleSpinBoxGamma.setValue(round(self.ui.doubleSpinBoxGamma.value(), 2))
-        self.ui.lineEditSaveFolder.setText(hex_io.save_dir + hex_io.get_save_name(*self.get_parameters()) + "/")
+        self.ui.lineEditSaveFolder.setText(hex_io.save_dir + hex_io.get_save_name(*self.get_parameters()))
 
     def train_button(self):
         if self.thread is None or not self.thread.learning:
@@ -134,7 +134,7 @@ class TrainUI:
 
     def train(self):
         size, gamma, start_epoch, end_epoch, random_epochs, part = self.get_parameters()
-        epsilon = self.ui.checkBoxResetEpsilon.isEnabled()
+        epsilon = self.ui.checkBoxResetEpsilon.isChecked()
         self.thread = LearnThread(size, gamma, start_epoch, end_epoch, random_epochs, self.model, epsilon)
         self.thread.start()
         self.set_busy(True)

@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QListWidgetItem
 from matplotlib import cm
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 
+from hex_game import hex_io
 from hex_game.graphics.mainwindow import Ui_TIPE
 from hex_game.graphics.plots import ResultsPlot
 
@@ -13,7 +14,7 @@ class ResultsUI:
     def __init__(self, ui: Ui_TIPE):
         self.ui = ui
         self.create_plots()
-        self.widgetPlot = self.ui.widgetResultsPlot
+        self.widgetPlot = self.ui.widgetResultsPlot  # type: ResultsPlot
         self.dataframes = dict()
         self.ui.listWidgetResults.itemChanged.connect(self.update_results_list)
 
@@ -58,30 +59,31 @@ class ResultsUI:
                 self.plot(self.dataframes[item.text()], row)
 
     def plot(self, df, row):
-        epochs = df.epoch.max()
         color = self.widgetPlot.colors[row]
         self.widgetPlot.enabled[row] = True
+        size, gamma, start_epoch, end_epoch, random_epochs, part = hex_io.get_parameters(self.widgetPlot.names[row])
 
         # Epsilon
         self.widgetPlot.epsilon.plot(df["epoch"], df["epsilon"], c=color)
 
         # Winner
-        k = int(round(epochs / 25000 + 0.5) * 1000)
-        c = int(round(epochs / k))
-        print(c)
-        player0 = np.zeros(c)
-        player1 = np.zeros(c)
-        error = np.zeros(c)
-        index = np.zeros(c)
-        for i in range(c):
-            index[i] = k * i
+        k = int(round(end_epoch / 25000 + 0.5) * 1000)
+        c_start = int(round(start_epoch / k))
+        c_end = int(round(end_epoch / k))
+
+        player0 = np.zeros(c_end - c_start)
+        player1 = np.zeros(c_end - c_start)
+        error = np.zeros(c_end - c_start)
+        index = np.zeros(c_end - c_start)
+        for i in range(c_start, c_end):
+            index[i - c_start] = k * i
             m = (i * k < df.epoch) & (df.epoch < (i + 1) * k)
             w = df.winner[m][df.epoch[m] % 1000 < 100]
             x = (w != -1).sum()
             if x != 0:
-                player0[i] = (w == 0).sum() / x * 100
-                player1[i] = (w == 1).sum() / x * 100
-                error[i] = (w == 2).sum() / x * 100
+                player0[i - c_start] = (w == 0).sum() / x * 100
+                player1[i - c_start] = (w == 1).sum() / x * 100
+                error[i - c_start] = (w == 2).sum() / x * 100
 
         self.widgetPlot.winner.plot(index, player0, 'v-',
                                     index, player1, 'o-',

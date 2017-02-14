@@ -236,6 +236,7 @@ class Ui_TIPE(object):
         self.doubleSpinBoxGamma = QtWidgets.QDoubleSpinBox(self.tabNewTraining)
         self.doubleSpinBoxGamma.setMaximum(1.0)
         self.doubleSpinBoxGamma.setSingleStep(0.01)
+        self.doubleSpinBoxGamma.setProperty("value", 0.9)
         self.doubleSpinBoxGamma.setObjectName("doubleSpinBoxGamma")
         self.formLayout.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.doubleSpinBoxGamma)
         self.labelSize_2 = QtWidgets.QLabel(self.tabNewTraining)
@@ -243,6 +244,7 @@ class Ui_TIPE(object):
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.labelSize_2)
         self.spinBoxSizeTrain = QtWidgets.QSpinBox(self.tabNewTraining)
         self.spinBoxSizeTrain.setMinimum(2)
+        self.spinBoxSizeTrain.setProperty("value", 3)
         self.spinBoxSizeTrain.setObjectName("spinBoxSizeTrain")
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.spinBoxSizeTrain)
         self.horizontalLayout_2.addLayout(self.formLayout)
@@ -345,8 +347,8 @@ class Ui_TIPE(object):
         self.menuBar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi(TIPE)
-        self.tabWidget.setCurrentIndex(2)
-        self.tabWidgetTrainChoice.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
+        self.tabWidgetTrainChoice.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(TIPE)
 
     def retranslateUi(self, TIPE):
@@ -383,7 +385,7 @@ class Ui_TIPE(object):
         self.labelSize.setText(_translate("TIPE", "Size"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.playTab), _translate("TIPE", "Play"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.resultsTab), _translate("TIPE", "Results"))
-        self.labelSaveFolder.setText(_translate("TIPE", "Save folder"))
+        self.labelSaveFolder.setText(_translate("TIPE", "Save name"))
         self.labelGamma.setText(_translate("TIPE", "Gamma"))
         self.labelSize_2.setText(_translate("TIPE", "Size"))
         self.labelEpochs.setText(_translate("TIPE", "Epochs"))

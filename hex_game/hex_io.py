@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 
 version = 0
-save_dir = "/home/admin/notebooks/saves/V{}/".format(version)
+save_dir = os.path.expanduser("~") + "/notebooks/saves/V{}/".format(version)
 
 
 def save_model_and_df(model, df, size, gamma, start_epoch, end_epoch, random_epochs, part):

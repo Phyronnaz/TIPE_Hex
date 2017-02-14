@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="playTab">
        <attribute name="title">
@@ -416,7 +416,7 @@
           <item row="1" column="0">
            <widget class="QLabel" name="labelSaveFolder">
             <property name="text">
-             <string>Save folder</string>
+             <string>Save name</string>
             </property>
            </widget>
           </item>
@@ -432,7 +432,7 @@
         <item>
          <widget class="QTabWidget" name="tabWidgetTrainChoice">
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tabNewTraining">
            <attribute name="title">
@@ -461,6 +461,9 @@
                   <property name="singleStep">
                    <double>0.010000000000000</double>
                   </property>
+                  <property name="value">
+                   <double>0.900000000000000</double>
+                  </property>
                  </widget>
                 </item>
                 <item row="0" column="0">
@@ -474,6 +477,9 @@
                  <widget class="QSpinBox" name="spinBoxSizeTrain">
                   <property name="minimum">
                    <number>2</number>
+                  </property>
+                  <property name="value">
+                   <number>3</number>
                   </property>
                  </widget>
                 </item>

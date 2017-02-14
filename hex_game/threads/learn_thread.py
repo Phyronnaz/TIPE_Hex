@@ -63,7 +63,7 @@ class LearnThread(threading.Thread):
         self.current_epoch = epoch
 
         elapsed = int((datetime.datetime.now() - self.start_time).seconds)
-        total = int(elapsed * (self.end_epoch - self.start_epoch) / (epoch - self.start_epoch))
+        total = int(elapsed * (self.end_epoch - self.start_epoch) / (epoch - self.start_epoch + 1))
 
         self.elapsed_time = datetime.timedelta(seconds=elapsed)
         self.remaining_time = datetime.timedelta(seconds=total - elapsed)
