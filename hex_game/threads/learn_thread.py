@@ -1,10 +1,12 @@
 import threading
+import datetime
+
 import numpy as np
 from hex_game.q_learning import learn
 
 
 class LearnThread(threading.Thread):
-    def __init__(self, size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path):
+    def __init__(self, size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path, reset_epsilon):
         threading.Thread.__init__(self)
 
         self.epoch_log = np.zeros(end_epoch - start_epoch)
@@ -20,7 +22,9 @@ class LearnThread(threading.Thread):
         self.end_epoch = end_epoch
         self.random_epochs = random_epochs
         self.initial_model_path = initial_model_path
+        self.reset_epsilon = reset_epsilon
 
+        self.start_time = datetime.datetime.now()
         self.elapsed_time = ""
         self.remaining_time = ""
         self.current_epoch = 0
@@ -31,11 +35,13 @@ class LearnThread(threading.Thread):
         self.model = None
         self.df = None
 
+
+
     def run(self):
         self.stop = False
         self.learning = True
         self.model, self.df = learn(self.size, self.gamma, self.start_epoch, self.end_epoch, self.random_epochs,
-                                    self.initial_model_path, self)
+                                    self.initial_model_path, self.reset_epsilon, self)
         self.learning = False
 
     def get_progress(self):
@@ -55,3 +61,10 @@ class LearnThread(threading.Thread):
 
     def set_epoch(self, epoch):
         self.current_epoch = epoch
+
+        elapsed = int((datetime.datetime.now() - self.start_time).seconds)
+        total = int(elapsed * (self.end_epoch - self.start_epoch) / (epoch - self.start_epoch))
+
+        self.elapsed_time = datetime.timedelta(seconds=elapsed)
+        self.remaining_time = datetime.timedelta(seconds=total - elapsed)
+

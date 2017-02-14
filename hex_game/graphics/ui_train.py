@@ -35,7 +35,7 @@ class TrainUI:
         # Timer
         timer = QTimer(self.ui.centralWidget)
         timer.timeout.connect(self.update_train)
-        timer.start(100)
+        timer.start(500)
 
     def set_progress(self, value, text=None):
         if value < 0:
@@ -134,7 +134,8 @@ class TrainUI:
 
     def train(self):
         size, gamma, start_epoch, end_epoch, random_epochs, part = self.get_parameters()
-        self.thread = LearnThread(size, gamma, start_epoch, end_epoch, random_epochs, self.model)
+        epsilon = self.ui.checkBoxResetEpsilon.isEnabled()
+        self.thread = LearnThread(size, gamma, start_epoch, end_epoch, random_epochs, self.model, epsilon)
         self.thread.start()
         self.set_busy(True)
 
