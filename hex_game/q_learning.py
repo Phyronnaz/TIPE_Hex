@@ -15,10 +15,10 @@ def init_model(size):
     model = Sequential()
     model.add(Dense(size ** 2 * 4, init='lecun_uniform', input_shape=(size ** 2 * 3,)))
     model.add(Activation('relu'))
-    # model.add(Dense(size ** 2 * 4, init='lecun_uniform'))
-    # model.add(Activation('relu'))
-    # model.add(Dense(size ** 2 * 4, init='lecun_uniform'))
-    # model.add(Activation('relu'))
+    model.add(Dense(size ** 2 * 4, init='lecun_uniform'))
+    model.add(Activation('relu'))
+    model.add(Dense(size ** 2 * 4, init='lecun_uniform'))
+    model.add(Activation('relu'))
     model.add(Dense(size ** 2, init='lecun_uniform'))
     model.add(Activation('linear'))
 
@@ -35,7 +35,7 @@ def get_split_board(board, player):
     t[0] = (board == -1) * 2 - 1
     t[1] = (board == player) * 2 - 1
     t[2] = (board == 1 - player) * 2 - 1
-    return t.reshape(1, size ** 2 * 3)
+    return t.reshape(1, 3 * size ** 2)
 
 
 def get_move_q_learning(board, player, model, training=False):
@@ -75,12 +75,10 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
     else:
         model = keras.models.load_model(initial_model_path)
 
-    t = datetime.datetime.now()
     #######################
     ### Learn the rules ###
     #######################
     learn_rules(model, size, 10000)
-    print((datetime.datetime.now() - t).seconds)
 
     #####################
     ### Create arrays ###
@@ -112,7 +110,6 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
         ### Learn the rules ###
         #######################
         learn_rules(model, size, 10)
-
 
         ##################
         ### Thread Log ###
@@ -233,7 +230,7 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
                     elif winner == other_player:
                         update = rewards["won"]
                     else:  # winner == -1
-                        newQ = model.predict(get_split_board(board, player), batch_size=1)
+                        newQ = model.predict(get_split_board(board, other_player), batch_size=1)
                         maxQ = np.max(newQ)
                         update = rewards["nothing"] + gamma * maxQ
                 #
