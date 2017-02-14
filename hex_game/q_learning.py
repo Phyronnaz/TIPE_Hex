@@ -7,7 +7,6 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Activation
 from keras.optimizers import RMSprop
 from keras.callbacks import History
-from keras.utils.visualize_util import plot
 from hex_game.main import *
 from hex_game.winner_check import *
 
@@ -48,7 +47,6 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
     """
     Train the model
     :param size: size of the game
-    :param epochs: number of games
     :param gamma: gamma for Q learning
     :param start_epoch: start epoch
     :param end_epoch: end epoch
@@ -63,7 +61,7 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
     else:
         model = keras.models.load_model(initial_model_path)
 
-    epsilon = 1
+    epsilon = 1 if start_epoch == 0 else 0.1
 
     n = (end_epoch - start_epoch) * size ** 2
     epoch_array = np.zeros(n)
@@ -89,20 +87,22 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
             remaining_time = datetime.timedelta(seconds=total - elapsed)
             # print("Game #: %s | Remaining time %s | Elapsed time %s" % (epoch, remaining_time, elapsed_time))
 
-            if thread is not None and epoch % 1000 == 0:
-                l = last_array_counter
-                a = array_counter
-                loss = loss_array[l:a][(epoch_array[l:a] % 1000 < 100) & \
-                                       (loss_array[l:a] != 0) & \
-                                       np.logical_not(np.isnan(loss_array[l:a]))].mean()
-                w = winner_array[l:a][epoch_array[l:a] % 1000 < 100]
-                c = (w != -1).sum()
-                player0 = (w == 0).sum() / c * 100
-                player1 = (w == 1).sum() / c * 100
-                error = (w == 2).sum() / c * 100
-                thread.log(epoch, loss, player0, player1, error)
+            if thread is not None:
                 thread.set_time(elapsed_time, remaining_time)
-                last_array_counter = array_counter
+                thread.set_epoch(epoch)
+                if epoch % 1000 == 0:
+                    l = last_array_counter
+                    a = array_counter
+                    loss = loss_array[l:a][(epoch_array[l:a] % 1000 < 100) &
+                                           (loss_array[l:a] != 0) &
+                                           np.logical_not(np.isnan(loss_array[l:a]))].mean()
+                    w = winner_array[l:a][epoch_array[l:a] % 1000 < 100]
+                    c = (w != -1).sum()
+                    player0 = (w == 0).sum() / c * 100
+                    player1 = (w == 1).sum() / c * 100
+                    error = (w == 2).sum() / c * 100
+                    thread.log(epoch, loss, player0, player1, error)
+                    last_array_counter = array_counter
 
         # Break
         if epoch >= end_epoch or (thread is not None and thread.stop):

@@ -23,6 +23,7 @@ class LearnThread(threading.Thread):
 
         self.elapsed_time = ""
         self.remaining_time = ""
+        self.current_epoch = 0
 
         self.stop = False
         self.learning = False
@@ -31,13 +32,14 @@ class LearnThread(threading.Thread):
         self.df = None
 
     def run(self):
+        self.stop = False
         self.learning = True
         self.model, self.df = learn(self.size, self.gamma, self.start_epoch, self.end_epoch, self.random_epochs,
                                     self.initial_model_path, self)
         self.learning = False
 
     def get_progress(self):
-        return (self.epoch_log[self.index - 1] - self.start_epoch) / (self.end_epoch - self.start_epoch)
+        return (self.current_epoch - self.start_epoch) / (self.end_epoch - self.start_epoch)
 
     def log(self, epoch, loss, player0, player1, error):
         self.epoch_log[self.index] = epoch
@@ -50,3 +52,6 @@ class LearnThread(threading.Thread):
     def set_time(self, elapsed, remaining):
         self.elapsed_time = elapsed
         self.remaining_time = remaining
+
+    def set_epoch(self, epoch):
+        self.current_epoch = epoch

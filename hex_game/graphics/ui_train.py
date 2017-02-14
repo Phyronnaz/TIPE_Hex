@@ -27,7 +27,7 @@ class TrainUI:
         self.thread = None  # type: LearnThread
 
         self.ui.pushButtonLoadModel.pressed.connect(self.load)
-        self.ui.pushButtonTrain.pressed.connect(self.train)
+        self.ui.pushButtonTrain.pressed.connect(self.train_button)
 
         self.update_save_folder()
         self.set_progress(-1)
@@ -35,7 +35,7 @@ class TrainUI:
         # Timer
         timer = QTimer(self.ui.centralWidget)
         timer.timeout.connect(self.update_train)
-        timer.start(1000)
+        timer.start(100)
 
     def set_progress(self, value, text=None):
         if value < 0:
@@ -62,7 +62,9 @@ class TrainUI:
         text = "Elapsed: {} | Remaining: {}".format(self.thread.elapsed_time, self.thread.remaining_time)
         self.set_progress(self.thread.get_progress(), text)
         if not self.thread.learning:
+            # End
             self.set_busy(False)
+            self.set_progress(1, "Done")
             hex_io.save_model_and_df(self.thread.model, self.thread.df, *self.get_parameters())
             self.thread = None
 
@@ -93,12 +95,13 @@ class TrainUI:
             self.model = f
             try:
                 self.get_parameters()
-            except:
+            except ValueError:
                 self.model = ""
-                msgBox = QMessageBox()
-                msgBox.setText("Bad naming")
-                msgBox.setWindowTitle("Error")
-                msgBox.exec_()
+                msg_box = QMessageBox()
+                msg_box.setText("Bad naming")
+                msg_box.setWindowTitle("Error")
+                msg_box.exec_()
+            self.ui.lineEditOldModel.setText(self.model)
 
     def get_parameters(self):
         """
@@ -123,18 +126,28 @@ class TrainUI:
         self.ui.doubleSpinBoxGamma.setValue(round(self.ui.doubleSpinBoxGamma.value(), 2))
         self.ui.lineEditSaveFolder.setText(hex_io.save_dir + hex_io.get_save_name(*self.get_parameters()) + "/")
 
+    def train_button(self):
+        if self.thread is None or not self.thread.learning:
+            self.train()
+        else:
+            self.thread.stop = True
+
     def train(self):
         size, gamma, start_epoch, end_epoch, random_epochs, part = self.get_parameters()
         self.thread = LearnThread(size, gamma, start_epoch, end_epoch, random_epochs, self.model)
         self.thread.start()
         self.set_busy(True)
 
-    def set_busy(self, value):
-        value = not value
-        self.ui.playTab.setEnabled(value)
-        self.ui.resultsTab.setEnabled(value)
-        self.ui.tabWidgetTrainChoice.setEnabled(value)
-        self.ui.tabWidgetTrainChoice.setEnabled(value)
-        self.ui.pushButtonTrain.setEnabled(value)
-        self.ui.actionOpen.setEnabled(value)
-        self.ui.menuBar.setEnabled(value)
+    def set_busy(self, busy):
+        b = not busy
+        self.ui.playTab.setEnabled(b)
+        self.ui.resultsTab.setEnabled(b)
+        self.ui.tabWidgetTrainChoice.setEnabled(b)
+        self.ui.tabWidgetTrainChoice.setEnabled(b)
+        self.ui.actionOpen.setEnabled(b)
+        self.ui.menuBar.setEnabled(b)
+
+        if busy:
+            self.ui.pushButtonTrain.setText("Stop")
+        else:
+            self.ui.pushButtonTrain.setText("Train")

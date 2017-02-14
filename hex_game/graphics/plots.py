@@ -1,10 +1,5 @@
-import random
-
-import matplotlib
 import matplotlib.lines as mlines
-from PyQt5 import QtCore
 from PyQt5.QtWidgets import QSizePolicy
-from numpy import arange, sin, pi
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 

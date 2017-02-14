@@ -3,6 +3,7 @@ import numpy
 NEIGHBORS_1 = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
 NEIGHBORS_2 = [(-1, 2), (1, 1), (2, -1), (1, -2), (-1, -1), (-2, 1)]
 
+
 #  -------------> y
 # |  000000000
 # | 1
@@ -11,14 +12,10 @@ NEIGHBORS_2 = [(-1, 2), (1, 1), (2, -1), (1, -2), (-1, -1), (-2, 1)]
 # | 1
 # v
 # x
-#
-
-
 
 def init_board(size: int = 11) -> numpy.ndarray:
     """
     Create new Hex Game
-    :param board: Board to load
     :param size: Size of the game to create
     :return board
     """
@@ -58,7 +55,7 @@ def play_move_and_copy(board: numpy.ndarray, move: (int, int), player: int) -> n
     return new_board
 
 
-def has_win(board : numpy.ndarray, player : int):
+def has_win(board: numpy.ndarray, player: int):
     """
     Check if a player has win
     :param board: board

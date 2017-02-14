@@ -1,4 +1,3 @@
-import numpy
 from hex_game.main import *
 from hex_game.winner_check import *
 

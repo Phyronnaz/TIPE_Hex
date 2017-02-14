@@ -1,21 +1,17 @@
-from PyQt5 import QtCore
-import pandas as pd
 import numpy as np
+import pandas as pd
+from PyQt5 import QtCore
 from PyQt5.QtWidgets import QListWidgetItem
-from PyQt5.QtWidgets import QVBoxLayout
+from matplotlib import cm
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 
-from hex_game.graphics.plots import ResultsPlot
-from hex_game.game import Game
-from hex_game.graphics.hex_view import HexView
-from PyQt5 import QtGui
 from hex_game.graphics.mainwindow import Ui_TIPE
-from matplotlib import cm
+from hex_game.graphics.plots import ResultsPlot
 
 
 class ResultsUI:
-    def __init__(self, Ui_TIPE: Ui_TIPE):
-        self.ui = Ui_TIPE
+    def __init__(self, ui: Ui_TIPE):
+        self.ui = ui
         self.create_plots()
         self.widgetPlot = self.ui.widgetResultsPlot
         self.dataframes = dict()
@@ -70,20 +66,22 @@ class ResultsUI:
         self.widgetPlot.epsilon.plot(df["epoch"], df["epsilon"], c=color)
 
         # Winner
-        k = int(round(len(df.index) / 25000 + 0.5) * 1000)
-        c = int(len(df.index) / k) - 1
-
+        k = int(round(epochs / 25000 + 0.5) * 1000)
+        c = int(round(epochs / k))
+        print(c)
         player0 = np.zeros(c)
         player1 = np.zeros(c)
         error = np.zeros(c)
         index = np.zeros(c)
         for i in range(c):
             index[i] = k * i
-            w = df.winner[i * k:(i + 1) * k][df.epoch[i * k:(i + 1) * k] % 1000 < 100]
-            c = (w != -1).sum()
-            player0[i] = (w == 0).sum() / c * 100
-            player1[i] = (w == 1).sum() / c * 100
-            error[i] = (w == 2).sum() / c * 100
+            m = (i * k < df.epoch) & (df.epoch < (i + 1) * k)
+            w = df.winner[m][df.epoch[m] % 1000 < 100]
+            x = (w != -1).sum()
+            if x != 0:
+                player0[i] = (w == 0).sum() / x * 100
+                player1[i] = (w == 1).sum() / x * 100
+                error[i] = (w == 2).sum() / x * 100
 
         self.widgetPlot.winner.plot(index, player0, 'v-',
                                     index, player1, 'o-',

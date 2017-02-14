@@ -1,6 +1,8 @@
-from hex_game import play_move, init_board, has_win
-from winner_check import check_for_winner, late_init_winner_matrix_and_counter
-from players.random import RandomPlayer
+import numpy
+
+from hex_game.main import play_move, init_board, has_win
+from hex_game.winner_check import check_for_winner, late_init_winner_matrix_and_counter
+from hex_game.main import get_random_move
 
 size = 11
 
@@ -8,7 +10,7 @@ win_count_has_win = 0
 win_count_winner_check = 0
 n = 1000
 
-player = RandomPlayer()
+rs = numpy.random.RandomState()
 
 for i in range(n):
     if i % 10 == 0:
@@ -18,7 +20,7 @@ for i in range(n):
     p = 0
     while not w:
         winner_matrix, winner_counter = late_init_winner_matrix_and_counter(board)
-        move = player.get_move(p, board)
+        move = get_random_move(board, rs)
         play_move(board, move, p)
         hw = has_win(board, p)
         winner, winner_counter = check_for_winner(move, p, winner_matrix, winner_counter)

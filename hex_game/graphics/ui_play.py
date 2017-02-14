@@ -8,13 +8,13 @@ from hex_game.graphics.mainwindow import Ui_TIPE
 
 
 class PlayUI:
-    def __init__(self, Ui_TIPE: Ui_TIPE):
+    def __init__(self, ui: Ui_TIPE):
         # Variables
         self.size = -1
         self.game = None
         self.models = []
 
-        self.ui = Ui_TIPE
+        self.ui = ui
 
         # Initial states
         self.ui.pushButtonViewDefault.setChecked(True)
