@@ -35,15 +35,17 @@ def get_split_board(board, player):
     t[0] = (board == -1) * 2 - 1
     t[1] = (board == player) * 2 - 1
     t[2] = (board == 1 - player) * 2 - 1
-    return t.reshape(1, 3 * size ** 2)
+    return t.flatten()
 
 
 def get_move_q_learning(board, player, model, training=False):
     size = board.shape[0]
     split_board = get_split_board(board, player)
     # Predict
-    q_values = model.predict(split_board, batch_size=1)
+    X = np.array([split_board])
+    Y = model.predict(X, batch_size=1)
     # Get best move
+    [q_values] = Y
     action = np.argmax(q_values)
     i = np.unravel_index(action, (size, size))
     move = (i[0], i[1]) if player == 0 else (i[1], i[0])
@@ -53,7 +55,8 @@ def get_move_q_learning(board, player, model, training=False):
         return move, q_values
 
 
-def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path="", reset_epsilon=False, thread=None):
+def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path="", reset_epsilon=False, thread=None,
+          batch_size=1):
     """
     Train the model
     :param size: size of the game
@@ -64,6 +67,7 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
     :param initial_model_path: path of the model to start with
     :param reset_epsilon: reset epsilon ?
     :param thread: thread object
+    :param batch_size: batch size
     :return: model, dataframe
     """
 
@@ -74,11 +78,6 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
         model = init_model(size)
     else:
         model = keras.models.load_model(initial_model_path)
-
-    #######################
-    ### Learn the rules ###
-    #######################
-    learn_rules(model, size, 10000)
 
     #####################
     ### Create arrays ###
@@ -106,10 +105,6 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
     epoch = start_epoch
     while True:
         epoch += 1
-        #######################
-        ### Learn the rules ###
-        #######################
-        learn_rules(model, size, 10)
 
         ##################
         ### Thread Log ###
@@ -150,7 +145,8 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
         winner = -1
         move_count = 0
         player = 0
-        random_state = np.random.RandomState(epoch)
+        ai_random_state = np.random.RandomState(epoch)
+        q_random_state = np.random.RandomState(epoch)
 
         #################################
         ### Initialize temp variables ###
@@ -190,11 +186,11 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
                     random_move = random.random() < epsilon and abs(epoch % 1000) > 100
                     # Get move
                     if random_move:
-                        move = tuple(np.random.randint(size, size=2))
+                        move = get_random_move(board, q_random_state)  # Limit regret
                     else:
                         move = q_move
                 else:
-                    move = get_random_move(board, random_state)
+                    move = get_random_move(board, ai_random_state)
 
                 ###################################
                 ### Play move and update winner ###
@@ -230,15 +226,21 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
                     elif winner == other_player:
                         update = rewards["won"]
                     else:  # winner == -1
-                        newQ = model.predict(get_split_board(board, other_player), batch_size=1)
+
+                        X = np.array([get_split_board(board, other_player)])
+                        Y = model.predict(X, batch_size=1)
+                        # Get best move
+                        [newQ] = Y
                         maxQ = np.max(newQ)
                         update = rewards["nothing"] + gamma * maxQ
                 #
                 # Apply update
                 #
                 history = History()
-                q_values[0][action] = update
-                model.fit(split_board, q_values, batch_size=1, nb_epoch=1, verbose=0, callbacks=[history])
+                q_values[action] = update
+                X = np.array([split_board])
+                Y = np.array([q_values])
+                model.fit(X, Y, batch_size=1, nb_epoch=1, verbose=0, callbacks=[history])
                 loss = history.history["loss"][0]
 
             ###########
@@ -285,11 +287,16 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
     ###########
     return model, df
 
-
-def learn_rules(model, size, epochs):
-    for _ in range(epochs):
-        board = np.random.randint(-1, 2, size=(size, size))
-        split_board = get_split_board(board, 0)
-        q_values = model.predict(split_board, batch_size=1)
-        q_values[0][board.flatten() != -1] = -10
-        model.fit(split_board, q_values, batch_size=1, nb_epoch=1, verbose=0)
+# def learn_rules(model, size, epochs, batch_size):
+#     for epoch in range(epochs):
+#         X = np.zeros((batch_size, 3 * size ** 2))
+#         Y = np.zeros((batch_size, size ** 2))
+#         for i in range(batch_size):
+#             board = np.random.randint(-1, 2, size=(size, size))
+#             split_board = get_split_board(board, 0)
+#             q_values = model.predict(split_board, batch_size=1)
+#             q_values[0][board.flatten() != -1] = -10
+#
+#             X[i] = split_board[0]
+#             Y[i] = q_values[0]
+#         model.fit(X, Y, batch_size=batch_size, nb_epoch=1, verbose=0)
