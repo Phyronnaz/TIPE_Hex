@@ -91,11 +91,21 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
     update_array = np.zeros(n)
     move_count_array = np.zeros(n)
 
+    #####################
+    ### Create memory ###
+    #####################
+    old_states_memory = np.zeros((batch_size, 3 * size ** 2))
+    actions_memory = np.zeros(batch_size, dtype=int)
+    new_states_memory = np.zeros((batch_size, 3 * size ** 2))
+    rewards_memory = np.zeros(batch_size)
+    terminals_memory = np.zeros(batch_size, dtype=bool)
+
     ###########################
     ### Initialize counters ###
     ###########################
     array_counter = 0
     last_array_counter = 0
+    memory_counter = 0
 
     rewards = {"won": 1, "lost": -1, "error": -10, "nothing": 0}
 
@@ -114,15 +124,15 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
             if epoch % 1000 == 0:
                 l = last_array_counter
                 a = array_counter
-                loss = loss_array[l:a][(epoch_array[l:a] % 1000 < 100) &
-                                       (loss_array[l:a] != 0) &
-                                       np.logical_not(np.isnan(loss_array[l:a]))].mean()
+                loss_log = loss_array[l:a][(epoch_array[l:a] % 1000 < 100) &
+                                           (loss_array[l:a] != 0) &
+                                           np.logical_not(np.isnan(loss_array[l:a]))].mean()
                 w = winner_array[l:a][epoch_array[l:a] % 1000 < 100]
                 c = (w != -1).sum()
                 player0 = (w == 0).sum() / c * 100
                 player1 = (w == 1).sum() / c * 100
                 error = (w == 2).sum() / c * 100
-                thread.log(epoch, loss, player0, player1, error)
+                thread.log(epoch, loss_log, player0, player1, error)
                 last_array_counter = array_counter
 
         #######################
@@ -153,7 +163,6 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
         #################################
         actions = [None, None]
         split_boards = [None, None]
-        values = [None, None]
 
         #################
         ### Game loop ###
@@ -161,7 +170,6 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
         while True:
             random_move = np.nan
             loss = np.nan
-            update = np.nan
 
             current_player = player
             other_player = 1 - player
@@ -178,10 +186,9 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
                 if current_player_is_q:
                     # Get q results
                     q_move, q_values, q_action, q_split_board = get_move_q_learning(board, current_player, model, True)
-                    # Save action, splitboard and q_values
+                    # Save action and splitboard
                     actions[current_player] = q_action
                     split_boards[current_player] = q_split_board
-                    values[current_player] = q_values
                     # Random move?
                     random_move = random.random() < epsilon and abs(epoch % 1000) > 100
                     # Get move
@@ -210,38 +217,69 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
                     # Error: Update current player and quit
                     #
                     action = actions[current_player]
-                    q_values = values[current_player]
-                    split_board = split_boards[current_player]
-                    update = rewards["error"]
+                    old_state = split_boards[current_player]
+                    reward = rewards["error"]
+                    terminal = True
                 else:
                     #
                     # Update other player
                     #
                     action = actions[other_player]
-                    q_values = values[other_player]
-                    split_board = split_boards[other_player]
+                    old_state = split_boards[other_player]
                     # Get update
                     if winner == current_player:
-                        update = rewards["lost"]
+                        reward = rewards["lost"]
+                        terminal = True
                     elif winner == other_player:
-                        update = rewards["won"]
+                        reward = rewards["won"]
+                        terminal = True
                     else:  # winner == -1
+                        reward = rewards["nothing"]
+                        terminal = False
+                        new_state = get_split_board(board, other_player)
+                #
+                # Save to memory
+                #
+                old_states_memory[memory_counter] = old_state
+                actions_memory[memory_counter] = action
+                if not terminal:
+                    new_states_memory[memory_counter] = new_state
+                rewards_memory[memory_counter] = reward
+                terminals_memory[memory_counter] = terminal
 
-                        X = np.array([get_split_board(board, other_player)])
+            ########################
+            ### Learn from memory ##
+            ########################
+            if memory_counter == batch_size - 1:
+                X_train = old_states_memory
+                Y_train = np.zeros((batch_size, size ** 2))
+
+                for i in range(batch_size):
+                    old_state = old_states_memory[i]
+                    action = actions_memory[i]
+                    new_state = new_states_memory[i]
+                    reward = rewards_memory[i]
+                    terminal = terminals_memory[i]
+
+                    X = np.array([old_state])
+                    Y = model.predict(X, batch_size=1)
+                    [old_q_values] = Y
+
+                    if terminal:
+                        update = reward
+                    else:
+                        X = np.array([new_state])
                         Y = model.predict(X, batch_size=1)
-                        # Get best move
-                        [newQ] = Y
-                        maxQ = np.max(newQ)
-                        update = rewards["nothing"] + gamma * maxQ
-                #
-                # Apply update
-                #
+                        [new_q_values] = Y
+                        update = reward + gamma * max(new_q_values)
+
+                    old_q_values[action] = update
+                    Y_train[i] = old_q_values
+
                 history = History()
-                q_values[action] = update
-                X = np.array([split_board])
-                Y = np.array([q_values])
-                model.fit(X, Y, batch_size=1, nb_epoch=1, verbose=0, callbacks=[history])
+                model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=1, verbose=0, callbacks=[history])
                 loss = history.history["loss"][0]
+                memory_counter = 0
 
             ###########
             ### Log ###
@@ -251,7 +289,6 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
             epsilon_array[array_counter] = epsilon
             random_move_array[array_counter] = random_move
             loss_array[array_counter] = loss
-            update_array[array_counter] = update
             move_count_array[array_counter] = move_count
 
             ########################
@@ -259,6 +296,7 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
             ########################
             array_counter += 1
             move_count += 1
+            memory_counter += 1
 
             ######################
             ### Quit if needed ###
@@ -279,7 +317,6 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
                            epsilon=epsilon_array[:array_counter],
                            random_move=random_move_array[:array_counter],
                            loss=loss_array[:array_counter],
-                           update=update_array[:array_counter],
                            move_count=move_count_array[:array_counter]
                            ))
     ###########

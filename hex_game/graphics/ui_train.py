@@ -21,6 +21,7 @@ class TrainUI:
         self.ui.spinBoxEpochs.valueChanged.connect(self.update_save_folder)
         self.ui.spinBoxRandomEpochs.valueChanged.connect(self.update_save_folder)
         self.ui.spinBoxAdditionalEpochs.valueChanged.connect(self.update_save_folder)
+        self.ui.spinBoxBatchSize.valueChanged.connect(self.update_save_folder)
 
         self.last_index = 0
         self.model = ""
@@ -105,7 +106,7 @@ class TrainUI:
 
     def get_parameters(self):
         """
-        :return: size, gamma, start_epoch, end_epoch, random_epochs, part
+        :return: size, gamma, start_epoch, end_epoch, random_epochs, batch_size, part
         """
         if self.model == "":
             return self.ui.spinBoxSizeTrain.value(), \
@@ -113,13 +114,14 @@ class TrainUI:
                    0, \
                    self.ui.spinBoxEpochs.value(), \
                    self.ui.spinBoxRandomEpochs.value(), \
+                   self.ui.spinBoxBatchSize.value(), \
                    0
         else:
-            size, gamma, start_epoch, end_epoch, random_epochs, part = hex_io.get_parameters(self.model)
+            size, gamma, start_epoch, end_epoch, random_epochs, batch_size, part = hex_io.get_parameters(self.model)
             start_epoch = end_epoch
             end_epoch += self.ui.spinBoxAdditionalEpochs.value()
             part += 1
-            return size, gamma, start_epoch, end_epoch, random_epochs, part
+            return size, gamma, start_epoch, end_epoch, random_epochs, batch_size, part
 
     def update_save_folder(self):
         # Gamma approximation error fix
@@ -133,9 +135,9 @@ class TrainUI:
             self.thread.stop = True
 
     def train(self):
-        size, gamma, start_epoch, end_epoch, random_epochs, part = self.get_parameters()
+        size, gamma, start_epoch, end_epoch, random_epochs, batch_size, part = self.get_parameters()
         epsilon = self.ui.checkBoxResetEpsilon.isChecked()
-        self.thread = LearnThread(size, gamma, start_epoch, end_epoch, random_epochs, self.model, epsilon)
+        self.thread = LearnThread(size, gamma, start_epoch, end_epoch, random_epochs, self.model, epsilon, batch_size)
         self.thread.start()
         self.set_busy(True)
 

@@ -61,7 +61,7 @@ class ResultsUI:
     def plot(self, df, row):
         color = self.widgetPlot.colors[row]
         self.widgetPlot.enabled[row] = True
-        size, gamma, start_epoch, end_epoch, random_epochs, part = hex_io.get_parameters(self.widgetPlot.names[row])
+        _, _, start_epoch, end_epoch, _, _, _ = hex_io.get_parameters(self.widgetPlot.names[row])
 
         # Epsilon
         self.widgetPlot.epsilon.plot(df["epoch"], df["epsilon"], c=color)
@@ -91,8 +91,8 @@ class ResultsUI:
                                     c=color)
 
         # Loss
-        self.widgetPlot.loss.plot(df["epoch"][df.loss.notnull() & df.random_move == False],
-                                  df["loss"][df.loss.notnull() & df.random_move == False],
+        self.widgetPlot.loss.plot(df["epoch"],
+                                  df["loss"],
                                   'ro', alpha=1, markersize=1, c=color)
 
         # Draw

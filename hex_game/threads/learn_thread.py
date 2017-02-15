@@ -6,7 +6,8 @@ from hex_game.q_learning import learn
 
 
 class LearnThread(threading.Thread):
-    def __init__(self, size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path, reset_epsilon):
+    def __init__(self, size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path, reset_epsilon,
+                 batch_size):
         threading.Thread.__init__(self)
 
         self.epoch_log = np.zeros(end_epoch - start_epoch)
@@ -23,6 +24,7 @@ class LearnThread(threading.Thread):
         self.random_epochs = random_epochs
         self.initial_model_path = initial_model_path
         self.reset_epsilon = reset_epsilon
+        self.batch_size = batch_size
 
         self.start_time = datetime.datetime.now()
         self.elapsed_time = ""
@@ -35,13 +37,11 @@ class LearnThread(threading.Thread):
         self.model = None
         self.df = None
 
-
-
     def run(self):
         self.stop = False
         self.learning = True
         self.model, self.df = learn(self.size, self.gamma, self.start_epoch, self.end_epoch, self.random_epochs,
-                                    self.initial_model_path, self.reset_epsilon, self)
+                                    self.initial_model_path, self.reset_epsilon, self, self.batch_size)
         self.learning = False
 
     def get_progress(self):
@@ -67,4 +67,3 @@ class LearnThread(threading.Thread):
 
         self.elapsed_time = datetime.timedelta(seconds=elapsed)
         self.remaining_time = datetime.timedelta(seconds=total - elapsed)
-
