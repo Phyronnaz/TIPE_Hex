@@ -1,14 +1,17 @@
 import numpy as np
-from hex_game import hex_io
-from hex_game.graphics import debug
-from hex_game.game import Game
-from hex_game.graphics.hex_view import HexView
 from PyQt5 import QtGui
+from hex_game import hex_io
+from hex_game.game import Game
+from hex_game.graphics import debug
+from hex_game.graphics.hex_view import HexView
 from hex_game.graphics.mainwindow import Ui_TIPE
 
 
 class PlayUI:
     def __init__(self, ui: Ui_TIPE):
+        # Hack
+        ui.spinBoxSizePlay.setValue(3)
+
         # Variables
         self.size = -1
         self.game = None
@@ -38,12 +41,15 @@ class PlayUI:
         self.ui.pushButtonNewGame.clicked.connect(self.new_game)
 
         # Launch update functions
-        self.update_progress_bar(-1)
+        self.set_progress(-1)
         self.update_models_list()
         self.update_combo_box()
         self.update_size()
 
     def reload_graphics_views(self):
+        """
+        Recreate HexViews
+        """
         hints = QtGui.QPainter.Antialiasing | QtGui.QPainter.HighQualityAntialiasing | \
                 QtGui.QPainter.SmoothPixmapTransform | QtGui.QPainter.TextAntialiasing
 
@@ -75,12 +81,10 @@ class PlayUI:
         self.ui.horizontalLayoutPlayTab.addWidget(self.ui.graphicsViewPlayer1)
         self.ui.horizontalLayoutPlayTab.addWidget(self.ui.graphicsViewPlayer2)
 
-    def add_model(self, filename):
-        if filename not in self.models:
-            self.models.append(filename)
-            self.update_models_list()
-
     def update_size(self):
+        """
+        Apply size change
+        """
         self.size = self.ui.spinBoxSizePlay.value()
         self.reload_graphics_views()
         self.update_graphics_views()
@@ -89,6 +93,9 @@ class PlayUI:
         self.update_models_list()
 
     def update_combo_box(self):
+        """
+        Apply player change
+        """
         if self.ui.comboBoxPlayer1.currentIndex() == 1:
             self.ui.labelMinimaxDepthPlayer1.show()
             self.ui.spinBoxMinimaxDepthPlayer1.show()
@@ -104,12 +111,16 @@ class PlayUI:
             self.ui.spinBoxMinimaxDepthPlayer2.hide()
 
     def update_models_list(self):
-        names = [m.split("/")[-1] for m in self.models]
+        """
+        Update list of the models and players choice
+        """
 
         self.ui.listWidgetModels.clear()
-        self.ui.listWidgetModels.addItems(names)
+        self.ui.listWidgetModels.addItems([hex_io.get_pretty_name(*hex_io.get_parameters(m)) for m in self.models])
 
-        players = ["Human", "Minimax", "Random"] + [n for n in names if hex_io.get_parameters(n)[0] == self.size]
+        pretty_names = [hex_io.get_pretty_name(*hex_io.get_parameters(n)) for n in self.models if
+                        hex_io.get_parameters(n)[0] == self.size]
+        players = ["Human", "Minimax", "Random"] + pretty_names
 
         self.ui.comboBoxPlayer1.clear()
         self.ui.comboBoxPlayer2.clear()
@@ -118,6 +129,9 @@ class PlayUI:
         self.ui.comboBoxPlayer2.addItems(players)
 
     def update_graphics_views(self):
+        """
+        Enable/Disable HexViews
+        """
         if self.ui.pushButtonViewDefault.isChecked():
             self.ui.graphicsViewDefault.show()
         else:
@@ -133,36 +147,63 @@ class PlayUI:
         else:
             self.ui.graphicsViewPlayer2.hide()
 
-    def update_progress_bar(self, value):
-        if value >= 0:
-            self.ui.progressBarMinimax.show()
-            self.ui.progressBarMinimax.setValue(value)
-        else:
-            self.ui.progressBarMinimax.hide()
-
-    def play_button(self):
-        if self.game is not None:
-            self.game.play()
-            self.update_game()
-
-    def click(self, x, y):
-        if self.game is not None:
-            self.game.click(x, y)
-            self.update_game()
-
     def update_game(self):
+        """
+        Update UI after a move
+        """
         self.update_boards()
         b = self.game is not None and self.game.winner == -1 and self.game.players[self.game.player][0] != "Human"
         self.ui.pushButtonPlay.setEnabled(b)
 
     def update_boards(self):
+        """
+        Update HexViews
+        """
         if self.game is not None:
             self.ui.graphicsViewDefault.set_board(self.get_board(self.game.board, q=False))
             self.ui.graphicsViewPlayer1.set_board(self.get_board(self.game.aux_boards[0], q=True))
             self.ui.graphicsViewPlayer2.set_board(self.get_board(-self.game.aux_boards[1], q=True))
 
+    def play_button(self):
+        """
+        Handle play button click
+        """
+        if self.game is not None:
+            self.game.play()
+            self.update_game()
+
+    def click(self, x, y):
+        """
+        Handle a click on the tile with coordinate x y
+        :param x: x
+        :param y: y
+        """
+        if self.game is not None:
+            self.game.click(x, y)
+            self.update_game()
+
+    def set_progress(self, value, text=None):
+        """
+        Set MiniMax progress bar value and text
+        :param value: float between 0 and 1, negative to hide the bar
+        :param text: text to display on the bar
+        """
+        if value < 0:
+            self.ui.progressBarMinimax.hide()
+        else:
+            self.ui.progressBarMinimax.show()
+            self.ui.progressBarMinimax.setValue(100 * value)
+            if text is not None:
+                self.ui.progressBarMinimax.setFormat(text)
+
     @staticmethod
     def get_board(board, q):
+        """
+        Convert a game board to a hex one
+        :param board: board
+        :param q: values between -1 and 1?
+        :return: new board
+        """
         t = np.zeros(shape=board.shape)
         m = abs(board).max() if abs(board).max() != 0 else 1
         for i in range(board.shape[0]):
@@ -179,6 +220,9 @@ class PlayUI:
         return t
 
     def new_game(self):
+        """
+        Create a new game
+        """
         combos = self.ui.comboBoxPlayer1.currentIndex(), self.ui.comboBoxPlayer2.currentIndex()
         depths = self.ui.spinBoxMinimaxDepthPlayer1.value(), self.ui.spinBoxMinimaxDepthPlayer2.value()
         players = [None, None]
@@ -194,3 +238,12 @@ class PlayUI:
         self.game = Game(self.size, players)
         self.update_game()
         debug.debug_play("New Game")
+
+    def add_model(self, path):
+        """
+        Add a model
+        :param path: path of the model to add
+        """
+        if path not in self.models:
+            self.models.append(path)
+            self.update_models_list()

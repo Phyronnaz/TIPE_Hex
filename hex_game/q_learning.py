@@ -12,6 +12,11 @@ from hex_game.winner_check import *
 
 
 def init_model(size):
+    """
+    Init model with size size
+    :param size: size
+    :return: model
+    """
     model = Sequential()
     model.add(Dense(size ** 2 * 4, init='lecun_uniform', input_shape=(size ** 2 * 3,)))
     model.add(Activation('relu'))
@@ -28,6 +33,12 @@ def init_model(size):
 
 
 def get_split_board(board, player):
+    """
+    Return the split board corresponding to player
+    :param board: board
+    :param player: player
+    :return: split board
+    """
     if player == 1:
         board = board.T
     size = board.shape[0]
@@ -39,6 +50,14 @@ def get_split_board(board, player):
 
 
 def get_move_q_learning(board, player, model, training=False):
+    """
+    Get the move of a Q player
+    :param board: board
+    :param player: player
+    :param model: model
+    :param training: True if action and split_board are needed
+    :return: (move, q_values, action, split_board) if training else (move, q_value)
+    """
     size = board.shape[0]
     split_board = get_split_board(board, player)
     # Predict

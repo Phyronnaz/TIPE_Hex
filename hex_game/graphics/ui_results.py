@@ -4,7 +4,6 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QListWidgetItem
 from matplotlib import cm
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
-
 from hex_game import hex_io
 from hex_game.graphics.mainwindow import Ui_TIPE
 from hex_game.graphics.plots import ResultsPlot
@@ -13,12 +12,16 @@ from hex_game.graphics.plots import ResultsPlot
 class ResultsUI:
     def __init__(self, ui: Ui_TIPE):
         self.ui = ui
-        self.create_plots()
+        self.create_plot_and_toolbar()
         self.widgetPlot = self.ui.widgetResultsPlot  # type: ResultsPlot
         self.dataframes = dict()
+        self.paths = []
         self.ui.listWidgetResults.itemChanged.connect(self.update_results_list)
 
-    def create_plots(self):
+    def create_plot_and_toolbar(self):
+        """
+        Create the plot and toolbar widgets
+        """
         self.ui.verticalLayoutResults.removeWidget(self.ui.widgetResultsPlot)
         self.ui.verticalLayoutResults.removeWidget(self.ui.widgetResultsToolbar)
 
@@ -33,10 +36,16 @@ class ResultsUI:
         self.ui.widgetResultsToolbar.setObjectName("widgetResultsToolbar")
         self.ui.verticalLayoutResults.addWidget(self.ui.widgetResultsToolbar)
 
-    def add_result(self, result):
-        name = result.split("/")[-1].split("\\")[-1]
-        self.dataframes[name] = pd.read_hdf(result)
+    def add_result(self, path):
+        """
+        Add a result
+        :param path: path of the file
+        :return:
+        """
+        name = hex_io.get_pretty_name(*hex_io.get_parameters(path))
+        self.dataframes[name] = pd.read_hdf(path)
 
+        self.paths.append(path)
         self.widgetPlot.names.append(name)
         self.widgetPlot.enabled.append(True)
         self.widgetPlot.colors.append(cm.get_cmap("Set1")(len(self.widgetPlot.colors)))
@@ -45,23 +54,36 @@ class ResultsUI:
         item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
         item.setCheckState(QtCore.Qt.Checked)
 
-    def update_results_list(self, item):
+    def update_results_list(self, item: QListWidgetItem):
+        """
+        Update item state
+        :param item: item of listWidgetResults
+        :return:
+        """
         if item.checkState():
             self.plot(self.dataframes[item.text()], self.ui.listWidgetResults.row(item))
         else:
             self.reload_plots()
 
     def reload_plots(self):
+        """
+        Clear plots and redraw
+        """
         self.widgetPlot.clear()
         for row in range(self.ui.listWidgetResults.count()):
             item = self.ui.listWidgetResults.item(row)
             if item.checkState():
                 self.plot(self.dataframes[item.text()], row)
 
-    def plot(self, df, row):
+    def plot(self, df: pd.DataFrame, row):
+        """
+        Plot a dataframe
+        :param df: dataframe to plot
+        :param row: row in listWidgetResults of the dataframe
+        """
         color = self.widgetPlot.colors[row]
         self.widgetPlot.enabled[row] = True
-        _, _, start_epoch, end_epoch, _, _, _ = hex_io.get_parameters(self.widgetPlot.names[row])
+        _, _, start_epoch, end_epoch, _, _, _ = hex_io.get_parameters(self.paths[row])
 
         # Epsilon
         self.widgetPlot.epsilon.plot(df["epoch"], df["epsilon"], c=color)

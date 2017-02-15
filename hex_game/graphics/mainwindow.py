@@ -208,10 +208,10 @@ class Ui_TIPE(object):
         self.labelSaveFolder = QtWidgets.QLabel(self.trainTab)
         self.labelSaveFolder.setObjectName("labelSaveFolder")
         self.formLayoutTrain.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.labelSaveFolder)
-        self.lineEditSaveFolder = QtWidgets.QLineEdit(self.trainTab)
-        self.lineEditSaveFolder.setReadOnly(True)
-        self.lineEditSaveFolder.setObjectName("lineEditSaveFolder")
-        self.formLayoutTrain.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.lineEditSaveFolder)
+        self.lineEditSaveName = QtWidgets.QLineEdit(self.trainTab)
+        self.lineEditSaveName.setReadOnly(True)
+        self.lineEditSaveName.setObjectName("lineEditSaveName")
+        self.formLayoutTrain.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.lineEditSaveName)
         self.verticalLayoutTrainTab.addLayout(self.formLayoutTrain)
         self.tabWidgetTrainChoice = QtWidgets.QTabWidget(self.trainTab)
         self.tabWidgetTrainChoice.setObjectName("tabWidgetTrainChoice")
@@ -358,7 +358,7 @@ class Ui_TIPE(object):
         self.menuBar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi(TIPE)
-        self.tabWidget.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(0)
         self.tabWidgetTrainChoice.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(TIPE)
 

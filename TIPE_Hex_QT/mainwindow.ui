@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="playTab">
        <attribute name="title">
@@ -421,7 +421,7 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QLineEdit" name="lineEditSaveFolder">
+           <widget class="QLineEdit" name="lineEditSaveName">
             <property name="readOnly">
              <bool>true</bool>
             </property>
