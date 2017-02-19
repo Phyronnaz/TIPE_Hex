@@ -14,20 +14,24 @@ class TrainUI:
         self.widgetPlot = self.ui.widgetTrainPlot
 
         # Connect update save folder
-        self.ui.tabWidgetTrainChoice.currentChanged.connect(self.update_save_name)
         self.ui.spinBoxSizeTrain.valueChanged.connect(self.update_save_name)
         self.ui.doubleSpinBoxGamma.valueChanged.connect(self.update_save_name)
-        self.ui.spinBoxEpochs.valueChanged.connect(self.update_save_name)
-        self.ui.spinBoxEpochs.valueChanged.connect(self.update_save_name)
-        self.ui.spinBoxRandomEpochs.valueChanged.connect(self.update_save_name)
-        self.ui.spinBoxAdditionalEpochs.valueChanged.connect(self.update_save_name)
         self.ui.spinBoxBatchSize.valueChanged.connect(self.update_save_name)
+        self.ui.doubleSpinBoxInitialEpsilon.valueChanged.connect(self.update_save_name)
+        self.ui.doubleSpinBoxFinalEpsilon.valueChanged.connect(self.update_save_name)
+        self.ui.radioButtonRandomAI.pressed.connect(self.update_save_name)
+        self.ui.radioButtonQAI.pressed.connect(self.update_save_name)
+        self.ui.spinBoxExplorationEpochs.valueChanged.connect(self.update_save_name)
+        self.ui.spinBoxTrainEpochs.valueChanged.connect(self.update_save_name)
+        self.ui.spinBoxMemory.valueChanged.connect(self.update_save_name)
+
+        self.ui.checkBoxLoadModel.clicked.connect(self.check_box)
 
         self.last_index = 0
         self.model = ""
         self.thread = None  # type: LearnThread
 
-        self.ui.pushButtonLoadModel.pressed.connect(self.load)
+        self.ui.pushButtonLoad.pressed.connect(self.load)
         self.ui.pushButtonTrain.pressed.connect(self.train_button)
 
         self.update_save_name()
@@ -103,7 +107,7 @@ class TrainUI:
                 msg_box.setText("Bad naming")
                 msg_box.setWindowTitle("Error")
                 msg_box.exec_()
-            self.ui.lineEditOldModel.setText(self.model)
+            self.ui.lineEditLoadModel.setText(self.model)
 
     def train_button(self):
         """
@@ -117,31 +121,52 @@ class TrainUI:
     def update_save_name(self):
         """
         Update save file name
-        :return:
         """
-        # Gamma approximation error fix
-        self.ui.doubleSpinBoxGamma.setValue(round(self.ui.doubleSpinBoxGamma.value(), 2))
         self.ui.lineEditSaveName.setText(hex_io.save_dir + hex_io.get_save_name(*self.get_parameters()))
+
+    def check_box(self):
+        b = not self.ui.checkBoxLoadModel.isChecked()
+        self.ui.spinBoxSizeTrain.setEnabled(b)
+        self.ui.doubleSpinBoxGamma.setEnabled(b)
+        self.ui.spinBoxBatchSize.setEnabled(b)
+        self.ui.spinBoxMemory.setEnabled(b)
+        if not b:
+            self.set_parameters()
+
+    def set_parameters(self):
+        if self.model != "" and self.ui.checkBoxLoadModel.isChecked():
+            size, gamma, batch_size, _, _, _, _, _, memory_size = self.get_parameters()
+            self.ui.spinBoxSizeTrain.setValue(size)
+            self.ui.doubleSpinBoxGamma.setValue(gamma)
+            self.ui.spinBoxBatchSize.setValue(batch_size)
+            self.ui.spinBoxMemory.setValue(memory_size)
 
     def get_parameters(self):
         """
         Get the parameters for train
-        :return: size, gamma, start_epoch, end_epoch, random_epochs, batch_size, part
+        :return: size, gamma, batch_size, initial_epsilon, final_epsilon, random_opponent, exploration_epochs, train_epochs, memory_size
         """
         if self.model == "":
             return self.ui.spinBoxSizeTrain.value(), \
                    self.ui.doubleSpinBoxGamma.value(), \
-                   0, \
-                   self.ui.spinBoxEpochs.value(), \
-                   self.ui.spinBoxRandomEpochs.value(), \
                    self.ui.spinBoxBatchSize.value(), \
-                   0
+                   self.ui.doubleSpinBoxInitialEpsilon.value(), \
+                   self.ui.doubleSpinBoxFinalEpsilon.value(), \
+                   self.ui.radioButtonRandomAI.isChecked(), \
+                   self.ui.spinBoxExplorationEpochs.value(), \
+                   self.ui.spinBoxTrainEpochs.value(), \
+                   self.ui.spinBoxMemory.value()
         else:
-            size, gamma, start_epoch, end_epoch, random_epochs, batch_size, part = hex_io.get_parameters(self.model)
-            start_epoch = end_epoch
-            end_epoch += self.ui.spinBoxAdditionalEpochs.value()
-            part += 1
-            return size, gamma, start_epoch, end_epoch, random_epochs, batch_size, part
+            size, gamma, batch_size, _, _, _, _, _, _ = hex_io.get_parameters(self.model)
+            return size, \
+                   gamma, \
+                   batch_size, \
+                   self.ui.doubleSpinBoxInitialEpsilon.value(), \
+                   self.ui.doubleSpinBoxFinalEpsilon.value(), \
+                   self.ui.radioButtonRandomAI.isChecked(), \
+                   self.ui.spinBoxExplorationEpochs.value(), \
+                   self.ui.spinBoxTrainEpochs.value(), \
+                   self.ui.spinBoxMemory.value()
 
     def set_busy(self, busy):
         """
@@ -151,9 +176,9 @@ class TrainUI:
         b = not busy
         self.ui.playTab.setEnabled(b)
         self.ui.resultsTab.setEnabled(b)
-        self.ui.tabWidgetTrainChoice.setEnabled(b)
-        self.ui.tabWidgetTrainChoice.setEnabled(b)
         self.ui.actionOpen.setEnabled(b)
+        self.ui.horizontalLayoutInput.setEnabled(b)
+        self.ui.horizontalLayoutLoad.setEnabled(b)
         self.ui.menuBar.setEnabled(b)
 
         if busy:
@@ -177,10 +202,7 @@ class TrainUI:
         """
         Start training
         """
-        size, gamma, start_epoch, end_epoch, random_epochs, batch_size, part = self.get_parameters()
-        epsilon = self.ui.checkBoxResetEpsilon.isChecked()
-        self.thread = LearnThread(size, gamma, start_epoch, end_epoch, random_epochs, self.model, epsilon, batch_size,
-                                  part)
+        self.thread = LearnThread(self.get_parameters(), self.model)
         self.thread.start()
         self.set_busy(True)
 
@@ -190,5 +212,5 @@ class TrainUI:
         """
         self.set_busy(False)
         self.set_progress(1, "Done")
-        self.thread.save()
+        self.thread.join()
         self.thread = None

@@ -1,12 +1,12 @@
 import random
-import datetime
+from collections import deque
+
 import numpy as np
 import pandas as pd
 import keras.models
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation
 from keras.optimizers import RMSprop
-from keras.callbacks import History
 from hex_game.main import *
 from hex_game.winner_check import *
 
@@ -18,13 +18,13 @@ def init_model(size):
     :return: model
     """
     model = Sequential()
-    model.add(Dense(size ** 2 * 4, init='lecun_uniform', input_shape=(size ** 2 * 3,)))
+    model.add(Dense(size ** 2 * 4, init="lecun_uniform", input_shape=(3 * size ** 2,)))
     model.add(Activation('relu'))
-    model.add(Dense(size ** 2 * 4, init='lecun_uniform'))
+    model.add(Dense(size ** 2 * 4, init="lecun_uniform"))
     model.add(Activation('relu'))
-    model.add(Dense(size ** 2 * 4, init='lecun_uniform'))
+    model.add(Dense(size ** 2 * 4, init="lecun_uniform"))
     model.add(Activation('relu'))
-    model.add(Dense(size ** 2, init='lecun_uniform'))
+    model.add(Dense(size ** 2, init="lecun_uniform"))
     model.add(Activation('linear'))
 
     rms = RMSprop()
@@ -49,44 +49,47 @@ def get_split_board(board, player):
     return t.flatten()
 
 
-def get_move_q_learning(board, player, model, training=False):
+def get_action(model, split_board):
     """
     Get the move of a Q player
-    :param board: board
-    :param player: player
     :param model: model
-    :param training: True if action and split_board are needed
-    :return: (move, q_values, action, split_board) if training else (move, q_value)
+    :param split_board: precomputed split board
+    :return: q_values, action
     """
+    # Predict
+    [q_values] = model.predict(np.array([split_board]))
+
+    # Get best action
+    action = np.argmax(q_values)
+
+    return action
+
+
+def get_move_from_action(player, action, size):
+    i = np.unravel_index(action, (size, size))  # type: tuple
+    move = (i[0], i[1]) if player == 0 else (i[1], i[0])
+    return move
+
+
+def get_move_q_learning(board, player, model):
     size = board.shape[0]
     split_board = get_split_board(board, player)
-    # Predict
-    X = np.array([split_board])
-    Y = model.predict(X, batch_size=1)
-    # Get best move
-    [q_values] = Y
-    action = np.argmax(q_values)
-    i = np.unravel_index(action, (size, size))
-    move = (i[0], i[1]) if player == 0 else (i[1], i[0])
-    if training:
-        return move, q_values, action, split_board
-    else:
-        return move, q_values
+    action = get_action(model, split_board)
+    move = get_move_from_action(player, action, size)
+    return move
 
 
-def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path="", reset_epsilon=False, thread=None,
-          batch_size=1):
+def get_random_action(board: np.ndarray, state: np.random.RandomState):
+    board = board.flatten()
+    actions = [k[0] for k in numpy.argwhere(board == -1)]
+    state.shuffle(actions)
+    return actions[0]
+
+
+def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, random_opponent, exploration_epochs,
+          train_epochs, memory_size, initial_model_path="", thread=None):
     """
-    Train the model
-    :param size: size of the game
-    :param gamma: gamma for Q learning
-    :param start_epoch: start epoch
-    :param end_epoch: end epoch
-    :param random_epochs: number of epochs AI plays against random player
-    :param initial_model_path: path of the model to start with
-    :param reset_epsilon: reset epsilon ?
-    :param thread: thread object
-    :param batch_size: batch size
+    Train the model=
     :return: model, dataframe
     """
 
@@ -101,23 +104,18 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
     #####################
     ### Create arrays ###
     #####################
-    n = (end_epoch - start_epoch) * size ** 2
+    n = (exploration_epochs + train_epochs) * size ** 2
     epoch_array = np.zeros(n)
     winner_array = np.zeros(n)
     epsilon_array = np.zeros(n)
     random_move_array = np.zeros(n, dtype='bool')
     loss_array = np.zeros(n)
-    update_array = np.zeros(n)
     move_count_array = np.zeros(n)
 
     #####################
     ### Create memory ###
     #####################
-    old_states_memory = np.zeros((batch_size, 3 * size ** 2))
-    actions_memory = np.zeros(batch_size, dtype=int)
-    new_states_memory = np.zeros((batch_size, 3 * size ** 2))
-    rewards_memory = np.zeros(batch_size)
-    terminals_memory = np.zeros(batch_size, dtype=bool)
+    memory = deque()
 
     ###########################
     ### Initialize counters ###
@@ -131,7 +129,8 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
     #######################
     ### Start main loop ###
     #######################
-    epoch = start_epoch
+    epsilon = initial_epsilon
+    epoch = 0
     while True:
         epoch += 1
 
@@ -143,10 +142,9 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
             if epoch % 1000 == 0:
                 l = last_array_counter
                 a = array_counter
-                loss_log = loss_array[l:a][(epoch_array[l:a] % 1000 < 100) &
-                                           (loss_array[l:a] != 0) &
+                loss_log = loss_array[l:a][(loss_array[l:a] != 0) &
                                            np.logical_not(np.isnan(loss_array[l:a]))].mean()
-                w = winner_array[l:a][epoch_array[l:a] % 1000 < 100]
+                w = winner_array[l:a]
                 c = (w != -1).sum()
                 player0 = (w == 0).sum() / c * 100
                 player1 = (w == 1).sum() / c * 100
@@ -157,14 +155,14 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
         #######################
         ### Break main loop ###
         #######################
-        if epoch >= end_epoch or (thread is not None and thread.stop):
+        if epoch >= exploration_epochs + train_epochs or (thread is not None and thread.stop):
             break
 
         ###################
         ### Set epsilon ###
         ###################
-        epsilon = (1000 / (epoch - start_epoch)) if reset_epsilon else (1000 / epoch)
-        epsilon = min(1, epsilon)
+        if epsilon > final_epsilon:
+            epsilon -= (initial_epsilon - final_epsilon) / exploration_epochs
 
         ###############################################
         ### Create board and winner_check variables ###
@@ -173,15 +171,15 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
         winner_matrix, winner_counter = init_winner_matrix_and_counter(size)
         winner = -1
         move_count = 0
-        player = 0
-        ai_random_state = np.random.RandomState(epoch)
-        q_random_state = np.random.RandomState(epoch)
+        current_player = 0
+        ai_random_state = np.random.RandomState()
+        q_random_state = np.random.RandomState()
 
         #################################
         ### Initialize temp variables ###
         #################################
         actions = [None, None]
-        split_boards = [None, None]
+        states = [None, None]
 
         #################
         ### Game loop ###
@@ -190,10 +188,9 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
             random_move = np.nan
             loss = np.nan
 
-            current_player = player
-            other_player = 1 - player
-            current_player_is_q = epoch > random_epochs or player == 1
-            other_player_is_q = epoch > random_epochs or player == 0
+            other_player = 1 - current_player
+            current_player_is_q = not random_opponent or current_player == 1
+            other_player_is_q = not random_opponent or other_player == 1
 
             ################################################
             ### If game already ended, just update model ###
@@ -203,18 +200,24 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
                 ### Get move and save q values ###
                 ##################################
                 if current_player_is_q:
-                    # Get q results
-                    q_move, q_values, q_action, q_split_board = get_move_q_learning(board, current_player, model, True)
-                    # Save action and splitboard
-                    actions[current_player] = q_action
-                    split_boards[current_player] = q_split_board
+                    # Compute split board
+                    split_board = get_split_board(board, current_player)
+
                     # Random move?
-                    random_move = random.random() < epsilon and abs(epoch % 1000) > 100
-                    # Get move
+                    random_move = random.random() < epsilon
+
+                    # Get action
                     if random_move:
-                        move = get_random_move(board, q_random_state)  # Limit regret
+                        action = get_random_action(board, q_random_state)  # Limit regret
                     else:
-                        move = q_move
+                        action = get_action(model, split_board)
+
+                    # Save action and split board
+                    actions[current_player] = action
+                    states[current_player] = split_board
+
+                    # Get move
+                    move = get_move_from_action(current_player, action, size)
                 else:
                     move = get_random_move(board, ai_random_state)
 
@@ -236,22 +239,25 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
                     # Error: Update current player and quit
                     #
                     action = actions[current_player]
-                    old_state = split_boards[current_player]
+                    old_state = states[current_player]
                     reward = rewards["error"]
                     terminal = True
+                    new_state = None
                 else:
                     #
                     # Update other player
                     #
                     action = actions[other_player]
-                    old_state = split_boards[other_player]
+                    old_state = states[other_player]
                     # Get update
                     if winner == current_player:
                         reward = rewards["lost"]
                         terminal = True
+                        new_state = None
                     elif winner == other_player:
                         reward = rewards["won"]
                         terminal = True
+                        new_state = None
                     else:  # winner == -1
                         reward = rewards["nothing"]
                         terminal = False
@@ -259,47 +265,35 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
                 #
                 # Save to memory
                 #
-                old_states_memory[memory_counter] = old_state
-                actions_memory[memory_counter] = action
-                if not terminal:
-                    new_states_memory[memory_counter] = new_state
-                rewards_memory[memory_counter] = reward
-                terminals_memory[memory_counter] = terminal
-                memory_counter += 1
+                memory.append((old_state, action, new_state, reward, terminal))
 
             ########################
             ### Learn from memory ##
             ########################
-            if memory_counter == batch_size:
-                X_train = old_states_memory
-                Y_train = np.zeros((batch_size, size ** 2))
+            if len(memory) == memory_size:
+                X = np.zeros((batch_size, 3 * size ** 2))
+                Y = np.zeros((batch_size, size ** 2))
+
+                minibatch = random.sample(memory, batch_size)
 
                 for i in range(batch_size):
-                    old_state = old_states_memory[i]
-                    action = actions_memory[i]
-                    new_state = new_states_memory[i]
-                    reward = rewards_memory[i]
-                    terminal = terminals_memory[i]
+                    old_state, action, new_state, reward, terminal = minibatch[i]
 
-                    X = np.array([old_state])
-                    Y = model.predict(X, batch_size=1)
-                    [old_q_values] = Y
+                    [old_q_values] = model.predict(np.array([old_state]))
 
                     if terminal:
                         update = reward
                     else:
-                        X = np.array([new_state])
-                        Y = model.predict(X, batch_size=1)
-                        [new_q_values] = Y
+                        [new_q_values] = model.predict(np.array([new_state]))
                         update = reward + gamma * max(new_q_values)
 
                     old_q_values[action] = update
-                    Y_train[i] = old_q_values
 
-                history = History()
-                model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=1, verbose=0, callbacks=[history])
-                loss = history.history["loss"][0]
-                memory_counter = 0
+                    X[i] = old_state
+                    Y[i] = old_q_values
+
+                loss = model.train_on_batch(X, Y)
+                memory.clear()
 
             ###########
             ### Log ###
@@ -326,7 +320,7 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
             #####################
             ### Invert player ###
             #####################
-            player = 1 - player
+            current_player = other_player
 
     ########################
     ### Create dataframe ###
@@ -342,17 +336,3 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
     ### End ###
     ###########
     return model, df
-
-# def learn_rules(model, size, epochs, batch_size):
-#     for epoch in range(epochs):
-#         X = np.zeros((batch_size, 3 * size ** 2))
-#         Y = np.zeros((batch_size, size ** 2))
-#         for i in range(batch_size):
-#             board = np.random.randint(-1, 2, size=(size, size))
-#             split_board = get_split_board(board, 0)
-#             q_values = model.predict(split_board, batch_size=1)
-#             q_values[0][board.flatten() != -1] = -10
-#
-#             X[i] = split_board[0]
-#             Y[i] = q_values[0]
-#         model.fit(X, Y, batch_size=batch_size, nb_epoch=1, verbose=0)

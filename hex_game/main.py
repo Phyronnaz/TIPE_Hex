@@ -100,22 +100,8 @@ def get_possibles_moves(board: numpy.ndarray) -> list((int, int)):
     return [tuple(k) for k in numpy.argwhere(board == -1)]
 
 
-def get_random_move(board: numpy.random, state: numpy.random.RandomState):
-    has_played = False
-
+def get_random_move(board: numpy.ndarray, state: numpy.random.RandomState):
     moves = get_possibles_moves(board)
     state.shuffle(moves)
 
-    move = None
-    for m in moves:
-        has_played = can_play_move(board, m)
-        if has_played:
-            move = m
-            break
-    if not has_played:
-        print("Error!")
-        print("Board:")
-        print(board)
-        raise Exception("Unable to find a move")
-    else:
-        return move
+    return moves[0]

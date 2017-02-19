@@ -20,7 +20,7 @@ class ResultsPlot(FigureCanvas):
         FigureCanvas.setSizePolicy(self, QSizePolicy.Expanding, QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
         self.names = []
-        self.enabled = []
+        self.plot_enabled = []
         self.colors = []
         self.name_plots()
 
@@ -51,7 +51,7 @@ class ResultsPlot(FigureCanvas):
         # Legend
         lines = []
         for i in range(len(self.names)):
-            if self.enabled[i]:
+            if self.plot_enabled[i]:
                 lines.append(mlines.Line2D([], [], color=self.colors[i], label=self.names[i], marker="o"))
         self.legend.remove()
         self.legend = self.fig.legend(lines, self.names, 'lower right')

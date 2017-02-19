@@ -6,26 +6,20 @@ from hex_game.q_learning import learn
 
 
 class LearnThread(threading.Thread):
-    def __init__(self, size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path, reset_epsilon,
-                 batch_size, part):
+    def __init__(self, parameters, model):
         threading.Thread.__init__(self)
 
-        self.epoch_log = np.zeros(end_epoch - start_epoch)
-        self.loss_log = np.zeros(end_epoch - start_epoch)
-        self.player0_log = np.zeros(end_epoch - start_epoch)
-        self.player1_log = np.zeros(end_epoch - start_epoch)
-        self.error_log = np.zeros(end_epoch - start_epoch)
-        self.index = 0
+        self.n = parameters[6] + parameters[7]
 
-        self.size = size
-        self.gamma = gamma
-        self.start_epoch = start_epoch
-        self.end_epoch = end_epoch
-        self.random_epochs = random_epochs
-        self.initial_model_path = initial_model_path
-        self.reset_epsilon = reset_epsilon
-        self.batch_size = batch_size
-        self.part = part
+        self.parameters = parameters
+        self.model = model
+
+        self.epoch_log = np.zeros(self.n)
+        self.loss_log = np.zeros(self.n)
+        self.player0_log = np.zeros(self.n)
+        self.player1_log = np.zeros(self.n)
+        self.error_log = np.zeros(self.n)
+        self.index = 0
 
         self.start_time = datetime.datetime.now()
         self.elapsed_time = ""
@@ -35,18 +29,10 @@ class LearnThread(threading.Thread):
         self.stop = False
         self.learning = False
 
-        self.model = None
-        self.df = None
-
-    def save(self):
-        hex_io.save_model_and_df(self.model, self.df, self.size, self.gamma, self.start_epoch, self.end_epoch,
-                                 self.random_epochs, self.batch_size, self.part)
-
     def run(self):
         self.stop = False
         self.learning = True
-        self.model, self.df = learn(self.size, self.gamma, self.start_epoch, self.end_epoch, self.random_epochs,
-                                    self.initial_model_path, self.reset_epsilon, self, self.batch_size)
+        hex_io.save_model_and_df(*learn(*self.parameters, initial_model_path=self.model, thread=self), *self.parameters)
         self.learning = False
 
     def get_progress(self):
@@ -54,7 +40,7 @@ class LearnThread(threading.Thread):
         Return progress of the learning
         :return: float between 0 and 1
         """
-        return (self.current_epoch - self.start_epoch) / (self.end_epoch - self.start_epoch)
+        return self.current_epoch / self.n
 
     def log(self, epoch, loss, player0, player1, error):
         """
@@ -80,7 +66,7 @@ class LearnThread(threading.Thread):
         self.current_epoch = epoch
 
         elapsed = int((datetime.datetime.now() - self.start_time).seconds)
-        total = int(elapsed * (self.end_epoch - self.start_epoch) / (epoch - self.start_epoch + 1))
+        total = int(elapsed * self.n / (epoch + 1))
 
         self.elapsed_time = datetime.timedelta(seconds=elapsed)
         self.remaining_time = datetime.timedelta(seconds=total - elapsed)

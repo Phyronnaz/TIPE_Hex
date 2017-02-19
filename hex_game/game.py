@@ -2,7 +2,7 @@ import keras.models
 import numpy as np
 from hex_game.main import play_move, can_play_move, init_board, get_random_move
 from hex_game.winner_check import check_for_winner, init_winner_matrix_and_counter
-from hex_game.q_learning import get_move_q_learning
+from hex_game.q_learning import get_move_q_learning, get_split_board
 from hex_game.negamax import get_move_negamax
 from hex_game.graphics import debug
 
@@ -60,9 +60,17 @@ class Game:
         elif name == "Random":
             self.play_move(get_random_move(self.board, self.random_states[self.player]))
         elif name == "Q learning":
-            move, q_values = get_move_q_learning(self.board, self.player, self.models[self.player])
+            model = self.models[self.player]
+
+            move = get_move_q_learning(self.board, self.player, model)
+
+            [q_values] = model.predict(np.array([get_split_board(self.board, self.player)]))
+
             t = q_values.reshape((self.size, self.size))
-            self.aux_boards[self.player] = t if self.player == 0 else t.T
+            if self.player == 1:
+                t = t.T
+            self.aux_boards[self.player] = t
+
             self.play_move(move)
 
     def click(self, x, y):
