@@ -265,11 +265,12 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
                     new_states_memory[memory_counter] = new_state
                 rewards_memory[memory_counter] = reward
                 terminals_memory[memory_counter] = terminal
+                memory_counter += 1
 
             ########################
             ### Learn from memory ##
             ########################
-            if memory_counter == batch_size - 1:
+            if memory_counter == batch_size:
                 X_train = old_states_memory
                 Y_train = np.zeros((batch_size, size ** 2))
 
@@ -315,7 +316,6 @@ def learn(size, gamma, start_epoch, end_epoch, random_epochs, initial_model_path
             ########################
             array_counter += 1
             move_count += 1
-            memory_counter += 1
 
             ######################
             ### Quit if needed ###

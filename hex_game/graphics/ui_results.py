@@ -14,7 +14,7 @@ class ResultsUI:
         self.ui = ui
         self.create_plot_and_toolbar()
         self.widgetPlot = self.ui.widgetResultsPlot  # type: ResultsPlot
-        self.dataframes = dict()
+        self.dataframes = []
         self.paths = []
         self.ui.listWidgetResults.itemChanged.connect(self.update_results_list)
 
@@ -43,9 +43,10 @@ class ResultsUI:
         :return:
         """
         name = hex_io.get_pretty_name(*hex_io.get_parameters(path))
-        self.dataframes[name] = pd.read_hdf(path)
 
+        self.dataframes.append(pd.read_hdf(path))
         self.paths.append(path)
+
         self.widgetPlot.names.append(name)
         self.widgetPlot.enabled.append(True)
         self.widgetPlot.colors.append(cm.get_cmap("Set1")(len(self.widgetPlot.colors)))
@@ -61,7 +62,8 @@ class ResultsUI:
         :return:
         """
         if item.checkState():
-            self.plot(self.dataframes[item.text()], self.ui.listWidgetResults.row(item))
+            row = self.ui.listWidgetResults.row(item)
+            self.plot(self.dataframes[row], row)
         else:
             self.reload_plots()
 
@@ -73,7 +75,7 @@ class ResultsUI:
         for row in range(self.ui.listWidgetResults.count()):
             item = self.ui.listWidgetResults.item(row)
             if item.checkState():
-                self.plot(self.dataframes[item.text()], row)
+                self.plot(self.dataframes[row], row)
 
     def plot(self, df: pd.DataFrame, row):
         """
