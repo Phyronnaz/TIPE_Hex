@@ -33,7 +33,9 @@ class LearnThread(threading.Thread):
     def run(self):
         self.stop = False
         self.learning = True
+        print("Learning started")
         hex_io.save_models_and_df(*learn(*self.parameters, self.models, thread=self), *self.parameters)
+        print("Learning ended")
         self.learning = False
 
     def get_progress(self):
@@ -72,3 +74,6 @@ class LearnThread(threading.Thread):
 
         self.elapsed_time = datetime.timedelta(seconds=elapsed)
         self.remaining_time = datetime.timedelta(seconds=total - elapsed)
+
+        print("Current epoch: {}; Remaining time: {}; Elapsed time: {}".format(self.current_epoch, self.remaining_time,
+                                                                               self.elapsed_time))

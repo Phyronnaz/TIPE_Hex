@@ -1,4 +1,5 @@
 import random
+import warnings
 from collections import deque
 
 import numpy as np
@@ -146,8 +147,10 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
             if epoch % 1000 == 0:
                 l = last_array_counter
                 a = array_counter
-                loss_log_player0 = loss_array_player0[l:a][np.logical_not(np.isnan(loss_array_player0[l:a]))].mean()
-                loss_log_player1 = loss_array_player1[l:a][np.logical_not(np.isnan(loss_array_player1[l:a]))].mean()
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                    loss_log_player0 = loss_array_player0[l:a][np.logical_not(np.isnan(loss_array_player0[l:a]))].mean()
+                    loss_log_player1 = loss_array_player1[l:a][np.logical_not(np.isnan(loss_array_player1[l:a]))].mean()
                 w = winner_array[l:a]
                 c = (w != -1).sum()
                 player0 = (w == 0).sum() / c * 100

@@ -120,6 +120,8 @@ class TrainUI:
                 self.ui.lineEditLoadPlayer0.setText(self.models[player])
             else:
                 self.ui.lineEditLoadPlayer1.setText(self.models[player])
+        self.check_box_load(0)
+        self.check_box_load(1)
 
     def train_button(self):
         """
@@ -159,15 +161,16 @@ class TrainUI:
         self.ui.checkBoxPlayer0.setEnabled(unchecked_0)
         self.ui.checkBoxPlayer1.setEnabled(unchecked_1)
 
-        model = self.models[player]
+        if (not unchecked_0 and player == 0) or (not unchecked_1 and player == 1):
+            model = self.models[player]
 
-        size, gamma, batch_size, _, _, _, _, memory_size, _ = self.get_parameters(model)
-        self.ui.spinBoxSizeTrain.setValue(size)
-        self.ui.doubleSpinBoxGamma.setValue(gamma)
-        self.ui.spinBoxBatchSize.setValue(batch_size)
-        self.ui.spinBoxMemory.setValue(memory_size)
-        self.ui.checkBoxPlayer0.setChecked(not unchecked_0)
-        self.ui.checkBoxPlayer1.setChecked(not unchecked_1)
+            size, gamma, batch_size, _, _, _, _, memory_size, _ = self.get_parameters(model)
+            self.ui.spinBoxSizeTrain.setValue(size)
+            self.ui.doubleSpinBoxGamma.setValue(gamma)
+            self.ui.spinBoxBatchSize.setValue(batch_size)
+            self.ui.spinBoxMemory.setValue(memory_size)
+            self.ui.checkBoxPlayer0.setChecked(not unchecked_0)
+            self.ui.checkBoxPlayer1.setChecked(not unchecked_1)
 
     def get_parameters(self, model=""):
         """
