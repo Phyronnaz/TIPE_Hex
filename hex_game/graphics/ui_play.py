@@ -205,11 +205,12 @@ class PlayUI:
         :return: new board
         """
         t = np.zeros(shape=board.shape)
-        m = abs(board).max() if abs(board).max() != 0 else 1
+        maxi = abs(board).max() if abs(board).max() != 0 else 1
+        mini = abs(board).min()
         for i in range(board.shape[0]):
             for j in range(board.shape[1]):
                 if q:
-                    t[i, j] = board[i, j] / m
+                    t[i, j] = (board[i, j] - mini * np.sign(board[i, j])) / (maxi - mini)
                 else:
                     if board[i, j] == -1:
                         t[i, j] = 0

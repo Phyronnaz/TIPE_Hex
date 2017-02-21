@@ -432,19 +432,48 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayoutLoad">
           <item>
-           <widget class="QCheckBox" name="checkBoxLoadModel">
+           <widget class="QCheckBox" name="checkBoxLoadPlayer0">
             <property name="text">
-             <string>Load model</string>
+             <string>Load Player 0</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEditLoadModel"/>
+           <widget class="QLineEdit" name="lineEditLoadPlayer0">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButtonLoad">
+           <widget class="QPushButton" name="pushButtonChoosePlayer0">
             <property name="text">
-             <string>Load</string>
+             <string>Choose</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QCheckBox" name="checkBoxLoadPlayer1">
+            <property name="text">
+             <string>Load Player 1</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="lineEditLoadPlayer1">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButtonChoosePlayer1">
+            <property name="text">
+             <string>Choose</string>
             </property>
            </widget>
           </item>
@@ -560,28 +589,25 @@
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
             </property>
             <item row="0" column="0">
-             <widget class="QLabel" name="label">
+             <widget class="QLabel" name="label_2">
               <property name="text">
-               <string>Opponent</string>
+               <string>Q Player is:</string>
               </property>
              </widget>
             </item>
             <item row="0" column="1">
-             <layout class="QHBoxLayout" name="horizontalLayout_4">
+             <layout class="QHBoxLayout" name="horizontalLayout_2">
               <item>
-               <widget class="QRadioButton" name="radioButtonQAI">
+               <widget class="QCheckBox" name="checkBoxPlayer0">
                 <property name="text">
-                 <string>Q AI</string>
-                </property>
-                <property name="checked">
-                 <bool>false</bool>
+                 <string>Player 0</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="radioButtonRandomAI">
+               <widget class="QCheckBox" name="checkBoxPlayer1">
                 <property name="text">
-                 <string>Random AI</string>
+                 <string>Player 1</string>
                 </property>
                 <property name="checked">
                  <bool>true</bool>
@@ -776,4 +802,8 @@
  <layoutdefault spacing="6" margin="11"/>
  <resources/>
  <connections/>
+ <buttongroups>
+  <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
+ </buttongroups>
 </ui>

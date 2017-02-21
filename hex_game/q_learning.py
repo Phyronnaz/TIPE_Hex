@@ -86,8 +86,8 @@ def get_random_action(board: np.ndarray, state: np.random.RandomState):
     return actions[0]
 
 
-def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, random_opponent, exploration_epochs,
-          train_epochs, memory_size, initial_model_path="", thread=None):
+def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs, train_epochs, memory_size,
+          q_players=(1,), initial_models_path=("", ""), thread=None):
     """
     Train the model=
     :return: model, dataframe
@@ -96,10 +96,14 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, random_oppone
     ##################
     ### Load model ###
     ##################
-    if initial_model_path == "":
-        model = init_model(size)
-    else:
-        model = keras.models.load_model(initial_model_path)
+    models = [None, None]
+
+    for player in range(2):
+        if player in q_players:
+            if initial_models_path[player] == "":
+                models[player] = init_model(size)
+            else:
+                models[player] = keras.models.load_model(initial_models_path[player])
 
     #####################
     ### Create arrays ###
@@ -109,20 +113,20 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, random_oppone
     winner_array = np.zeros(n)
     epsilon_array = np.zeros(n)
     random_move_array = np.zeros(n, dtype='bool')
-    loss_array = np.zeros(n)
+    loss_array_player0 = np.zeros(n)
+    loss_array_player1 = np.zeros(n)
     move_count_array = np.zeros(n)
 
     #####################
-    ### Create memory ###
+    ### Create memories ###
     #####################
-    memory = deque()
+    memories = [deque(), deque()]
 
     ###########################
     ### Initialize counters ###
     ###########################
     array_counter = 0
     last_array_counter = 0
-    memory_counter = 0
 
     rewards = {"won": 1, "lost": -1, "error": -10, "nothing": 0}
 
@@ -142,14 +146,14 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, random_oppone
             if epoch % 1000 == 0:
                 l = last_array_counter
                 a = array_counter
-                loss_log = loss_array[l:a][(loss_array[l:a] != 0) &
-                                           np.logical_not(np.isnan(loss_array[l:a]))].mean()
+                loss_log_player0 = loss_array_player0[l:a][np.logical_not(np.isnan(loss_array_player0[l:a]))].mean()
+                loss_log_player1 = loss_array_player1[l:a][np.logical_not(np.isnan(loss_array_player1[l:a]))].mean()
                 w = winner_array[l:a]
                 c = (w != -1).sum()
                 player0 = (w == 0).sum() / c * 100
                 player1 = (w == 1).sum() / c * 100
                 error = (w == 2).sum() / c * 100
-                thread.log(epoch, loss_log, player0, player1, error)
+                thread.log(epoch, loss_log_player0, loss_log_player1, player0, player1, error)
                 last_array_counter = array_counter
 
         #######################
@@ -186,11 +190,11 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, random_oppone
         #################
         while True:
             random_move = np.nan
-            loss = np.nan
+            losses = [np.nan, np.nan]
 
             other_player = 1 - current_player
-            current_player_is_q = not random_opponent or current_player == 1
-            other_player_is_q = not random_opponent or other_player == 1
+            current_player_is_q = current_player in q_players
+            other_player_is_q = other_player in q_players
 
             ################################################
             ### If game already ended, just update model ###
@@ -210,7 +214,7 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, random_oppone
                     if random_move:
                         action = get_random_action(board, q_random_state)  # Limit regret
                     else:
-                        action = get_action(model, split_board)
+                        action = get_action(models[current_player], split_board)
 
                     # Save action and split board
                     actions[current_player] = action
@@ -238,6 +242,7 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, random_oppone
                     #
                     # Error: Update current player and quit
                     #
+                    memory = memories[current_player]
                     action = actions[current_player]
                     old_state = states[current_player]
                     reward = rewards["error"]
@@ -247,6 +252,7 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, random_oppone
                     #
                     # Update other player
                     #
+                    memory = memories[other_player]
                     action = actions[other_player]
                     old_state = states[other_player]
                     # Get update
@@ -270,30 +276,33 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, random_oppone
             ########################
             ### Learn from memory ##
             ########################
-            if len(memory) == memory_size:
-                X = np.zeros((batch_size, 3 * size ** 2))
-                Y = np.zeros((batch_size, size ** 2))
+            for player in range(2):
+                model = models[player]
+                memory = memories[player]
+                if len(memory) == memory_size:
+                    X = np.zeros((batch_size, 3 * size ** 2))
+                    Y = np.zeros((batch_size, size ** 2))
 
-                minibatch = random.sample(memory, batch_size)
+                    minibatch = random.sample(memory, batch_size)
 
-                for i in range(batch_size):
-                    old_state, action, new_state, reward, terminal = minibatch[i]
+                    for i in range(batch_size):
+                        old_state, action, new_state, reward, terminal = minibatch[i]
 
-                    [old_q_values] = model.predict(np.array([old_state]))
+                        [old_q_values] = model.predict(np.array([old_state]))
 
-                    if terminal:
-                        update = reward
-                    else:
-                        [new_q_values] = model.predict(np.array([new_state]))
-                        update = reward + gamma * max(new_q_values)
+                        if terminal:
+                            update = reward
+                        else:
+                            [new_q_values] = model.predict(np.array([new_state]))
+                            update = reward + gamma * max(new_q_values)
 
-                    old_q_values[action] = update
+                        old_q_values[action] = update
 
-                    X[i] = old_state
-                    Y[i] = old_q_values
+                        X[i] = old_state
+                        Y[i] = old_q_values
 
-                loss = model.train_on_batch(X, Y)
-                memory.clear()
+                    losses[player] = model.train_on_batch(X, Y)
+                    memory.clear()
 
             ###########
             ### Log ###
@@ -302,7 +311,8 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, random_oppone
             winner_array[array_counter] = winner
             epsilon_array[array_counter] = epsilon
             random_move_array[array_counter] = random_move
-            loss_array[array_counter] = loss
+            loss_array_player0[array_counter] = losses[0]
+            loss_array_player1[array_counter] = losses[1]
             move_count_array[array_counter] = move_count
 
             ########################
@@ -329,10 +339,11 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, random_oppone
                            winner=winner_array[:array_counter],
                            epsilon=epsilon_array[:array_counter],
                            random_move=random_move_array[:array_counter],
-                           loss=loss_array[:array_counter],
+                           loss_player0=loss_array_player0[:array_counter],
+                           loss_player1=loss_array_player1[:array_counter],
                            move_count=move_count_array[:array_counter]
                            ))
     ###########
     ### End ###
     ###########
-    return model, df
+    return models, df

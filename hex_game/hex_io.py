@@ -5,25 +5,31 @@ version = 0
 save_dir = os.path.expanduser("~") + "/notebooks/saves/V{}/".format(version)
 
 
-def save_model_and_df(model, df, size, gamma, batch_size, initial_epsilon, final_epsilon, random_opponent,
-                      exploration_epochs, train_epochs, memory_size):
+def save_models_and_df(models, df, size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs,
+                       train_epochs, memory_size, q_players):
     """
     Save a model and a dataframe
     :param model: model
     :param df: dataframe
     """
-    name = get_save_name(size, gamma, batch_size, initial_epsilon, final_epsilon, random_opponent, exploration_epochs,
-                         train_epochs, memory_size)
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
-    model.save(save_dir + name + ".model")
+
+    # Save models
+    for i in range(2):
+        if models[i] is not None:
+            name = get_save_name(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs,
+                                 train_epochs, memory_size, q_players, i)
+            models[i].save(save_dir + name + ".model")
+
+    # Save dataframe
+    name = get_save_name(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs, train_epochs,
+                         memory_size, q_players)
     df.to_hdf(save_dir + name + ".hdf5", 'name', complevel=9, complib='blosc')
-    del model
-    del df
 
 
-def get_save_name(size, gamma, batch_size, initial_epsilon, final_epsilon, random_opponent, exploration_epochs,
-                  train_epochs, memory_size):
+def get_save_name(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs, train_epochs,
+                  memory_size, q_players, player="all"):
     """
     Get the save name corresponding to the arguments
     :return: name
@@ -38,14 +44,16 @@ def get_save_name(size, gamma, batch_size, initial_epsilon, final_epsilon, rando
     name += '{:.5f}'.format(initial_epsilon)
     name += "-final_epsilon-"
     name += '{:.5f}'.format(final_epsilon)
-    name += "-random_opponent-"
-    name += str(random_opponent)
     name += "-exploration_epochs-"
     name += str(exploration_epochs)
     name += "-train_epochs-"
     name += str(train_epochs)
     name += "-memory_size-"
     name += str(memory_size)
+    name += "-q_players-"
+    name += str(q_players)
+    name += "-player-"
+    name += str(player)
     name += "-date-"
     name += datetime.now().strftime("%Y_%m_%d_%H:%M:%S")
     return name
@@ -55,7 +63,7 @@ def get_parameters(name: str):
     """
     Return the parameters of a name
     :param name: can be a path
-    :return: size, gamma, batch_size, initial_epsilon, final_epsilon, random_opponent, exploration_epochs, train_epochs, memory_size
+    :return: size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs, train_epochs, memory_size, q_players, player
     """
     s = name.split("/")[-1].split("\\")[-1].rsplit(".", 1)[0]
     l = s.split("-")
@@ -64,15 +72,17 @@ def get_parameters(name: str):
            int(l[l.index("batch_size") + 1]), \
            float(l[l.index("initial_epsilon") + 1]), \
            float(l[l.index("final_epsilon") + 1]), \
-           bool(l[l.index("random_opponent") + 1]), \
            int(l[l.index("exploration_epochs") + 1]), \
            int(l[l.index("train_epochs") + 1]), \
-           int(l[l.index("memory_size") + 1])
+           int(l[l.index("memory_size") + 1]), \
+           [0, 1] if len(l[l.index("q_players") + 1]) == 6 else [int(l[l.index("q_players") + 1][1])], \
+           l[l.index("player") + 1]
 
 
 def get_pretty_name(*parameters):
     """
     Return pretty name
-    :param: parameters: size, gamma, batch_size, initial_epsilon, final_epsilon, random_opponent, exploration_epochs, train_epochs, memory_size
+    :param: parameters: size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs, train_epochs, memory_size, q_players, player
     """
-    return "Size {}; Gamma {}; Batch Size {}; Epsilon {}-{}; Random opponent: {}; Exploration epochs {}; Train epochs {}; Memory Size {}".format(*parameters)
+    return "Size {}; Gamma {}; Batch Size {}; Epsilon {}-{}; Exploration epochs {}; Train epochs {}; Memory Size {}; Q Players: {}; Player {}".format(
+        *parameters)

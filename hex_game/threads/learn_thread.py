@@ -6,16 +6,17 @@ from hex_game.q_learning import learn
 
 
 class LearnThread(threading.Thread):
-    def __init__(self, parameters, model):
+    def __init__(self, parameters, models):
         threading.Thread.__init__(self)
 
-        self.n = parameters[6] + parameters[7]
+        self.n = parameters[5] + parameters[6]
 
         self.parameters = parameters
-        self.model = model
+        self.models = models
 
         self.epoch_log = np.zeros(self.n)
-        self.loss_log = np.zeros(self.n)
+        self.loss_log_player0 = np.zeros(self.n)
+        self.loss_log_player1 = np.zeros(self.n)
         self.player0_log = np.zeros(self.n)
         self.player1_log = np.zeros(self.n)
         self.error_log = np.zeros(self.n)
@@ -32,7 +33,7 @@ class LearnThread(threading.Thread):
     def run(self):
         self.stop = False
         self.learning = True
-        hex_io.save_model_and_df(*learn(*self.parameters, initial_model_path=self.model, thread=self), *self.parameters)
+        hex_io.save_models_and_df(*learn(*self.parameters, self.models, thread=self), *self.parameters)
         self.learning = False
 
     def get_progress(self):
@@ -42,7 +43,7 @@ class LearnThread(threading.Thread):
         """
         return self.current_epoch / self.n
 
-    def log(self, epoch, loss, player0, player1, error):
+    def log(self, epoch, loss_log_player0, loss_log_player1, player0, player1, error):
         """
         Add a row to the logs
         :param epoch: epoch
@@ -52,7 +53,8 @@ class LearnThread(threading.Thread):
         :param error: percentage of game ended with an error
         """
         self.epoch_log[self.index] = epoch
-        self.loss_log[self.index] = loss
+        self.loss_log_player0[self.index] = loss_log_player0
+        self.loss_log_player1[self.index] = loss_log_player1
         self.player0_log[self.index] = player0
         self.player1_log[self.index] = player1
         self.error_log[self.index] = error

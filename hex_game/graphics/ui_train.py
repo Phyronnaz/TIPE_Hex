@@ -19,19 +19,26 @@ class TrainUI:
         self.ui.spinBoxBatchSize.valueChanged.connect(self.update_save_name)
         self.ui.doubleSpinBoxInitialEpsilon.valueChanged.connect(self.update_save_name)
         self.ui.doubleSpinBoxFinalEpsilon.valueChanged.connect(self.update_save_name)
-        self.ui.radioButtonRandomAI.pressed.connect(self.update_save_name)
-        self.ui.radioButtonQAI.pressed.connect(self.update_save_name)
         self.ui.spinBoxExplorationEpochs.valueChanged.connect(self.update_save_name)
         self.ui.spinBoxTrainEpochs.valueChanged.connect(self.update_save_name)
         self.ui.spinBoxMemory.valueChanged.connect(self.update_save_name)
+        self.ui.checkBoxPlayer0.clicked.connect(self.update_save_name)
+        self.ui.checkBoxPlayer1.clicked.connect(self.update_save_name)
+        self.ui.checkBoxLoadPlayer0.clicked.connect(self.update_save_name)
+        self.ui.checkBoxLoadPlayer1.clicked.connect(self.update_save_name)
 
-        self.ui.checkBoxLoadModel.clicked.connect(self.check_box)
+        self.ui.checkBoxLoadPlayer0.clicked.connect(lambda: self.check_box_load(0))
+        self.ui.checkBoxLoadPlayer1.clicked.connect(lambda: self.check_box_load(1))
+
+        self.ui.checkBoxPlayer0.clicked.connect(lambda: self.check_box(0))
+        self.ui.checkBoxPlayer1.clicked.connect(lambda: self.check_box(1))
 
         self.last_index = 0
-        self.model = ""
+        self.models = ["", ""]
         self.thread = None  # type: LearnThread
 
-        self.ui.pushButtonLoad.pressed.connect(self.load)
+        self.ui.pushButtonChoosePlayer0.pressed.connect(lambda: self.choose_player(0))
+        self.ui.pushButtonChoosePlayer1.pressed.connect(lambda: self.choose_player(1))
         self.ui.pushButtonTrain.pressed.connect(self.train_button)
 
         self.update_save_name()
@@ -66,7 +73,9 @@ class TrainUI:
 
             # Plot
             self.widgetPlot.loss.plot(self.thread.epoch_log[:self.thread.index],
-                                      self.thread.loss_log[:self.thread.index], 'o-')
+                                      self.thread.loss_log_player0[:self.thread.index], 'v-')
+            self.widgetPlot.loss.plot(self.thread.epoch_log[:self.thread.index],
+                                      self.thread.loss_log_player1[:self.thread.index], 'o-')
             self.widgetPlot.winner.plot(self.thread.epoch_log[:self.thread.index],
                                         self.thread.player0_log[:self.thread.index], 'v-')
             self.widgetPlot.winner.plot(self.thread.epoch_log[:self.thread.index],
@@ -91,23 +100,26 @@ class TrainUI:
             if text is not None:
                 self.ui.progressBarTrain.setFormat(text)
 
-    def load(self):
+    def choose_player(self, player):
         """
         Open file dialog to load model to continue training
         """
         f, g = QFileDialog.getOpenFileName(self.ui.centralWidget, "Open file", "", "Model (*.model)")
 
         if f != "":
-            self.model = f
+            self.models[player] = f
             try:
-                self.get_parameters()
+                self.get_parameters(self.models[player])
             except ValueError:
-                self.model = ""
+                self.models[player] = ""
                 msg_box = QMessageBox()
                 msg_box.setText("Bad naming")
                 msg_box.setWindowTitle("Error")
                 msg_box.exec_()
-            self.ui.lineEditLoadModel.setText(self.model)
+            if player == 0:
+                self.ui.lineEditLoadPlayer0.setText(self.models[player])
+            else:
+                self.ui.lineEditLoadPlayer1.setText(self.models[player])
 
     def train_button(self):
         """
@@ -124,49 +136,67 @@ class TrainUI:
         """
         self.ui.lineEditSaveName.setText(hex_io.save_dir + hex_io.get_save_name(*self.get_parameters()))
 
-    def check_box(self):
-        b = not self.ui.checkBoxLoadModel.isChecked()
-        self.ui.spinBoxSizeTrain.setEnabled(b)
-        self.ui.doubleSpinBoxGamma.setEnabled(b)
-        self.ui.spinBoxBatchSize.setEnabled(b)
-        self.ui.spinBoxMemory.setEnabled(b)
-        if not b:
-            self.set_parameters()
+    def check_box(self, player):
+        unchecked_0 = not self.ui.checkBoxPlayer0.isChecked()
+        unchecked_1 = not self.ui.checkBoxPlayer1.isChecked()
+        both_unchecked = unchecked_0 and unchecked_1
+        if both_unchecked:
+            if player == 0:
+                self.ui.checkBoxPlayer0.setChecked(True)
+            else:
+                self.ui.checkBoxPlayer1.setChecked(True)
+        self.update_save_name()
 
-    def set_parameters(self):
-        if self.model != "" and self.ui.checkBoxLoadModel.isChecked():
-            size, gamma, batch_size, _, _, _, _, _, memory_size = self.get_parameters()
-            self.ui.spinBoxSizeTrain.setValue(size)
-            self.ui.doubleSpinBoxGamma.setValue(gamma)
-            self.ui.spinBoxBatchSize.setValue(batch_size)
-            self.ui.spinBoxMemory.setValue(memory_size)
+    def check_box_load(self, player):
+        unchecked_0 = not self.ui.checkBoxLoadPlayer0.isChecked()
+        unchecked_1 = not self.ui.checkBoxLoadPlayer1.isChecked()
+        both_unchecked = unchecked_0 and unchecked_1
 
-    def get_parameters(self):
+        self.ui.spinBoxSizeTrain.setEnabled(both_unchecked)
+        self.ui.doubleSpinBoxGamma.setEnabled(both_unchecked)
+        self.ui.spinBoxBatchSize.setEnabled(both_unchecked)
+        self.ui.spinBoxMemory.setEnabled(both_unchecked)
+        self.ui.checkBoxPlayer0.setEnabled(unchecked_0)
+        self.ui.checkBoxPlayer1.setEnabled(unchecked_1)
+
+        model = self.models[player]
+
+        size, gamma, batch_size, _, _, _, _, memory_size, _ = self.get_parameters(model)
+        self.ui.spinBoxSizeTrain.setValue(size)
+        self.ui.doubleSpinBoxGamma.setValue(gamma)
+        self.ui.spinBoxBatchSize.setValue(batch_size)
+        self.ui.spinBoxMemory.setValue(memory_size)
+        self.ui.checkBoxPlayer0.setChecked(not unchecked_0)
+        self.ui.checkBoxPlayer1.setChecked(not unchecked_1)
+
+    def get_parameters(self, model=""):
         """
         Get the parameters for train
-        :return: size, gamma, batch_size, initial_epsilon, final_epsilon, random_opponent, exploration_epochs, train_epochs, memory_size
+        :return: size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs, train_epochs, memory_size, q_players
         """
-        if self.model == "":
+        b0, b1 = self.ui.checkBoxPlayer0.isChecked(), self.ui.checkBoxPlayer1.isChecked()
+        if model == "":
             return self.ui.spinBoxSizeTrain.value(), \
                    self.ui.doubleSpinBoxGamma.value(), \
                    self.ui.spinBoxBatchSize.value(), \
                    self.ui.doubleSpinBoxInitialEpsilon.value(), \
                    self.ui.doubleSpinBoxFinalEpsilon.value(), \
-                   self.ui.radioButtonRandomAI.isChecked(), \
                    self.ui.spinBoxExplorationEpochs.value(), \
                    self.ui.spinBoxTrainEpochs.value(), \
-                   self.ui.spinBoxMemory.value()
+                   self.ui.spinBoxMemory.value(), \
+                   [] + ([0] if b0 else []) + ([1] if b1 else [])
+
         else:
-            size, gamma, batch_size, _, _, _, _, _, _ = hex_io.get_parameters(self.model)
+            size, gamma, batch_size, _, _, _, _, memory_size, _, _ = hex_io.get_parameters(model)
             return size, \
                    gamma, \
                    batch_size, \
                    self.ui.doubleSpinBoxInitialEpsilon.value(), \
                    self.ui.doubleSpinBoxFinalEpsilon.value(), \
-                   self.ui.radioButtonRandomAI.isChecked(), \
                    self.ui.spinBoxExplorationEpochs.value(), \
                    self.ui.spinBoxTrainEpochs.value(), \
-                   self.ui.spinBoxMemory.value()
+                   memory_size, \
+                   [] + ([0] if b0 else []) + ([1] if b1 else [])
 
     def set_busy(self, busy):
         """
@@ -202,7 +232,7 @@ class TrainUI:
         """
         Start training
         """
-        self.thread = LearnThread(self.get_parameters(), self.model)
+        self.thread = LearnThread(self.get_parameters(), self.models)
         self.thread.start()
         self.set_busy(True)
 

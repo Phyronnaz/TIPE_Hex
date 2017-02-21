@@ -87,7 +87,7 @@ class ResultsUI:
 
         # Winner
 
-        index, player0, player1, error, loss = self.get_arrays(row)
+        index, player0, player1, error, loss_player0, loss_player1 = self.get_arrays(row)
 
         self.widgetPlot.winner.plot(index, player0, 'v-',
                                     index, player1, 'o-',
@@ -95,8 +95,8 @@ class ResultsUI:
                                     c=color, markersize=5)
 
         # Loss
-        # self.widgetPlot.loss.plot(df["epoch"], df["loss"], 'ro', markersize=1, c=color)
-        self.widgetPlot.loss.plot(index, loss, c=color)
+        self.widgetPlot.loss.plot(index, loss_player0, 'v-', c=color, markersize=5)
+        self.widgetPlot.loss.plot(index, loss_player1, 'o-', c=color, markersize=5)
 
         # Draw
         self.widgetPlot.draw()
@@ -104,7 +104,7 @@ class ResultsUI:
     def get_arrays(self, row):
         if row not in self.cache:
             df = self.dataframes[row]
-            _, _, _, _, _, _, exploration_epochs, train_epochs, _ = hex_io.get_parameters(self.paths[row])
+            _, _, _, _, _, exploration_epochs, train_epochs, _, _, _ = hex_io.get_parameters(self.paths[row])
             n = exploration_epochs + train_epochs
             k = int(round(n / 25000 + 0.5) * 1000)
             c_start = 0
@@ -113,17 +113,19 @@ class ResultsUI:
             player0 = np.zeros(c_end - c_start)
             player1 = np.zeros(c_end - c_start)
             error = np.zeros(c_end - c_start)
-            loss = np.zeros(c_end - c_start)
+            loss_player0 = np.zeros(c_end - c_start)
+            loss_player1 = np.zeros(c_end - c_start)
             index = np.zeros(c_end - c_start)
             for i in range(c_start, c_end):
                 index[i - c_start] = k * i
                 m = (i * k < df.epoch) & (df.epoch < (i + 1) * k)
-                loss[i] = df.loss[m].mean()
+                loss_player0[i] = df.loss_player0[m].mean()
+                loss_player1[i] = df.loss_player1[m].mean()
                 w = df.winner[m]
                 x = (w != -1).sum()
                 if x != 0:
                     player0[i - c_start] = (w == 0).sum() / x * 100
                     player1[i - c_start] = (w == 1).sum() / x * 100
                     error[i - c_start] = (w == 2).sum() / x * 100
-            self.cache[row] = index, player0, player1, error, loss
+            self.cache[row] = index, player0, player1, error, loss_player0, loss_player1
         return self.cache[row]
