@@ -18,6 +18,8 @@ class ResultsUI:
         self.paths = []
         self.cache = dict()
         self.ui.listWidgetResults.itemChanged.connect(self.reload_plots)
+        self.ui.pushButtonRefresh.pressed.connect(self.reload_plots)
+        self.create_combox_box()
 
     def create_plot_and_toolbar(self):
         """
@@ -29,13 +31,22 @@ class ResultsUI:
         self.ui.widgetResultsPlot.deleteLater()
         self.ui.widgetResultsToolbar.deleteLater()
 
-        self.ui.widgetResultsPlot = ResultsPlot(self.ui.resultsTab, width=3, height=3, dpi=100)
+        self.ui.widgetResultsPlot = ResultsPlot(self.ui.resultsTab, width=5, height=5, dpi=80)
         self.ui.widgetResultsPlot.setObjectName("widgetResultsPlot")
         self.ui.verticalLayoutResults.addWidget(self.ui.widgetResultsPlot)
 
         self.ui.widgetResultsToolbar = NavigationToolbar(self.ui.widgetResultsPlot, self.ui.resultsTab)
         self.ui.widgetResultsToolbar.setObjectName("widgetResultsToolbar")
         self.ui.verticalLayoutResults.addWidget(self.ui.widgetResultsToolbar)
+
+    def create_combox_box(self):
+        for s in ["size", "gamma", "initial_epsilon", "final_epsilon", "exploration_epochs", "train_epochs",
+                  "memory_size", "batch_size"]:
+            self.ui.comboBoxColorVariable.addItem(s)
+        l = list(cm.cmap_d.keys())
+        l.sort()
+        for s in l:
+            self.ui.comboBoxColorMaps.addItem(s)
 
     def add_result(self, path):
         """
@@ -50,13 +61,14 @@ class ResultsUI:
 
         self.widgetPlot.names.append(name)
         self.widgetPlot.plot_enabled.append(True)
-        self.widgetPlot.colors.append(cm.get_cmap("Set1")(len(self.widgetPlot.colors)))
+
+        self.widgetPlot.colors.append("black")
 
         item = QListWidgetItem(name, self.ui.listWidgetResults)
         item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
         item.setCheckState(QtCore.Qt.Checked)
 
-    def reload_plots(self):
+    def reload_plots(self, *args):
         """
         Clear plots and redraw
         """
@@ -65,6 +77,10 @@ class ResultsUI:
             checked = item.checkState() != 0
             self.widgetPlot.plot_enabled[row] = checked
 
+            x = hex_io.get_parameters_dict(self.paths[row])[self.ui.comboBoxColorVariable.currentText()]
+            x /= self.ui.doubleSpinBoxMaxPlot.value()
+            self.widgetPlot.colors[row] = cm.get_cmap(self.ui.comboBoxColorMaps.currentText())(x)
+
         self.widgetPlot.clear()
 
         for row in range(self.ui.listWidgetResults.count()):
@@ -72,6 +88,7 @@ class ResultsUI:
             checked = item.checkState() != 0
             if checked:
                 self.plot(row)
+        self.widgetPlot.draw()
 
     def plot(self, row):
         """
@@ -97,9 +114,6 @@ class ResultsUI:
         # Loss
         self.widgetPlot.loss.plot(index, loss_player0, 'v-', c=color, markersize=5)
         self.widgetPlot.loss.plot(index, loss_player1, 'o-', c=color, markersize=5)
-
-        # Draw
-        self.widgetPlot.draw()
 
     def get_arrays(self, row):
         if row not in self.cache:

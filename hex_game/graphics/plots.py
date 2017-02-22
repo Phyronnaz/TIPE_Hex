@@ -23,6 +23,7 @@ class ResultsPlot(FigureCanvas):
         self.plot_enabled = []
         self.colors = []
         self.name_plots()
+        self.draw()
 
     def name_plots(self):
         # Epsilon
@@ -55,8 +56,6 @@ class ResultsPlot(FigureCanvas):
                 lines.append(mlines.Line2D([], [], color=self.colors[i], label=self.names[i], marker="o"))
         self.legend.remove()
         self.legend = self.fig.legend(lines, self.names, 'lower right')
-
-        self.draw()
 
     def clear(self):
         self.epsilon.cla()

@@ -79,6 +79,12 @@ def get_parameters(name: str):
            l[l.index("player") + 1]
 
 
+def get_parameters_dict(name: str):
+    s, g, bs, ie, fe, ee, te, ms, qp, p = get_parameters(name)
+    return {"size": s, "gamma": g, "batch_size": bs, "initial_epsilon": ie, "final_epsilon": fe,
+            "exploration_epochs": ee, "train_epochs": te, "memory_size": ms, "q_players": qp, "player": p}
+
+
 def get_pretty_name(*parameters):
     """
     Return pretty name
