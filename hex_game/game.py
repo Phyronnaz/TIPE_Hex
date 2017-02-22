@@ -1,5 +1,6 @@
 import keras.models
 import numpy as np
+import tensorflow as tf
 from hex_game.main import play_move, can_play_move, init_board, get_random_move
 from hex_game.winner_check import check_for_winner, init_winner_matrix_and_counter
 from hex_game.q_learning import get_move_q_learning, get_split_board
@@ -27,15 +28,12 @@ class Game:
 
         self.aux_boards = [np.zeros((size, size)), np.zeros((size, size))]
 
-        self.models = [None, None]
         self.depths = [0, 0]
         self.random_states = [np.random.RandomState(), np.random.RandomState()]
 
         for i in range(2):
             if players[i][0] == "Minimax":
                 self.depths[i] = players[i][1]
-            elif players[i][0] == "Q learning":
-                self.models[i] = keras.models.load_model(players[i][1])
 
     def play_move(self, move):
         if self.winner == -1:
@@ -60,11 +58,15 @@ class Game:
         elif name == "Random":
             self.play_move(get_random_move(self.board, self.random_states[self.player]))
         elif name == "Q learning":
-            model = self.models[self.player]
+            config = tf.ConfigProto()
+            sess = tf.Session(config=config)
+            keras.backend.set_session(sess)
+            with sess.graph.as_default():
+                model = keras.models.load_model(self.players[self.player][1])
 
-            move = get_move_q_learning(self.board, self.player, model)
+                move = get_move_q_learning(self.board, self.player, model)
 
-            [q_values] = model.predict(np.array([get_split_board(self.board, self.player)]))
+                [q_values] = model.predict(np.array([get_split_board(self.board, self.player)]))
 
             t = q_values.reshape((self.size, self.size))
             if self.player == 1:

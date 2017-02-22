@@ -17,8 +17,8 @@ class ResultsUI:
         self.dataframes = []
         self.paths = []
         self.cache = dict()
-        self.ui.listWidgetResults.itemChanged.connect(self.reload_plots)
         self.ui.pushButtonRefresh.pressed.connect(self.reload_plots)
+        self.ui.pushButtonClear.pressed.connect(self.clear)
         self.create_combox_box()
 
     def create_plot_and_toolbar(self):
@@ -68,6 +68,19 @@ class ResultsUI:
         item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
         item.setCheckState(QtCore.Qt.Checked)
 
+    def clear(self):
+        for df in self.dataframes:
+            del df
+        self.ui.listWidgetResults.clear()
+        self.dataframes = []
+        self.paths = []
+        self.cache = dict()
+        self.widgetPlot.names = []
+        self.widgetPlot.plot_enabled = []
+        self.widgetPlot.colors = []
+        self.widgetPlot.clear()
+        self.widgetPlot.draw()
+
     def reload_plots(self, *args):
         """
         Clear plots and redraw
@@ -82,6 +95,9 @@ class ResultsUI:
             self.widgetPlot.colors[row] = cm.get_cmap(self.ui.comboBoxColorMaps.currentText())(x)
 
         self.widgetPlot.clear()
+        for i in range(len(self.widgetPlot.names)):
+            print(self.widgetPlot.names[i])
+            print(self.widgetPlot.plot_enabled[i])
 
         for row in range(self.ui.listWidgetResults.count()):
             item = self.ui.listWidgetResults.item(row)
