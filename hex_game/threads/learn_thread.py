@@ -3,6 +3,8 @@ import datetime
 import numpy as np
 from hex_game import hex_io
 from hex_game.q_learning import learn
+import keras.backend
+import tensorflow as tf
 
 
 class LearnThread(threading.Thread):
@@ -34,7 +36,11 @@ class LearnThread(threading.Thread):
         self.stop = False
         self.learning = True
         print("Learning started")
-        hex_io.save_models_and_df(*learn(*self.parameters, self.models, thread=self), *self.parameters)
+        config = tf.ConfigProto()
+        sess = tf.Session(config=config)
+        keras.backend.set_session(sess)
+        with sess.graph.as_default():
+            hex_io.save_models_and_df(*learn(*self.parameters, self.models, thread=self), *self.parameters)
         print("Learning ended")
         self.learning = False
 
@@ -73,7 +79,7 @@ class LearnThread(threading.Thread):
         total = int(elapsed * self.n / (epoch + 1))
 
         self.elapsed_time = datetime.timedelta(seconds=elapsed)
-        self.remaining_time = datetime.timedelta(seconds=total - elapsed)
+        self.remaining_time = datetime.timedelta(seconds=max(total - elapsed, 0))
 
         print("Current epoch: {}; Remaining time: {}; Elapsed time: {}".format(self.current_epoch, self.remaining_time,
                                                                                self.elapsed_time))

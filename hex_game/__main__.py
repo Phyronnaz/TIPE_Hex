@@ -18,10 +18,10 @@ def iterator(s: str, f):
     if len(l) == 1:
         yield f(s)
     elif len(l) == 3:
-        [start, step, end] = f(l[0]), f(l[1]), f(l[2])
+        [start, end, step] = f(l[0]), f(l[1]), f(l[2])
         x = start
         while x < end:
-            yield x
+            yield f(str(x))
             x += step
     else:
         raise ValueError
@@ -51,34 +51,35 @@ else:
         except ValueError:
             pass
 
-        size_iterator = iterator(get_value(l, "size"), int)
-        gamma_iterator = iterator(get_value(l, "gamma"), float)
-        initial_epsilon_iterator = iterator(get_value(l, "initial_epsilon"), float)
-        final_epsilon_iterator = iterator(get_value(l, "final_epsilon"), float)
-        exploration_epoch_iterator = iterator(get_value(l, "exploration_epochs"), int)
-        train_epochs_iterator = iterator(get_value(l, "train_epochs"), int)
-        memory_size_iterator = iterator(get_value(l, "memory_size"), int)
-        batch_size_iterator = iterator(get_value(l, "batch_size"), int)
-
         first_q = ("--first_q", '') in l
         second_q = ("--second_q", '') in l
 
         q_players = [] + ([0] if first_q else []) + ([1] if second_q else [])
 
+        f = lambda n: lambda s: round(float(s), n)
+
+        size_iterator = iterator(get_value(l, "size"), int)
         for size in size_iterator:
+            gamma_iterator = iterator(get_value(l, "gamma"), f(2))
             for gamma in gamma_iterator:
+                initial_epsilon_iterator = iterator(get_value(l, "initial_epsilon"), f(5))
                 for initial_epsilon in initial_epsilon_iterator:
+                    final_epsilon_iterator = iterator(get_value(l, "final_epsilon"), f(5))
                     for final_epsilon in final_epsilon_iterator:
+                        exploration_epoch_iterator = iterator(get_value(l, "exploration_epochs"), int)
                         for exploration_epochs in exploration_epoch_iterator:
+                            train_epochs_iterator = iterator(get_value(l, "train_epochs"), int)
                             for train_epochs in train_epochs_iterator:
+                                memory_size_iterator = iterator(get_value(l, "memory_size"), int)
                                 for memory_size in memory_size_iterator:
+                                    batch_size_iterator = iterator(get_value(l, "batch_size"), int)
                                     for batch_size in batch_size_iterator:
                                         parameters = (size, gamma, batch_size, initial_epsilon, final_epsilon,
                                                       exploration_epochs, train_epochs, memory_size, q_players)
 
                                         print(hex_io.get_pretty_name(*(parameters + ("all",))))
                                         thread = LearnThread(parameters, ["", ""])
-                                        thread.start()
+                                        thread.run()
     except ValueError as e:
         print(e)
         print(args)
