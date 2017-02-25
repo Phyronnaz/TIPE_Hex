@@ -90,7 +90,7 @@ def get_random_action(board: np.ndarray, state: np.random.RandomState):
 def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs, train_epochs, memory_size,
           q_players=(1,), allow_freeze=(0, 1), initial_models_path=("", ""), thread=None):
     """
-    Train the model=
+    Train the model
     :return: model, dataframe
     """
 
@@ -145,7 +145,7 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
         ##################
         ### Thread Log ###
         ##################
-        if epoch % 100 == 0 and thread is not None:
+        if epoch % 100 == 0:
             thread.set_epoch(epoch)
             if epoch % 1000 == 0:
                 l = last_array_counter
@@ -165,11 +165,13 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
                     frozen_players = [0]
                 elif player1 > 75 and 1 in allow_freeze:
                     frozen_players = [1]
+                else:
+                    frozen_players = []
 
         #######################
         ### Break main loop ###
         #######################
-        if epoch >= exploration_epochs + train_epochs or (thread is not None and thread.stop):
+        if epoch >= exploration_epochs + train_epochs or thread.stop:
             break
 
         ###################
