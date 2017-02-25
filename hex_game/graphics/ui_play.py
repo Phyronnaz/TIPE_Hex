@@ -119,7 +119,7 @@ class PlayUI:
         self.ui.listWidgetModels.addItems([hex_io.get_pretty_name(*hex_io.get_parameters(m)) for m in self.models])
 
         pretty_names = [hex_io.get_pretty_name(*hex_io.get_parameters(n)) for n in self.models if
-                        hex_io.get_parameters(n)[0] == self.size]
+                        hex_io.get_parameters_dict(n)["size"] == self.size]
         players = ["Human", "Minimax", "Random"] + pretty_names
 
         self.ui.comboBoxPlayer1.clear()

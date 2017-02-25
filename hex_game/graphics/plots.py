@@ -40,6 +40,7 @@ class ResultsPlot(FigureCanvas):
         self.winner.set_title("Winner")
         self.winner.set_xlabel("epoch")
         self.winner.set_ylabel("percentage")
+        self.winner.set_ybound(0, 100)
 
         labels = ["Player 0", "Player 1", "error"]
         markers = ["v", "o", "P"]
@@ -93,6 +94,7 @@ class TrainPlot(FigureCanvas):
         self.winner.set_title("Winner")
         self.winner.set_xlabel("epoch")
         self.winner.set_ylabel("percentage")
+        self.winner.set_ybound(0, 100)
 
         labels = ["Player 0", "Player 1", "error"]
         markers = ["v", "o", "P"]

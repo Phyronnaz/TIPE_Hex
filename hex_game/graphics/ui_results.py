@@ -95,9 +95,6 @@ class ResultsUI:
             self.widgetPlot.colors[row] = cm.get_cmap(self.ui.comboBoxColorMaps.currentText())(x)
 
         self.widgetPlot.clear()
-        for i in range(len(self.widgetPlot.names)):
-            print(self.widgetPlot.names[i])
-            print(self.widgetPlot.plot_enabled[i])
 
         for row in range(self.ui.listWidgetResults.count()):
             item = self.ui.listWidgetResults.item(row)
@@ -126,6 +123,7 @@ class ResultsUI:
                                     index, player1, 'o-',
                                     index, error, 'P-',
                                     c=color, markersize=5)
+        self.widgetPlot.winner.set_ybound(0, 100)
 
         # Loss
         self.widgetPlot.loss.plot(index, loss_player0, 'v-', c=color, markersize=5)
@@ -134,7 +132,8 @@ class ResultsUI:
     def get_arrays(self, row):
         if row not in self.cache:
             df = self.dataframes[row]
-            _, _, _, _, _, exploration_epochs, train_epochs, _, _, _ = hex_io.get_parameters(self.paths[row])
+            exploration_epochs = hex_io.get_parameters_dict(self.paths[row])["exploration_epochs"]
+            train_epochs = hex_io.get_parameters_dict(self.paths[row])["train_epochs"]
             n = exploration_epochs + train_epochs
             k = int(round(n / 25000 + 0.5) * 1000)
             c_start = 0

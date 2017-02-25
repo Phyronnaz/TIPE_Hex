@@ -88,7 +88,7 @@ def get_random_action(board: np.ndarray, state: np.random.RandomState):
 
 
 def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs, train_epochs, memory_size,
-          q_players=(1,), initial_models_path=("", ""), thread=None):
+          q_players=(1,), allow_freeze=(0, 1), initial_models_path=("", ""), thread=None):
     """
     Train the model=
     :return: model, dataframe
@@ -118,9 +118,9 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
     loss_array_player1 = np.zeros(n)
     move_count_array = np.zeros(n)
 
-    #####################
+    #######################
     ### Create memories ###
-    #####################
+    #######################
     memories = [deque(), deque()]
 
     ###########################
@@ -129,13 +129,16 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
     array_counter = 0
     last_array_counter = 0
 
-    rewards = {"won": 1, "lost": -1, "error": -10, "nothing": 0}
+    ######################
+    ### Set parameters ###
+    ######################
+    epsilon = initial_epsilon
+    epoch = 0
+    frozen_players = []
 
     #######################
     ### Start main loop ###
     #######################
-    epsilon = initial_epsilon
-    epoch = 0
     while True:
         epoch += 1
 
@@ -158,6 +161,10 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
                 error = (w == 2).sum() / c * 100
                 thread.log(epoch, loss_log_player0, loss_log_player1, player0, player1, error)
                 last_array_counter = array_counter
+                if player0 > 75 and 0 in allow_freeze:
+                    frozen_players = [0]
+                elif player1 > 75 and 1 in allow_freeze:
+                    frozen_players = [1]
 
         #######################
         ### Break main loop ###
@@ -192,12 +199,16 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
         ### Game loop ###
         #################
         while True:
+            rewards = {"won": 5, "lost": -5, "error": -10, "nothing": 1 - move_count / size}
+
             random_move = np.nan
             losses = [np.nan, np.nan]
 
             other_player = 1 - current_player
             current_player_is_q = current_player in q_players
             other_player_is_q = other_player in q_players
+            current_player_is_learning = not current_player in frozen_players
+            other_player_is_learning = not other_player in frozen_players
 
             ################################################
             ### If game already ended, just update model ###
@@ -240,8 +251,9 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
             ######################
             ### Update players ###
             ######################
-            if (other_player_is_q and winner != 2 and move_count != 0) or (current_player_is_q and winner == 2):
-                if current_player_is_q and winner == 2:
+            if (other_player_is_q and other_player_is_learning and winner != 2 and move_count != 0) or \
+                    (current_player_is_q and current_player_is_learning and winner == 2):
+                if current_player_is_q and current_player_is_learning and winner == 2:
                     #
                     # Error: Update current player and quit
                     #

@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="playTab">
        <attribute name="title">
@@ -659,7 +659,7 @@
             <item row="0" column="0">
              <widget class="QLabel" name="label_2">
               <property name="text">
-               <string>Q Player is:</string>
+               <string>Q Players</string>
               </property>
              </widget>
             </item>
@@ -685,13 +685,38 @@
              </layout>
             </item>
             <item row="1" column="0">
+             <widget class="QLabel" name="label_9">
+              <property name="text">
+               <string>Allow Freeze</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <layout class="QHBoxLayout" name="horizontalLayout_4">
+              <item>
+               <widget class="QCheckBox" name="checkBoxLearner0">
+                <property name="text">
+                 <string>Player 0</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="checkBoxLearner1">
+                <property name="text">
+                 <string>Player 1</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item row="2" column="0">
              <widget class="QLabel" name="label_6">
               <property name="text">
                <string>Exploration Epochs</string>
               </property>
              </widget>
             </item>
-            <item row="1" column="1">
+            <item row="2" column="1">
              <widget class="QSpinBox" name="spinBoxExplorationEpochs">
               <property name="maximum">
                <number>999999999</number>
@@ -704,14 +729,14 @@
               </property>
              </widget>
             </item>
-            <item row="2" column="0">
+            <item row="3" column="0">
              <widget class="QLabel" name="label_7">
               <property name="text">
                <string>Train Epochs</string>
               </property>
              </widget>
             </item>
-            <item row="2" column="1">
+            <item row="3" column="1">
              <widget class="QSpinBox" name="spinBoxTrainEpochs">
               <property name="maximum">
                <number>999999999</number>
@@ -724,14 +749,14 @@
               </property>
              </widget>
             </item>
-            <item row="3" column="0">
+            <item row="4" column="0">
              <widget class="QLabel" name="label_8">
               <property name="text">
                <string>Memory Size</string>
               </property>
              </widget>
             </item>
-            <item row="3" column="1">
+            <item row="4" column="1">
              <widget class="QSpinBox" name="spinBoxMemory">
               <property name="maximum">
                <number>999999999</number>
@@ -744,14 +769,14 @@
               </property>
              </widget>
             </item>
-            <item row="4" column="0">
+            <item row="5" column="0">
              <widget class="QLabel" name="label_3">
               <property name="text">
                <string>Batch Size</string>
               </property>
              </widget>
             </item>
-            <item row="4" column="1">
+            <item row="5" column="1">
              <widget class="QSpinBox" name="spinBoxBatchSize">
               <property name="minimum">
                <number>1</number>

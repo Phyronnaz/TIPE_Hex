@@ -24,6 +24,8 @@ class TrainUI:
         self.ui.spinBoxMemory.valueChanged.connect(self.update_save_name)
         self.ui.checkBoxPlayer0.clicked.connect(self.update_save_name)
         self.ui.checkBoxPlayer1.clicked.connect(self.update_save_name)
+        self.ui.checkBoxLearner0.clicked.connect(self.update_save_name)
+        self.ui.checkBoxLearner1.clicked.connect(self.update_save_name)
         self.ui.checkBoxLoadPlayer0.clicked.connect(self.update_save_name)
         self.ui.checkBoxLoadPlayer1.clicked.connect(self.update_save_name)
 
@@ -82,6 +84,7 @@ class TrainUI:
                                         self.thread.player1_log[:self.thread.index], 'o-')
             self.widgetPlot.winner.plot(self.thread.epoch_log[:self.thread.index],
                                         self.thread.error_log[:self.thread.index], 'P-')
+            self.widgetPlot.winner.set_ybound(0, 100)
 
             # Draw
             self.widgetPlot.draw()
@@ -164,7 +167,7 @@ class TrainUI:
         if (not unchecked_0 and player == 0) or (not unchecked_1 and player == 1):
             model = self.models[player]
 
-            size, gamma, batch_size, _, _, _, _, memory_size, _ = self.get_parameters(model)
+            size, gamma, batch_size, _, _, _, _, memory_size, _, _ = self.get_parameters(model)
             self.ui.spinBoxSizeTrain.setValue(size)
             self.ui.doubleSpinBoxGamma.setValue(gamma)
             self.ui.spinBoxBatchSize.setValue(batch_size)
@@ -175,9 +178,10 @@ class TrainUI:
     def get_parameters(self, model=""):
         """
         Get the parameters for train
-        :return: size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs, train_epochs, memory_size, q_players
+        :return: size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs, train_epochs, memory_size, q_players, q_learners
         """
         b0, b1 = self.ui.checkBoxPlayer0.isChecked(), self.ui.checkBoxPlayer1.isChecked()
+        c0, c1 = self.ui.checkBoxLearner0.isChecked(), self.ui.checkBoxLearner1.isChecked()
         if model == "":
             return self.ui.spinBoxSizeTrain.value(), \
                    self.ui.doubleSpinBoxGamma.value(), \
@@ -187,10 +191,16 @@ class TrainUI:
                    self.ui.spinBoxExplorationEpochs.value(), \
                    self.ui.spinBoxTrainEpochs.value(), \
                    self.ui.spinBoxMemory.value(), \
-                   [] + ([0] if b0 else []) + ([1] if b1 else [])
+                   [] + ([0] if b0 else []) + ([1] if b1 else []), \
+                   [] + ([0] if c0 else []) + ([1] if c1 else [])
 
         else:
-            size, gamma, batch_size, _, _, _, _, memory_size, _, _ = hex_io.get_parameters(model)
+            d = hex_io.get_parameters_dict(model)
+            size = d["size"]
+            gamma = d["gamma"]
+            batch_size = d["batch_size"]
+            memory_size = d["memory_size"]
+
             return size, \
                    gamma, \
                    batch_size, \
@@ -199,7 +209,8 @@ class TrainUI:
                    self.ui.spinBoxExplorationEpochs.value(), \
                    self.ui.spinBoxTrainEpochs.value(), \
                    memory_size, \
-                   [] + ([0] if b0 else []) + ([1] if b1 else [])
+                   [] + ([0] if b0 else []) + ([1] if b1 else []), \
+                   [] + ([0] if c0 else []) + ([1] if c1 else [])
 
     def set_busy(self, busy):
         """
