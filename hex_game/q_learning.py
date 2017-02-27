@@ -179,6 +179,8 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
         ###################
         if epsilon > final_epsilon:
             epsilon -= (initial_epsilon - final_epsilon) / exploration_epochs
+        else:
+            epsilon = 0
 
         ###############################################
         ### Create board and winner_check variables ###
