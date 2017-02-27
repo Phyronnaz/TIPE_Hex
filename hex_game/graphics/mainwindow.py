@@ -313,7 +313,7 @@ class Ui_TIPE(object):
         self.doubleSpinBoxGamma = QtWidgets.QDoubleSpinBox(self.trainTab)
         self.doubleSpinBoxGamma.setMaximum(1.0)
         self.doubleSpinBoxGamma.setSingleStep(0.01)
-        self.doubleSpinBoxGamma.setProperty("value", 0.9)
+        self.doubleSpinBoxGamma.setProperty("value", 0.99)
         self.doubleSpinBoxGamma.setObjectName("doubleSpinBoxGamma")
         self.formLayout.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.doubleSpinBoxGamma)
         self.label_4 = QtWidgets.QLabel(self.trainTab)
