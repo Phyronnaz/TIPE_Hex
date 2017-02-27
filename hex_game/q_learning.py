@@ -201,7 +201,8 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
         ### Game loop ###
         #################
         while True:
-            rewards = {"won": 5, "lost": -5, "error": -10, "nothing": 1 - move_count / size}
+            x = 1 - move_count / size ** 2
+            rewards = {"won": 5 * x, "lost": -5 * x, "error": -10, "nothing": 0}
 
             random_move = np.nan
             losses = [np.nan, np.nan]

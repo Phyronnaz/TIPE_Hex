@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-version = 1
+version = 2
 save_dir = os.path.expanduser("~") + "/notebooks/saves/V{}/".format(version)
 
 
