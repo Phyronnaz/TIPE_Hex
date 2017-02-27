@@ -69,11 +69,14 @@ def get_parameters(name: str):
     """
     s = name.split("/")[-1].split("\\")[-1].rsplit(".", 1)[0]
     l = s.split("-")
-    if len(l[l.index("allow_freeze") + 1]) == 6:
-        q = [0, 1]
-    elif len(l[l.index("allow_freeze") + 1]) == 3:
-        q = [int(l[l.index("allow_freeze") + 1][1])]
-    else:
+    try:
+        if len(l[l.index("allow_freeze") + 1]) == 6:
+            q = [0, 1]
+        elif len(l[l.index("allow_freeze") + 1]) == 3:
+            q = [int(l[l.index("allow_freeze") + 1][1])]
+        else:
+            q = []
+    except ValueError:
         q = []
 
     return int(l[l.index("size") + 1]), \
