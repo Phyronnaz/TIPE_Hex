@@ -24,8 +24,8 @@ def init_model(size):
     model.add(Dense(size ** 2 * 4, init="lecun_uniform"))
     model.add(Activation('relu'))
     model.add(Dense(size ** 2 * 4, init="lecun_uniform"))
-    model.add(Activation('relu'))
-    model.add(Dense(size ** 2, init="lecun_uniform"))
+    # model.add(Activation('relu'))
+    # model.add(Dense(size ** 2, init="lecun_uniform"))
     model.add(Activation('linear'))
 
     rms = RMSprop()
