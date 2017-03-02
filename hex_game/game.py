@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from hex_game.main import play_move, can_play_move, init_board, get_random_move
 from hex_game.winner_check import check_for_winner, init_winner_matrix_and_counter
-from hex_game.q_learning import get_move_q_learning, get_split_board
+from hex_game.q_learning import get_move_q_learning, get_features
 from hex_game.negamax import get_move_negamax
 from hex_game.graphics import debug
 
@@ -66,7 +66,7 @@ class Game:
 
                 move = get_move_q_learning(self.board, self.player, model)
 
-                [q_values] = model.predict(np.array([get_split_board(self.board, self.player)]))
+                [q_values] = model.predict(np.array([get_features(self.board, self.player)]))
 
             t = q_values.reshape((self.size, self.size))
             if self.player == 1:

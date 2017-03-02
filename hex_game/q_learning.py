@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 import keras.models
 from keras.models import Sequential
-from keras.layers.core import Dense, Activation
+from keras.layers.core import Dense, Activation, Flatten
+from keras.layers.convolutional import Convolution2D
 from keras.optimizers import RMSprop
 from hex_game.main import *
 from hex_game.winner_check import *
@@ -19,12 +20,11 @@ def init_model(size):
     :return: model
     """
     model = Sequential()
-    model.add(Dense(size ** 2 * 4, init="lecun_uniform", input_shape=(3 * size ** 2,)))
+    model.add(Convolution2D(32, 5, 5, init="lecun_uniform", input_shape=(size + 4, size + 4, 6,), border_mode="valid"))
     model.add(Activation('relu'))
-    model.add(Dense(size ** 2 * 4, init="lecun_uniform"))
+    model.add(Convolution2D(32, 3, 3, init="lecun_uniform", border_mode="valid"))
     model.add(Activation('relu'))
-    # model.add(Dense(size ** 2 * 4, init="lecun_uniform"))
-    # model.add(Activation('relu'))
+    model.add(Flatten())
     model.add(Dense(size ** 2, init="lecun_uniform"))
     model.add(Activation('linear'))
 
@@ -33,21 +33,63 @@ def init_model(size):
     return model
 
 
-def get_split_board(board, player):
+def get_features(board, player):
     """
-    Return the split board corresponding to player
+    Return the features corresponding to player
     :param board: board
     :param player: player
-    :return: split board
+    :return: features
     """
     if player == 1:
         board = board.T
     size = board.shape[0]
-    t = numpy.zeros((3, size, size))
-    t[0] = (board == -1) * 2 - 1
-    t[1] = (board == player) * 2 - 1
-    t[2] = (board == 1 - player) * 2 - 1
-    return t.flatten()
+
+    t = -numpy.ones((size + 4, size + 4, 6))
+
+    t[2:-2, 2:-2, 0] = (board == player) * 2 - 1
+    t[2:-2, 2:-2, 1] = (board == 1 - player) * 2 - 1
+
+    t[:2, :, 0] = 1
+    t[-2:, :, 0] = 1
+    t[:2, :, 2] = 1
+    t[-2:, :, 3] = 1
+
+    t[:, :2, 1] = 1
+    t[:, -2:, 1] = 1
+    t[:2, :, 4] = 1
+    t[-2:, :, 5] = 1
+
+    # Paths
+    for player in range(2):
+        for side in range(2):
+            checked = numpy.zeros(board.shape, dtype=bool)
+            size = board.shape[0]
+            pile = deque()
+
+            # Append edges
+            for a in range(size):
+                if player == 0 and board[-side, a] == 0:
+                    pile.append((0, a))
+                elif player == 1 and board[a, -side] == 1:
+                    pile.append((a, 0))
+
+            # Process tiles
+            while len(pile) != 0:
+                x, y = pile.pop()
+
+                if 0 <= x < size and 0 <= y < size and board[x, y] == player and not checked[x, y]:
+                    checked[x, y] = True
+                    pile.append((x - 1, y))
+                    pile.append((x + 1, y))
+                    pile.append((x, y - 1))
+                    pile.append((x, y + 1))
+                    pile.append((x + 1, y - 1))
+                    pile.append((x - 1, y + 1))
+
+            # Save
+            t[2:-2, 2:-2, 2 + 2 * player + side] = checked * 2 - 1
+
+    return t
 
 
 def get_action(model, split_board):
@@ -74,7 +116,7 @@ def get_move_from_action(player, action, size):
 
 def get_move_q_learning(board, player, model):
     size = board.shape[0]
-    split_board = get_split_board(board, player)
+    split_board = get_features(board, player)
     action = get_action(model, split_board)
     move = get_move_from_action(player, action, size)
     return move
@@ -224,7 +266,7 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
                 ##################################
                 if current_player_is_q:
                     # Compute split board
-                    split_board = get_split_board(board, current_player)
+                    split_board = get_features(board, current_player)
 
                     # Random move?
                     random_move = random.random() < epsilon
@@ -287,7 +329,7 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
                     else:  # winner == -1
                         reward = rewards["nothing"]
                         terminal = False
-                        new_state = get_split_board(board, other_player)
+                        new_state = get_features(board, other_player)
                 #
                 # Save to memory
                 #
@@ -300,7 +342,7 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
                 model = models[player]
                 memory = memories[player]
                 if len(memory) == memory_size:
-                    X = np.zeros((batch_size, 3 * size ** 2))
+                    X = np.zeros((batch_size, size + 4, size + 4, 6))
                     Y = np.zeros((batch_size, size ** 2))
 
                     minibatch = random.sample(memory, batch_size)
