@@ -120,7 +120,7 @@ class PlayUI:
 
         pretty_names = [hex_io.get_pretty_name(*hex_io.get_parameters(n)) for n in self.models if
                         hex_io.get_parameters_dict(n)["size"] == self.size]
-        players = ["Human", "Minimax", "Random"] + pretty_names
+        players = ["Human", "Minimax", "Poisson","Random"] + pretty_names
 
         self.ui.comboBoxPlayer1.clear()
         self.ui.comboBoxPlayer2.clear()
@@ -233,6 +233,8 @@ class PlayUI:
             elif combos[i] == 1:
                 players[i] = "Minimax", depths[i]
             elif combos[i] == 2:
+                players[i] = "Poisson", ""
+            elif combos[i] == 3:
                 players[i] = "Random", ""
             else:
                 players[i] = "Q learning", self.models[combos[i] - 3]

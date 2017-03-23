@@ -1,7 +1,10 @@
 import keras.models
 import numpy as np
 import tensorflow as tf
+
+from hex_game.ai_poisson import get_poisson
 from hex_game.main import play_move, can_play_move, init_board, get_random_move
+from hex_game.poisson import Poisson
 from hex_game.winner_check import check_for_winner, init_winner_matrix_and_counter
 from hex_game.q_learning import get_move_q_learning, get_features
 from hex_game.negamax import get_move_negamax
@@ -43,9 +46,17 @@ class Game:
                 self.player = 1 - self.player
             else:
                 debug.debug_play("Failed to play!")
+
+            self.poisson()
+
         if self.winner != -1 and not self.ended:
             self.ended = True
             debug.debug_play("Winner: Player %s" % self.winner)
+
+    def poisson(self):
+        poisson = Poisson(self.board)
+        poisson.iterations(1000)
+        self.aux_boards[1] = poisson.U
 
     def play(self):
         name, _ = self.players[self.player]
@@ -73,6 +84,9 @@ class Game:
                 t = t.T
             self.aux_boards[self.player] = t
 
+            self.play_move(move)
+        elif name == "Poisson":
+            move = get_poisson(self.board)
             self.play_move(move)
 
     def click(self, x, y):
