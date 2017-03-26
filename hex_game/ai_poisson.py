@@ -18,13 +18,21 @@ def get_poisson(board):
     return move
 
 def get_neighbour_matrix(poisson_matrix):
+
+    # Inintialisation of the neighbour matrix #
+
     n = len(poisson_matrix)
-    poisson_matrix = -poisson_matrix
+    poisson_matrix = -poisson_matrix  #changes the sign of the poisson matrix value to find the least weighted path
     neighbour_matrix = numpy.zeros((n ** 2, n ** 2, 2))
+
+    # put infinite weight inside all the matrix #
+
     for i in range (n ** 2):
         for j in range (n ** 2):
-            neighbour_matrix[i,j,0] = 1000
+            neighbour_matrix[i,j, 0] = 1000
             neighbour_matrix[i, j, 1] = i*11+j
+
+    # create paths with all linked cells with the cell's poisson value as the weight and the linked cell as the precedent neighbour #
     for i in range(n):
         for j in range(i + 1, n):
             if poisson_matrix[i , j] != 1:
@@ -39,6 +47,7 @@ def get_neighbour_matrix(poisson_matrix):
     return(neighbour_matrix)
 
 def get_next_floyd_warshall(W):
+    # Classical Floyd Warshall algorithm with the precedent neighbour kept in memory to rebuild the explored paths #
     n = len(W)
     for k in range (n):
         for i in range(n):
@@ -50,6 +59,7 @@ def get_next_floyd_warshall(W):
     return(W)
 
 def find_paths(neighbour_matrix):
+    # explore the cells of the neighbour matrix representing a path from a starting cell to an ending one (to find a complete path) #
     n = len(neighbour_matrix)
     paths = []
     for i in range (numpy.sqrt(n)):
@@ -61,6 +71,7 @@ def find_paths(neighbour_matrix):
 
 
 def get_best_path(paths_list, neighbour_matrix):
+    # Finds the least weighted path among all available paths and returns the right coordinates in the board #
     n = numpy.sqrt(len(neighbour_matrix))
     m = len(paths_list)
     best = paths_list[0]
@@ -83,7 +94,8 @@ def get_best_path(paths_list, neighbour_matrix):
 
 
 def get_move(path, poisson_matrix):
-    #refaire la minimisation de l'écart a la moyenne sur la liste du chemin trouvé pour trouver le bon move
+    # Finds the best path by  minimizing the sum of the difference from the average (with poisson matrix) #
+    # TO DO
     def esperance:
         mini = 0
         return mini
