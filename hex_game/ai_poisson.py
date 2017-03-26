@@ -12,5 +12,19 @@ def get_poisson(board):
     print(U)
     return get_random_move(board, numpy.random.RandomState())
 
+def get_neighbour_matrix():
+
+    return(neighbour)
+
+def floyd_warshall(W):
+    n = len(W)
+    for k in range (n):
+        for i in range(n):
+            for j in range (n):
+                W[i,j] = min(W[i,j],W[i,k]+W[k,j])
+
+
+
+
 def get_list(U, i, j):
     pass
