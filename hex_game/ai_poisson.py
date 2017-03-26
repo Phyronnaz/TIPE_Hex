@@ -2,7 +2,7 @@ import numpy
 
 from hex_game.main import get_random_move
 from hex_game.poisson import Poisson
-
+#bonsoir
 NEIGHBORS_1 = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
 
 def get_poisson(board):
