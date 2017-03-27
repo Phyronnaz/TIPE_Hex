@@ -1,9 +1,7 @@
 import numpy
 
-from hex_game.main import get_random_move
+from hex_game.main import get_random_move, NEIGHBORS_1
 from hex_game.poisson import Poisson
-
-NEIGHBORS_1 = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
 
 
 def get_poisson(board):
@@ -19,31 +17,27 @@ def get_poisson(board):
     return move
 
 
-def get_neighbour_matrix(poisson_matrix):
-    # Initialisation of the neighbour matrix
-    n = len(poisson_matrix)
-    poisson_matrix = -poisson_matrix  # changes the sign of the poisson matrix value to find the least weighted path
-    neighbour_matrix = numpy.zeros((n ** 2, n ** 2, 2))
+def get_neighbour_matrix(poisson_matrix, board, player):
+    poisson_matrix += numpy.max(numpy.abs(poisson_matrix))
 
-    # Put infinite weight inside all the matrix
-    for i in range(n ** 2):
-        for j in range(n ** 2):
-            neighbour_matrix[i, j, 0] = float("inf")
-            neighbour_matrix[i, j, 1] = i * 11 + j
+    # Initialisation of the neighbour matrix
+    n = poisson_matrix.shape[0]
+    poisson_matrix = -poisson_matrix  # changes the sign of the poisson matrix value to find the least weighted path
+    neighbour_matrix = numpy.zeros((n, n, n, n, 2), dtype=object)
+
+    neighbour_matrix[:, :, :, :, 0] = float("inf")
+    neighbour_matrix[:, :, :, :, 1] = []
 
     # Create paths with all linked cells with the cell's poisson value as the weight and the linked cell as the
     # precedent neighbour
     for i in range(n):
         for j in range(i + 1, n):
-            if poisson_matrix[i, j] != 1:
-                neighbour_matrix[11 * i + (j - 1), 11 * i + j, 0] = poisson_matrix[i, j]
-                neighbour_matrix[11 * i + (j - 1), 11 * i + j, 1] = 11 * i + (j - 1)
-                neighbour_matrix[11 * (i - 1) + j, 11 * i + j, 0] = poisson_matrix[i, j]
-                neighbour_matrix[11 * (i - 1) + j, 11 * i + j, 1] = 11 * (i - 1) + j
-                neighbour_matrix[11 * (i + 1) + (j - 1), 11 * i + j, 0] = poisson_matrix[i, j]
-                neighbour_matrix[11 * (i + 1) + (j - 1), 11 * i + j, 1] = 11 * (i + 1) + (j - 1)
-                neighbour_matrix[11 * (i - 1) + (j + 1), 11 * i + j, 0] = poisson_matrix[i, j]
-                neighbour_matrix[11 * (i - 1) + (j + 1), 11 * i + j, 1] = 11 * (i - 1) + (j + 1)
+            if board[i, j] != 1 - player:
+                for (k, l) in NEIGHBORS_1:
+                    a = i + k
+                    b = j + l
+                    neighbour_matrix[a, b, i, j, 0] = poisson_matrix[i, j]
+                    neighbour_matrix[a, b, i, j, 1] = [(i, j)]
 
     return neighbour_matrix
 
