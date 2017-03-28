@@ -37,7 +37,7 @@ def get_neighbour_matrix(poisson_matrix, board, player):
                     a = i + k
                     b = j + l
                     neighbour_matrix[a, b, i, j, 0] = poisson_matrix[i, j]
-                    neighbour_matrix[a, b, i, j, 1] = [(i, j)]
+                    neighbour_matrix[a, b, i, j, 1] = [(a, b)]
 
     return neighbour_matrix
 
@@ -46,12 +46,14 @@ def get_next_floyd_warshall(W):
     # Classical Floyd Warshall algorithm with the precedent neighbour kept in memory to rebuild the explored paths
     n = len(W)
     for k in range(n):
-        for i in range(n):
-            for j in range(i, n):
-                if W[i, j, 0] > W[i, k, 0] + W[k, j, 0]:
-                    W[i, j, 0] = W[i, k, 0] + W[k, j, 0]
-                    W[i, j, 1] = k
-                    W[k, j, 1] = i
+        for l in range(n)
+            for a in range(n):
+                for a in range(n):
+                    for i in range (n):
+                        for j in range (n):
+                            if W[a, b, i, j, 0] > W[a,b,k,l, 0] + W[k,l,i,j, 0] and (k,l) not in W[a,b,k,l,1] and (a,b) not in W[k,l,i,j,1]:
+                                W[a,b,i,j, 0] = W[a,b,k,l, 0] + W[k, l,i,j, 0]
+                                W[a, b, i,j, 1].append((k,l))
     return W
 
 
