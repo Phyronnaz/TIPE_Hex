@@ -48,7 +48,10 @@ class HexView(QGraphicsView):
                 self.polygons[i, j].setColorRGB(r, g, b, a)
 
     def set_color(self, x, y, color):
-        self.polygons[x, y].set_color(color)
+        if 0 <= x < self.polygons.shape[0] > y >= 0:
+            self.polygons[x, y].setColor(color)
+        else:
+            print("Out of bounds!")
 
 
 class QGraphicsPolygonItemClick(QGraphicsPolygonItem):

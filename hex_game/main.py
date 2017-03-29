@@ -105,3 +105,10 @@ def get_random_move(board: numpy.ndarray, state: numpy.random.RandomState):
     state.shuffle(moves)
 
     return moves[0]
+
+
+def is_neighboring(a, b):
+    for (k, l) in NEIGHBORS_1:
+        if a[0] == b[0] + k and a[1] == b[1] + l:
+            return True
+    return False

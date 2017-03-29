@@ -86,7 +86,7 @@ class Game:
 
             self.play_move(move)
         elif name == "Poisson":
-            move = get_poisson(self.board)
+            move = get_poisson(self.board, self.player)
             self.play_move(move)
 
     def click(self, x, y):

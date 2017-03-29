@@ -1,95 +1,136 @@
+from collections import deque
+
 import numpy
 
-from hex_game.main import get_random_move, NEIGHBORS_1
+from hex_game.graphics import debug
+from hex_game.main import get_random_move, NEIGHBORS_1, init_board, is_neighboring
 from hex_game.poisson import Poisson
 
 
-def get_poisson(board):
-    poisson = Poisson(board)
+def get_poisson(board, player):
+    W, P = get_neighbour_and_previous_matrix(board, player)
+
+    while floyd_warshall(W, P):
+        pass
+
+    print("Neighbour matrix:")
+    print(W[0, :, -1, :])
+
+    start, end = find_start_end(W)
+
+    path = get_best_path(start, end, P)
+
+    print(path)
+
+    debug.debug_path(path)
+
+    return get_random_move(board, numpy.random.RandomState())
+
+
+def get_neighbour_and_previous_matrix(board, player):
+    board = board.copy()
+
+    if player == 1:
+        board = board.T
+        p0 = board == 0
+        p1 = board == 1
+        board[p0] = 1
+        board[p1] = 0
+
+    m = board.shape[0]
+
+    # Create edges
+    B = numpy.zeros((m + 2, m + 2), dtype=int)  # Large board
+    B[1:m + 1, 1:m + 1] = board
+    B[0, :] = 0
+    B[-1, :] = 0
+    B[:, 0] = 1
+    B[:, -1] = 1
+    B[0, 0] = -1
+    B[-1, -1] = -1
+    B[1, -1] = -1
+    B[-1, 1] = -1
+
+    poisson = Poisson(B)
     poisson.iterations(1000)
     U = poisson.U
-    print("Poisson Matrix:")
+    U += 1
+    print("Poisson matrix:")
     print(U)
-    neighbour_matrix = get_neighbour_matrix(U)
-    while not find_paths(neighbour_matrix):
-        neighbour_matrix = get_next_floyd_warshall(neighbour_matrix)
-    move = get_move(get_best_path(find_paths(neighbour_matrix), neighbour_matrix), U)
-    return move
 
-
-def get_neighbour_matrix(poisson_matrix, board, player):
-    poisson_matrix += numpy.max(numpy.abs(poisson_matrix))
-
-    # Initialisation of the neighbour matrix
-    n = poisson_matrix.shape[0]
-    poisson_matrix = -poisson_matrix  # changes the sign of the poisson matrix value to find the least weighted path
-    neighbour_matrix = numpy.zeros((n, n, n, n, 2), dtype=object)
-
-    neighbour_matrix[:, :, :, :, 0] = float("inf")
-    neighbour_matrix[:, :, :, :, 1] = []
+    # Initialization of the neighbour matrix
+    n = U.shape[0]
+    W = float("inf") * numpy.ones((n, n, n, n))  # Neighbour matrix
+    P = -numpy.ones((n, n, n, n, 2), dtype=int)  # Previous matrix
 
     # Create paths with all linked cells with the cell's poisson value as the weight and the linked cell as the
     # precedent neighbour
     for i in range(n):
-        for j in range(i + 1, n):
-            if board[i, j] != 1 - player:
+        for j in range(n):
+            if B[i, j] != 1:
                 for (k, l) in NEIGHBORS_1:
                     a = i + k
                     b = j + l
-                    neighbour_matrix[a, b, i, j, 0] = poisson_matrix[i, j]
-                    neighbour_matrix[a, b, i, j, 1] = [(a, b)]
+                    if 0 <= a < n > b >= 0:
+                        W[a, b, i, j] = U[i, j]
+                        P[a, b, i, j] = (a, b)
 
-    return neighbour_matrix
+    return W, P
 
 
-def get_next_floyd_warshall(W):
+def floyd_warshall(W, P):
     # Classical Floyd Warshall algorithm with the precedent neighbour kept in memory to rebuild the explored paths
-    n = len(W)
-    for k in range(n):
-        for l in range(n)
-            for a in range(n):
-                for a in range(n):
-                    for i in range (n):
-                        for j in range (n):
-                            if W[a, b, i, j, 0] > W[a,b,k,l, 0] + W[k,l,i,j, 0] and (k,l) not in W[a,b,k,l,1] and (a,b) not in W[k,l,i,j,1]:
-                                W[a,b,i,j, 0] = W[a,b,k,l, 0] + W[k, l,i,j, 0]
-                                W[a, b, i,j, 1].append((k,l))
-    return W
+    n = W.shape[0]
+    modified = False
+    for a in range(n):
+        for b in range(n):
+            for i in range(n):
+                for j in range(n):
+                    for k in range(n):
+                        for l in range(n):
+                            if W[a, b, i, j] > W[a, b, k, l] + W[k, l, i, j]:
+                                W[a, b, i, j] = W[a, b, k, l] + W[k, l, i, j]
+                                P[a, b, i, j] = (k, l)
+                                modified = True
+    return modified
 
 
-def find_paths(neighbour_matrix):
+def find_start_end(W):
     # Explore the cells of the neighbour matrix representing a path from a starting cell to an ending one (to find a
     # complete path)
-    n = len(neighbour_matrix)
-    paths = []
-    for i in range(numpy.sqrt(n)):
-        for j in range(n - numpy.sqrt(n), n):
-            if neighbour_matrix[i, j, 0] != float("inf"):
-                paths.append([i, j, neighbour_matrix[i, (n - 1) * n + j, 0]])
-    return paths
+    n = W.shape[0]
+    max_value = 0
+    start, end = (0, 0)
+    for i in range(n):
+        for j in range(n):
+            if max_value < W[0, i, n - 1, j] != float("inf"):
+                max_value = W[0, i, n - 1, j]
+                start = numpy.array([0, i])
+                end = numpy.array([n - 1, j])
+
+    return start, end
 
 
-def get_best_path(paths_list, neighbour_matrix):
-    # Finds the least weighted path among all available paths and returns the right coordinates in the board
-    n = numpy.sqrt(len(neighbour_matrix))
-    m = len(paths_list)
-    best = paths_list[0]
-    for k in range(1, m):
-        if paths_list[k][2] < best[2]:
-            best = paths_list[k]
-    fst, lst = best[0], best[1]
-    j = lst
-    path = [lst]
-    while j != fst:
-        i = neighbour_matrix[fst, j, 1]
-        path.append(i)
-        j = i
-    path.append(fst)
-    l = len(path)
-    final_path = []
-    for k in range(n):
-        final_path.append((path[k] // n, path[k] % n))
-    return final_path
+def get_best_path(start, end, P):
+    n = P.shape[0]
+
+    def aux(pile: deque, start, end):
+        middle = P[start[0], start[1], end[0], end[1]]
+        if -1 in middle:
+            return
+        elif is_neighboring(start, end):
+            pile.append(start)
+            return
+        else:
+            pile.append(middle)
+            aux(pile, start, middle)
+            aux(pile, middle, end)
+
+    pile = deque()
+    aux(pile, start, end)
+    pile.append(end)
+
+    return [k - numpy.array([1, 1]) for k in pile if 1 <= k[0] < n - 1 > k[1] >= 1]
 
 
 def get_move(path, poisson_matrix):
@@ -103,7 +144,3 @@ def get_move(path, poisson_matrix):
     for k in path:
         i, j = k
     return move
-
-
-def get_list(U, i, j):
-    pass

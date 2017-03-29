@@ -5,10 +5,13 @@ from hex_game.game import Game
 from hex_game.graphics import debug
 from hex_game.graphics.hex_view import HexView
 from hex_game.graphics.mainwindow import Ui_TIPE
+from hex_game.main import init_board
 
 
 class PlayUI:
     def __init__(self, ui: Ui_TIPE):
+        debug.play_ui = self
+
         # Hack
         ui.spinBoxSizePlay.setValue(3)
 
@@ -120,7 +123,7 @@ class PlayUI:
 
         pretty_names = [hex_io.get_pretty_name(*hex_io.get_parameters(n)) for n in self.models if
                         hex_io.get_parameters_dict(n)["size"] == self.size]
-        players = ["Human", "Minimax", "Poisson","Random"] + pretty_names
+        players = ["Human", "Minimax", "Poisson", "Random"] + pretty_names
 
         self.ui.comboBoxPlayer1.clear()
         self.ui.comboBoxPlayer2.clear()
@@ -161,7 +164,7 @@ class PlayUI:
         """
         if self.game is not None:
             self.ui.graphicsViewDefault.set_board(self.get_board(self.game.board, q=False))
-            self.ui.graphicsViewPlayer1.set_board(self.get_board(self.game.aux_boards[0], q=True))
+            # self.ui.graphicsViewPlayer1.set_board(self.get_board(self.game.aux_boards[0], q=True))
             self.ui.graphicsViewPlayer2.set_board(self.get_board(-self.game.aux_boards[1], q=True))
 
     def play_button(self):
@@ -250,3 +253,8 @@ class PlayUI:
         if path not in self.models:
             self.models.append(path)
             self.update_models_list()
+
+    def debug_path(self, path):
+        self.ui.graphicsViewPlayer1.set_board(self.get_board(init_board(self.size), q=False))
+        for p in path:
+            self.ui.graphicsViewPlayer1.set_color(p[0], p[1], "pink")
