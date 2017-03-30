@@ -1,11 +1,12 @@
 import numpy as np
 from PyQt5 import QtGui
-from hex_game import hex_io
+
 from hex_game.game import Game
 from hex_game.graphics import debug
 from hex_game.graphics.hex_view import HexView
 from hex_game.graphics.mainwindow import Ui_TIPE
-from hex_game.main import init_board
+from hex_game.players import *
+from hex_game.players.player_poisson import PoissonPlayer
 
 
 class PlayUI:
@@ -16,12 +17,26 @@ class PlayUI:
         ui.spinBoxSizePlay.setValue(3)
 
         # Variables
-        self.size = -1
-        self.game = None
-        self.models = []
-
         self.ui = ui
+        self.size = 3
+        self.game = None  # type: Game
+        self.models_paths = []
+        self.displayed_players = []
 
+        # Players
+        self.human = HumanPlayer()
+        self.minimax = MinimaxPlayer()
+        self.random = RandomPlayer()
+        self.poisson = PoissonPlayer()
+        self.players = [self.human, self.minimax, self.random, self.poisson]
+
+        # Init
+        self.init_ui()
+        self.update_combobox()
+        self.update_minimax_spinbox()
+        self.update_size()
+
+    def init_ui(self):
         # Initial states
         self.ui.pushButtonViewDefault.setChecked(True)
         self.ui.pushButtonViewPlayer1.setChecked(False)
@@ -32,22 +47,16 @@ class PlayUI:
         # Connect actions
         self.ui.spinBoxSizePlay.valueChanged.connect(self.update_size)
 
-        self.ui.comboBoxPlayer1.activated.connect(self.update_combo_box)
-        self.ui.comboBoxPlayer2.activated.connect(self.update_combo_box)
+        self.ui.comboBoxPlayer1.activated.connect(self.update_minimax_spinbox)
+        self.ui.comboBoxPlayer2.activated.connect(self.update_minimax_spinbox)
 
-        self.ui.pushButtonViewDefault.clicked.connect(self.update_graphics_views)
-        self.ui.pushButtonViewPlayer1.clicked.connect(self.update_graphics_views)
-        self.ui.pushButtonViewPlayer2.clicked.connect(self.update_graphics_views)
+        self.ui.pushButtonViewDefault.clicked.connect(self.update_graphics_views_visibility)
+        self.ui.pushButtonViewPlayer1.clicked.connect(self.update_graphics_views_visibility)
+        self.ui.pushButtonViewPlayer2.clicked.connect(self.update_graphics_views_visibility)
 
         self.ui.pushButtonPlay.clicked.connect(self.play_button)
         self.ui.pushButtonPlay.setShortcut("Return")
         self.ui.pushButtonNewGame.clicked.connect(self.new_game)
-
-        # Launch update functions
-        self.set_progress(-1)
-        self.update_models_list()
-        self.update_combo_box()
-        self.update_size()
 
     def reload_graphics_views(self):
         """
@@ -90,48 +99,43 @@ class PlayUI:
         """
         self.size = self.ui.spinBoxSizePlay.value()
         self.reload_graphics_views()
-        self.update_graphics_views()
+        self.update_graphics_views_visibility()
         self.game = None
         self.update_game()
-        self.update_models_list()
+        self.update_combobox()
 
-    def update_combo_box(self):
+    def update_minimax_spinbox(self):
         """
         Apply player change
         """
-        if self.ui.comboBoxPlayer1.currentIndex() == 1:
+        if type(self.displayed_players[self.ui.comboBoxPlayer1.currentIndex()]) is MinimaxPlayer:
             self.ui.labelMinimaxDepthPlayer1.show()
             self.ui.spinBoxMinimaxDepthPlayer1.show()
         else:
             self.ui.labelMinimaxDepthPlayer1.hide()
             self.ui.spinBoxMinimaxDepthPlayer1.hide()
 
-        if self.ui.comboBoxPlayer2.currentIndex() == 1:
+        if type(self.displayed_players[self.ui.comboBoxPlayer2.currentIndex()]) is MinimaxPlayer:
             self.ui.labelMinimaxDepthPlayer2.show()
             self.ui.spinBoxMinimaxDepthPlayer2.show()
         else:
             self.ui.labelMinimaxDepthPlayer2.hide()
             self.ui.spinBoxMinimaxDepthPlayer2.hide()
 
-    def update_models_list(self):
+    def update_combobox(self):
         """
         Update list of the models and players choice
         """
-
-        self.ui.listWidgetModels.clear()
-        self.ui.listWidgetModels.addItems([hex_io.get_pretty_name(*hex_io.get_parameters(m)) for m in self.models])
-
-        pretty_names = [hex_io.get_pretty_name(*hex_io.get_parameters(n)) for n in self.models if
-                        hex_io.get_parameters_dict(n)["size"] == self.size]
-        players = ["Human", "Minimax", "Poisson", "Random"] + pretty_names
+        self.displayed_players = [k for k in self.players if k.check(self.size)]
+        names = [k.name for k in self.displayed_players]
 
         self.ui.comboBoxPlayer1.clear()
         self.ui.comboBoxPlayer2.clear()
 
-        self.ui.comboBoxPlayer1.addItems(players)
-        self.ui.comboBoxPlayer2.addItems(players)
+        self.ui.comboBoxPlayer1.addItems(names)
+        self.ui.comboBoxPlayer2.addItems(names)
 
-    def update_graphics_views(self):
+    def update_graphics_views_visibility(self):
         """
         Enable/Disable HexViews
         """
@@ -155,7 +159,7 @@ class PlayUI:
         Update UI after a move
         """
         self.update_boards()
-        b = self.game is not None and self.game.winner == -1 and self.game.players[self.game.player][0] != "Human"
+        b = self.game is not None and self.game.winner == -1 and self.game.players[self.game.player].name != "Human"
         self.ui.pushButtonPlay.setEnabled(b)
 
     def update_boards(self):
@@ -163,9 +167,13 @@ class PlayUI:
         Update HexViews
         """
         if self.game is not None:
+            aux1 = self.game.players[0].get_aux_board(self.game.board, 0)
+            aux2 = self.game.players[1].get_aux_board(self.game.board, 1)
             self.ui.graphicsViewDefault.set_board(self.get_board(self.game.board, q=False))
-            # self.ui.graphicsViewPlayer1.set_board(self.get_board(self.game.aux_boards[0], q=True))
-            self.ui.graphicsViewPlayer2.set_board(self.get_board(-self.game.aux_boards[1], q=True))
+            if aux1 is not None:
+                self.ui.graphicsViewPlayer1.set_board(self.get_board(aux1, q=True))
+            if aux2 is not None:
+                self.ui.graphicsViewPlayer2.set_board(self.get_board(aux2, q=True))
 
     def play_button(self):
         """
@@ -182,25 +190,11 @@ class PlayUI:
         :param y: y
         """
         if self.game is not None:
-            self.game.click(x, y)
+            self.human.move = x, y
+            self.game.play()
             self.update_game()
 
-    def set_progress(self, value, text=None):
-        """
-        Set MiniMax progress bar value and text
-        :param value: float between 0 and 1, negative to hide the bar
-        :param text: text to display on the bar
-        """
-        if value < 0:
-            self.ui.progressBarMinimax.hide()
-        else:
-            self.ui.progressBarMinimax.show()
-            self.ui.progressBarMinimax.setValue(100 * value)
-            if text is not None:
-                self.ui.progressBarMinimax.setFormat(text)
-
-    @staticmethod
-    def get_board(board, q):
+    def get_board(self, board, q):
         """
         Convert a game board to a hex one
         :param board: board
@@ -209,11 +203,10 @@ class PlayUI:
         """
         t = np.zeros(shape=board.shape)
         maxi = abs(board).max() if abs(board).max() != 0 else 1
-        mini = abs(board).min()
         for i in range(board.shape[0]):
             for j in range(board.shape[1]):
                 if q:
-                    t[i, j] = (board[i, j] - mini * np.sign(board[i, j])) / (maxi - mini)
+                    t[i, j] = board[i, j] / maxi
                 else:
                     if board[i, j] == -1:
                         t[i, j] = 0
@@ -228,19 +221,7 @@ class PlayUI:
         Create a new game
         """
         combos = self.ui.comboBoxPlayer1.currentIndex(), self.ui.comboBoxPlayer2.currentIndex()
-        depths = self.ui.spinBoxMinimaxDepthPlayer1.value(), self.ui.spinBoxMinimaxDepthPlayer2.value()
-        players = [None, None]
-        for i in range(2):
-            if combos[i] == 0:
-                players[i] = "Human", ""
-            elif combos[i] == 1:
-                players[i] = "Minimax", depths[i]
-            elif combos[i] == 2:
-                players[i] = "Poisson", ""
-            elif combos[i] == 3:
-                players[i] = "Random", ""
-            else:
-                players[i] = "Q learning", self.models[combos[i] - 3]
+        players = [self.displayed_players[combos[k]] for k in range(2)]
         self.game = Game(self.size, players)
         self.update_game()
         debug.debug_play("New Game")
@@ -250,11 +231,10 @@ class PlayUI:
         Add a model
         :param path: path of the model to add
         """
-        if path not in self.models:
-            self.models.append(path)
-            self.update_models_list()
+        if path not in self.models_paths:
+            self.models_paths.append(path)
+            self.players.append(QLearningPlayer(path))
+            self.update_combobox()
 
     def debug_path(self, path):
-        self.ui.graphicsViewPlayer1.set_board(self.get_board(init_board(self.size), q=False))
-        for p in path:
-            self.ui.graphicsViewPlayer1.set_color(p[0], p[1], "pink")
+        self.ui.graphicsViewDefault.set_path(path)

@@ -1,9 +1,12 @@
+from PyQt5 import QtCore
+from PyQt5.QtCore import Qt
+import math
 import numpy as np
 from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QColor
 from PyQt5.QtGui import QPen
 from PyQt5.QtGui import QPolygonF
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPolygonItem
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPolygonItem, QGraphicsLineItem, QGraphicsItem
 
 
 class HexView(QGraphicsView):
@@ -14,6 +17,8 @@ class HexView(QGraphicsView):
         self.scene = QGraphicsScene(self)
 
         self.setScene(self.scene)
+
+        self.arrows = []
 
         self.polygons = np.zeros((size, size), dtype=object)
 
@@ -53,6 +58,17 @@ class HexView(QGraphicsView):
         else:
             print("Out of bounds!")
 
+    def set_path(self, path):
+        for arrow in self.arrows:
+            self.scene.removeItem(arrow)
+        self.arrows = []
+        for i in range(1, len(path)):
+            a = path[i - 1]
+            b = path[i]
+            arrow = Arrow(a, b, 25, -np.pi / 6)
+            self.scene.addItem(arrow)
+            self.arrows.append(arrow)
+
 
 class QGraphicsPolygonItemClick(QGraphicsPolygonItem):
     def __init__(self, x, y, size, rotation, callback, color):
@@ -85,3 +101,24 @@ class QGraphicsPolygonItemClick(QGraphicsPolygonItem):
 
     def setColorRGB(self, r, g, b, a):
         self.setBrush(QColor(r, g, b, a))
+
+
+class Arrow(QGraphicsLineItem):
+    def __init__(self, start, end, size, rotation):
+        def position(x, y):
+            p_x = (2 * x + y) * np.sin(np.pi / 3)
+            p_y = y * (2 - np.cos(5 * np.pi / 3))
+
+            r = np.array([[np.cos(rotation), -np.sin(rotation)],
+                          [np.sin(rotation), np.cos(rotation)]])
+            p_x *= size
+            p_y *= size
+            p_y, p_x = r.dot(np.array([p_x, p_y]))
+            return p_x, p_y
+
+        a, b = position(*start)
+        c, d = position(*end)
+
+        super(Arrow, self).__init__(a, b, c, d)
+
+        self.setPen(QPen(Qt.green, 10, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))

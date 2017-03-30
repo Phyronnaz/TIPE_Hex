@@ -2,26 +2,22 @@ from collections import deque
 
 import numpy
 
-# from hex_game.graphics import debug
+from hex_game.graphics import debug
 from hex_game.main import get_random_move, NEIGHBORS_1, init_board, is_neighboring, play_move_and_copy, can_play_move
 from hex_game.poisson import Poisson
 
 
-def get_poisson_move(board, player):
+def get_move_poisson(board, player):
     W, P = get_neighbour_and_previous_matrix(board, player)
 
     while floyd_warshall(W, P):
         pass
 
-    print("Neighbour matrix:")
-    print(W[0, :, -1, :])
-
     start, end = find_start_end(W)
 
     path = get_best_path(start, end, P)
 
-    print(path)
-    # [k - numpy.array([1, 1]) for k in pile if 1 <= k[0] < n - 1 > k[1] >= 1]
+    debug.debug_path([k if player == 0 else (k[1], k[0]) for k in path])
 
     move = get_move(path, board, player)
 
@@ -31,7 +27,7 @@ def get_poisson_move(board, player):
     return move
 
 
-def get_poisson(board, player):
+def invert_board(board, player):
     board = board.copy()
 
     if player == 1:
@@ -41,11 +37,17 @@ def get_poisson(board, player):
         board[p0] = 1
         board[p1] = 0
 
+    return board
+
+
+def get_poisson(board):
     m = board.shape[0]
 
     # Create edges
-    B = numpy.zeros((m + 2, m + 2), dtype=int)  # Large board
+    B = -numpy.ones((m + 2, m + 2), dtype=int)  # Large board
     B[1:m + 1, 1:m + 1] = board
+
+    # Set edges values
     B[0, :] = 0
     B[-1, :] = 0
     B[:, 0] = 1
@@ -58,14 +60,13 @@ def get_poisson(board, player):
     poisson = Poisson(B)
     poisson.iterations(1000)
     U = poisson.U
-    U += 1
-    print("Poisson matrix:")
-    print(U)
+    U += 2
     return U[1:m + 1, 1:m + 1]
 
 
 def get_neighbour_and_previous_matrix(board, player):
-    U = get_poisson(board, player)
+    board = invert_board(board, player)
+    U = get_poisson(board)
     # Initialization of the neighbour matrix
     n = U.shape[0]
     W = float("inf") * numpy.ones((n, n, n, n))  # Neighbour matrix
@@ -107,12 +108,12 @@ def find_start_end(W):
     # Explore the cells of the neighbour matrix representing a path from a starting cell to an ending one (to find a
     # complete path)
     n = W.shape[0]
-    max_value = 0
-    start, end = (0, 0)
+    min_value = float("inf")
+    start, end = None, None
     for i in range(n):
         for j in range(n):
-            if max_value < W[0, i, n - 1, j] != float("inf"):
-                max_value = W[0, i, n - 1, j]
+            if min_value > W[0, i, n - 1, j]:
+                min_value = W[0, i, n - 1, j]
                 start = numpy.array([0, i])
                 end = numpy.array([n - 1, j])
 
@@ -130,8 +131,8 @@ def get_best_path(start, end, P):
             pile.append(start)
             return
         else:
-            pile.append(middle)
             aux(pile, start, middle)
+            pile.append(middle)
             aux(pile, middle, end)
 
     pile = deque()
@@ -155,13 +156,13 @@ def get_move(path, board, player):
         p = path[i]
         if can_play_move(board, p):
             new_board = play_move_and_copy(board, p, 0)
-            U = get_poisson(new_board, player)
+            U = get_poisson(invert_board(new_board, player))
             weights[i] = U[X, Y]
 
-    sum_dev_from_avg = numpy.apply_along_axis(numpy.sum, 0, numpy.apply_along_axis(dev_from_avg, 0, weights))
+    S = numpy.apply_along_axis(numpy.sum, 0, numpy.apply_along_axis(dev_from_avg, 0, weights))
 
     w = [board[X, Y] == -1]
-    k = numpy.argmin(sum_dev_from_avg[w])
+    k = numpy.argmin(S[w])
 
     move = tuple(path[w][k])
     print(move)
