@@ -2,12 +2,12 @@ from collections import deque
 
 import numpy
 
-from hex_game.graphics import debug
-from hex_game.main import get_random_move, NEIGHBORS_1, init_board, is_neighboring
+# from hex_game.graphics import debug
+from hex_game.main import get_random_move, NEIGHBORS_1, init_board, is_neighboring, play_move_and_copy, can_play_move
 from hex_game.poisson import Poisson
 
 
-def get_poisson(board, player):
+def get_poisson_move(board, player):
     W, P = get_neighbour_and_previous_matrix(board, player)
 
     while floyd_warshall(W, P):
@@ -21,13 +21,17 @@ def get_poisson(board, player):
     path = get_best_path(start, end, P)
 
     print(path)
+    # [k - numpy.array([1, 1]) for k in pile if 1 <= k[0] < n - 1 > k[1] >= 1]
 
-    debug.debug_path(path)
+    move = get_move(path, board, player)
 
-    return get_random_move(board, numpy.random.RandomState())
+    if player == 1:
+        move = (move[1], move[0])
+
+    return move
 
 
-def get_neighbour_and_previous_matrix(board, player):
+def get_poisson(board, player):
     board = board.copy()
 
     if player == 1:
@@ -57,7 +61,11 @@ def get_neighbour_and_previous_matrix(board, player):
     U += 1
     print("Poisson matrix:")
     print(U)
+    return U[1:m + 1, 1:m + 1]
 
+
+def get_neighbour_and_previous_matrix(board, player):
+    U = get_poisson(board, player)
     # Initialization of the neighbour matrix
     n = U.shape[0]
     W = float("inf") * numpy.ones((n, n, n, n))  # Neighbour matrix
@@ -67,7 +75,7 @@ def get_neighbour_and_previous_matrix(board, player):
     # precedent neighbour
     for i in range(n):
         for j in range(n):
-            if B[i, j] != 1:
+            if board[i, j] != 1:
                 for (k, l) in NEIGHBORS_1:
                     a = i + k
                     b = j + l
@@ -130,17 +138,31 @@ def get_best_path(start, end, P):
     aux(pile, start, end)
     pile.append(end)
 
-    return [k - numpy.array([1, 1]) for k in pile if 1 <= k[0] < n - 1 > k[1] >= 1]
+    return numpy.array(pile)
 
 
-def get_move(path, poisson_matrix):
-    # Finds the best path by  minimizing the sum of the difference from the average (with poisson matrix)
-    # TODO
-    def esperance():
-        mini = 0
-        return mini
+def dev_from_avg(t):
+    return t - t.mean()
 
-    move = path[0]
-    for k in path:
-        i, j = k
+
+def get_move(path, board, player):
+    # Finds the best path by minimizing the sum of the difference from the average (with poisson matrix)
+    n = len(path)
+    X, Y = path.T
+    weights = numpy.zeros((n, n))
+
+    for i in range(n):
+        p = path[i]
+        if can_play_move(board, p):
+            new_board = play_move_and_copy(board, p, 0)
+            U = get_poisson(new_board, player)
+            weights[i] = U[X, Y]
+
+    sum_dev_from_avg = numpy.apply_along_axis(numpy.sum, 0, numpy.apply_along_axis(dev_from_avg, 0, weights))
+
+    w = [board[X, Y] == -1]
+    k = numpy.argmin(sum_dev_from_avg[w])
+
+    move = tuple(path[w][k])
+    print(move)
     return move

@@ -2,7 +2,7 @@ import keras.models
 import numpy as np
 import tensorflow as tf
 
-from hex_game.ai_poisson import get_poisson
+from hex_game.ai_poisson import get_poisson, get_poisson_move
 from hex_game.main import play_move, can_play_move, init_board, get_random_move
 from hex_game.poisson import Poisson
 from hex_game.winner_check import check_for_winner, init_winner_matrix_and_counter
@@ -86,7 +86,7 @@ class Game:
 
             self.play_move(move)
         elif name == "Poisson":
-            move = get_poisson(self.board, self.player)
+            move = get_poisson_move(self.board, self.player)
             self.play_move(move)
 
     def click(self, x, y):

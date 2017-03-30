@@ -39,7 +39,7 @@ def can_play_move(board: numpy.ndarray, move: (int, int)) -> bool:
     :param move: move
     :return: Whether or not he can succeed
     """
-    return 0 <= move[0] < board.shape[0] > move[1] >= 0 and board[move] == -1
+    return 0 <= move[0] < board.shape[0] > move[1] >= 0 and board[move[0], move[1]] == -1
 
 
 def play_move_and_copy(board: numpy.ndarray, move: (int, int), player: int) -> numpy.ndarray:
