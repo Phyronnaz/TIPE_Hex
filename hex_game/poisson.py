@@ -1,49 +1,48 @@
 import numpy
 
+from hex_game.main import NEIGHBORS_1, NEIGHBORS_2
+
 
 class Poisson:
-    def __init__(self, board):
-        self.M = M = board.shape[0]
-        self.N = N = self.M + 2
+    def __init__(self, board, scales):
+        self.m = m = board.shape[0]
+        self.n = n = self.m + 4
 
-        self.C = -6 * numpy.ones((N, N))
-        self.NE = numpy.ones((N, N))
-        self.E = numpy.ones((N, N))
-        self.SE = numpy.ones((N, N))
-        self.NW = numpy.ones((N, N))
-        self.SW = numpy.ones((N, N))
-        self.W = numpy.ones((N, N))
-        self.F = numpy.zeros((N, N))
-        self.A = numpy.zeros((N, N))
+        self.C = -6  * numpy.ones((n, n))
 
-        self.U = numpy.zeros((M, M))
+        self.F = numpy.zeros((n, n))
+        self.A = numpy.zeros((n, n))
 
-        for i in range(M):
-            for j in range(M):
+        U = numpy.zeros((m, m))
+
+        for i in range(m):
+            for j in range(m):
                 if board[i, j] != -1:
-                    self.source_ponctuelle(i + 1, j + 1, [-1, 1][board[i, j]])
+                    self.source_ponctuelle(i + 2, j + 2, [-1, 1][board[i, j]] * scales[i, j])
 
     def source_ponctuelle(self, x, y, v):
         self.C[x, y] = 1
         self.F[x, y] = v
-        for K in [self.NE, self.E, self.SE, self.SW, self.W, self.NW]:
-            K[x, y] = 0
-
-    def norme(self, alpha=0.01):
-        return numpy.sum(self.U > alpha) - numpy.sum(self.U < -alpha)
 
     def gauss_seidel(self):
-        M = self.N - 1
-        self.A[1:M, 1:M] = 1 / self.C[1:M, 1:M] * \
-                           (self.F[1:M, 1:M] -
-                            self.NE[1:M, 1:M] * self.A[1 - 1:M - 1, 1 + 1:M + 1] -
-                            self.E[1:M, 1:M] * self.A[1:M, 1 + 1:M + 1] -
-                            self.SE[1:M, 1:M] * self.A[1 + 1:M + 1, 1:M] -
-                            self.SW[1:M, 1:M] * self.A[1 + 1:M + 1, 1 - 1:M - 1] -
-                            self.W[1:M, 1:M] * self.A[1:M, 1 - 1:M - 1] -
-                            self.NW[1:M, 1:M] * self.A[1 - 1:M - 1, 1:M])
+        n = self.n
+        A = self.A
+        C = self.C
+        F = self.F
+        s = 2
+        e = n - 2
+
+        neighbors_1 = numpy.zeros((e - s, e - s))
+        for (a, b) in NEIGHBORS_1:
+            neighbors_1 += A[s + a:e + a, s + b:e + b]
+
+        neighbors_2 = numpy.zeros((e - s, e - s))
+        for (a, b) in NEIGHBORS_2:
+            neighbors_2 += A[s + a:e + a, s + b:e + b]
+
+        A[s:e, s:e] = 1 / C[s:e, s:e] * (F[s:e, s:e] - (F[s:e, s:e] == 0) * (neighbors_1 + 0 * neighbors_2))
 
     def iterations(self, ni):
         for i in range(ni):
             self.gauss_seidel()
-        self.U = self.A[1:self.N - 1, 1:self.N - 1]
+        self.U = self.A[2:self.n - 2, 2:self.n - 2]

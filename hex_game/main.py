@@ -107,8 +107,33 @@ def get_random_move(board: numpy.ndarray, state: numpy.random.RandomState):
     return moves[0]
 
 
-def is_neighboring(a, b):
-    for (k, l) in NEIGHBORS_1:
+def is_neighboring(a, b, order):
+    for (k, l) in NEIGHBORS_1 if order == 1 else NEIGHBORS_2:
         if a[0] == b[0] + k and a[1] == b[1] + l:
             return True
     return False
+
+
+def get_common_neighbours(p1, p2, n):
+    """
+    Get common neighbours of points p1 and p2
+    :param p1: point 1
+    :param p2: point 2
+    :return: list of tuple
+    """
+    l1 = get_neighbors_1(p1, n)
+    l2 = get_neighbors_1(p2, n)
+    return [k for k in l1 if k in l2]
+
+
+def get_neighbors_1(p, n):
+    a, b = p
+    return [(a + i, b + j) for (i, j) in NEIGHBORS_1 if 0 <= a + i < n > b + j >= 0]
+
+
+def get_neighbors_2(p, board):
+    a, b = p
+    n = board.shape[0]
+    return [(a + i, b + j) for (i, j) in NEIGHBORS_2
+            if 0 <= a + i < n > b + j >= 0 and
+            len([k for k in get_common_neighbours(p, (a + i, b + j), n) if board[k] == -1]) == 2]

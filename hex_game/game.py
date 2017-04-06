@@ -28,7 +28,7 @@ class Game:
                 self.winner, self.winner_c = check_for_winner(move, self.player, self.winner_matrix, self.winner_c)
                 self.player = 1 - self.player
             else:
-                debug.debug_play("Failed to play!")
+                debug.debug_play("Failed to play! Move: {}".format(move))
 
         if self.winner != -1 and not self.ended:
             self.ended = True

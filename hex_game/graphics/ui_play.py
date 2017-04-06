@@ -14,7 +14,7 @@ class PlayUI:
         debug.play_ui = self
 
         # Hack
-        ui.spinBoxSizePlay.setValue(3)
+        ui.spinBoxSizePlay.setValue(11)
 
         # Variables
         self.ui = ui

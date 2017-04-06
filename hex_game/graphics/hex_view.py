@@ -6,7 +6,8 @@ from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QColor
 from PyQt5.QtGui import QPen
 from PyQt5.QtGui import QPolygonF
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPolygonItem, QGraphicsLineItem, QGraphicsItem
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPolygonItem, QGraphicsLineItem, QGraphicsItem, \
+    QGraphicsSimpleTextItem
 
 
 class HexView(QGraphicsView):
@@ -36,6 +37,21 @@ class HexView(QGraphicsView):
                 self.scene.addItem(item)
                 if color == 'white':
                     self.polygons[i, j] = item
+
+                rotation = -np.pi / 6
+                t = QGraphicsSimpleTextItem(str((i, j)))
+                t.setScale(0.75)
+                p_x = (2 * i + j) * np.sin(np.pi / 3)
+                p_y = j * (2 - np.cos(5 * np.pi / 3))
+
+                r = np.array([[np.cos(rotation), -np.sin(rotation)],
+                              [np.sin(rotation), np.cos(rotation)]])
+                p_x *= 25
+                p_y *= 25
+                p_y, p_x = r.dot(np.array([p_x, p_y]))
+
+                t.setPos(p_x, p_y)
+                self.scene.addItem(t)
 
     def click(self, x, y):
         if 0 <= x < self.size > y >= 0:
@@ -88,6 +104,7 @@ class QGraphicsPolygonItemClick(QGraphicsPolygonItem):
             p_y, p_x = r.dot(np.array([p_x, p_y]))
 
             points.append(QPointF(p_x, p_y))
+
         polygon = QPolygonF(points)
         super().__init__(polygon)
         self.setPen(QPen(QColor("black"), size / 10))
