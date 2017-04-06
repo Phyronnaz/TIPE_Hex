@@ -189,7 +189,7 @@ class PlayUI:
         :param x: x
         :param y: y
         """
-        if self.game is not None:
+        if self.game is not None and self.game.players[self.game.player].name == "Human":
             self.human.move = x, y
             self.game.play()
             self.update_game()

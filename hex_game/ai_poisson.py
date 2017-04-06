@@ -67,8 +67,9 @@ def get_poisson(board):
 def get_neighbour_and_previous_matrix(board, player):
     board = invert_board(board, player)
     U = get_poisson(board)
+
     # Initialization of the neighbour matrix
-    n = U.shape[0]
+    n = board.shape[0]
     W = float("inf") * numpy.ones((n, n, n, n))  # Neighbour matrix
     P = -numpy.ones((n, n, n, n, 2), dtype=int)  # Previous matrix
 
@@ -81,8 +82,9 @@ def get_neighbour_and_previous_matrix(board, player):
                     a = i + k
                     b = j + l
                     if 0 <= a < n > b >= 0:
-                        W[a, b, i, j] = U[i, j]
-                        P[a, b, i, j] = (a, b)
+                        if board[a, b] != 1:
+                            W[a, b, i, j] = U[i, j]
+                            P[a, b, i, j] = (a, b)
 
     return W, P
 
@@ -110,6 +112,7 @@ def find_start_end(W):
     n = W.shape[0]
     min_value = float("inf")
     start, end = None, None
+    print(W[0, :, n - 1, :])
     for i in range(n):
         for j in range(n):
             if min_value > W[0, i, n - 1, j]:
@@ -150,6 +153,11 @@ def get_move(path, board, player):
     # Finds the best path by minimizing the sum of the difference from the average (with poisson matrix)
     n = len(path)
     X, Y = path.T
+
+    U = get_poisson(invert_board(board, player))
+    i = numpy.argmax(U[X, Y])
+    return X[i], Y[i]
+
     weights = numpy.zeros((n, n))
 
     for i in range(n):

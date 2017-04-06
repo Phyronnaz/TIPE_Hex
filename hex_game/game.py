@@ -35,8 +35,12 @@ class Game:
             debug.debug_play("Winner: Player %s" % self.winner)
 
     def play(self):
-        move = self.players[self.player].get_move(self.board, self.player)
-        self.play_move(move)
+        try:
+            move = self.players[self.player].get_move(self.board, self.player)
+            self.play_move(move)
+        except Exception as e:
+            print(e)
+
 
     def click(self, x, y):
         if self.players[self.player][0] == "Human":
