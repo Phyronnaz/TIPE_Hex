@@ -2,7 +2,7 @@ import numpy
 from hex_game.floyd_warshall.floyd_warshall import floyd_warshall
 
 from hex_game.graphics import debug
-from hex_game.main import is_neighboring, get_common_neighbors, get_neighbors_1, get_neighbors_2
+from hex_game.main import is_neighboring, get_common_neighbors, get_neighbors_1, get_neighbors_2, add_edges
 from hex_game.poisson import Poisson
 
 poisson_dict = {}
@@ -11,32 +11,41 @@ poisson_dict = {}
 def get_move_poisson(board, player):
     paths = [get_path(board, p) for p in [0, 1]]
 
-    debug.debug_path(invert_path(paths[0], 0), id=player * 10, player=player)
-    debug.debug_path(invert_path(paths[1], 1), id=player * 10 + 1, player=player)
+    # paths_values = [None, None]
+    # for p in [0, 1]:
+    #     X, Y = paths[p].T
+    #     i_board = invert_board(board, p)
+    #     paths_values[p] = get_poisson(i_board)[X, Y]
+    #
+    # best = numpy.argmax([sum(paths_values[p]) for p in [0, 1]])
+    # i_board = invert_board(board, best)
+    # move = get_move(paths[best], i_board)
+    #
+    # return invert_move(move, best)
 
-    paths_values = [None, None]
-    for p in [0, 1]:
-        X, Y = paths[p].T
-        i_board = invert_board(board, p)
-        paths_values[p] = get_poisson(i_board)[X, Y]
+    real_paths = [invert_path(paths[p], p) for p in [0, 1]]
 
-    best = numpy.argmax([sum(paths_values[p]) for p in [0, 1]])
-    i_board = invert_board(board, best)
-    move = get_move(paths[best], i_board)
+    debug.debug_path(real_paths[0], id=0, player=player)
+    debug.debug_path(real_paths[1], id=1, player=player)
 
-    return invert_move(move, best)
+    return [k for k in real_paths[0] if k in real_paths[1]][0]
 
 
 def get_path(board, player):
-    i_board = invert_board(board, player)
+    i_board = add_edges(invert_board(board, player), 1)
+
     W, P = get_weights_and_precedents_matrix(i_board)
 
+    # Floyd
     while floyd_warshall(W, P):
         pass
 
+    # Find path
     start, end = find_start_end(W)
-
     path = find_path(start, end, P, i_board)
+
+    # Remove edges
+    path = [(x - 1, y - 1) for (x, y) in path]
 
     return path
 
@@ -60,7 +69,7 @@ def invert_board(board, player):
 
 def invert_move(move, player):
     if player == 0:
-        return move
+        return move[0], move[1]
     else:
         return move[1], move[0]
 
@@ -71,21 +80,10 @@ def get_poisson(board, iterations=1000):
         n = board.shape[0]
 
         # Create edges
-        B = -numpy.ones((n + 2, n + 2), dtype=int)  # Large board
-        B[1:n + 1, 1:n + 1] = board
-
-        # Set edges values
-        B[0, :] = 0
-        B[-1, :] = 0
-        B[:, 0] = 1
-        B[:, -1] = 1
-        B[0, 0] = -1
-        B[-1, -1] = -1
-        B[1, -1] = -1
-        B[-1, 1] = -1
+        B = add_edges(board, 1)
 
         scales = numpy.ones((n + 2, n + 2))
-        c = 1  # How much the borders are used in poisson
+        c = 1  # How much edges are used in poisson
         scales[0, :] = c
         scales[-1, :] = c
         scales[:, 0] = c
@@ -130,23 +128,6 @@ def get_weights_and_precedents_matrix(board):
                         P[a, b, i, j] = [a, b]
 
     return W, P
-
-
-# def floyd_warshall(W, P):
-#     # Classical Floyd Warshall algorithm with the precedent neighbour kept in memory to rebuild the explored paths
-#     n = W.shape[0]
-#     modified = False
-#     for a in range(n):
-#         for b in range(n):
-#             for i in range(n):
-#                 for j in range(n):
-#                     for k in range(n):
-#                         for l in range(n):
-#                             if W[a, b, i, j] > W[a, b, k, l] + W[k, l, i, j]:
-#                                 W[a, b, i, j] = W[a, b, k, l] + W[k, l, i, j]
-#                                 P[a, b, i, j] = (k, l)
-#                                 modified = True
-#     return modified
 
 
 def find_start_end(W):

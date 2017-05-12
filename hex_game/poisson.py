@@ -8,12 +8,12 @@ class Poisson:
         self.m = m = board.shape[0]
         self.n = n = self.m + 4
 
-        self.C = -6 * numpy.ones((n, n))
+        self.C = -6 * numpy.ones((n, n))  # Coeffs
 
         self.F = numpy.zeros((n, n))
-        self.A = numpy.zeros((n, n))
+        self.A = numpy.zeros((n, n))  # Work matrix
 
-        self.U = numpy.zeros((m, m))
+        self.U = numpy.zeros((m, m))  # Result matrix
 
         for i in range(m):
             for j in range(m):
@@ -33,14 +33,21 @@ class Poisson:
         e = n - 2
 
         neighbors_1 = numpy.zeros((e - s, e - s))
-        for (a, b) in NEIGHBORS_1:
-            neighbors_1 += A[s + a:e + a, s + b:e + b]
 
-        neighbors_2 = numpy.zeros((e - s, e - s))
-        for (a, b) in NEIGHBORS_2:
-            neighbors_2 += A[s + a:e + a, s + b:e + b]
+        # Speed depend on direction
+        for (a, b) in [(-1, 1), (0, 1), (1, -1), (0, -1)]:
+            neighbors_1 += numpy.minimum(0, A[s + a:e + a, s + b:e + b]) / 2
+            neighbors_1 += numpy.maximum(0, A[s + a:e + a, s + b:e + b])
 
-        A[s:e, s:e] = 1 / C[s:e, s:e] * (F[s:e, s:e] - (C[s:e, s:e] != 1) * (neighbors_1 + 0 * neighbors_2))
+        for (a, b) in [(-1, 0), (-1, 1), (1, -1), (1, 0)]:
+            neighbors_1 += numpy.maximum(0, A[s + a:e + a, s + b:e + b]) / 2
+            neighbors_1 += numpy.minimum(0, A[s + a:e + a, s + b:e + b])
+
+        # Normal
+        # for (a, b) in NEIGHBORS_1:
+        #     neighbors_1 += A[s + a:e + a, s + b:e + b]
+
+        A[s:e, s:e] = 1 / C[s:e, s:e] * (F[s:e, s:e] - (C[s:e, s:e] != 1) * neighbors_1)
 
     def iterations(self, ni):
         for i in range(ni):

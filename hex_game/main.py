@@ -101,6 +101,12 @@ def get_possibles_moves(board: numpy.ndarray) -> list((int, int)):
 
 
 def get_random_move(board: numpy.ndarray, state: numpy.random.RandomState):
+    """
+    Random move
+    :param board: board
+    :param state: numpy RandomState
+    :return: (int, int)
+    """
     moves = get_possibles_moves(board)
     state.shuffle(moves)
 
@@ -108,6 +114,13 @@ def get_random_move(board: numpy.ndarray, state: numpy.random.RandomState):
 
 
 def is_neighboring(a, b, distance):
+    """
+    Are a and b neighbors?
+    :param a: (int, int)
+    :param b: (int, int)
+    :param distance: 1 or 2
+    :return: bool
+    """
     for (k, l) in NEIGHBORS_1 if distance == 1 else NEIGHBORS_2:
         if a[0] == b[0] + k and a[1] == b[1] + l:
             return True
@@ -151,3 +164,24 @@ def get_neighbors_2(p, board):
     return [(a + i, b + j) for (i, j) in NEIGHBORS_2
             if 0 <= a + i < n > b + j >= 0 and
             len([k for k in get_common_neighbors(p, (a + i, b + j), board) if board[k] == -1]) == 2]
+
+
+def add_edges(board, count):
+    n = board.shape[0]
+    B = -numpy.ones((n + 2 * count, n + 2 * count), dtype=int)  # Large board
+    B[count:n + count, count:n + count] = board
+
+    # Set edges values
+    B[:count, :] = 0
+    B[-count:, :] = 0
+
+    B[:, :count] = 1
+    B[:, -count:] = 1
+
+    B[:count, :count] = -1
+    B[-count:, -count:] = -1
+
+    B[:count, -count:] = -1
+    B[-count:, :count] = -1
+
+    return B
