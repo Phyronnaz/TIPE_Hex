@@ -13,7 +13,6 @@ class Game:
         # Assign variables
         self.size = size
         self.players = players  # type: Player,Player
-        self.ended = False
 
         # Init game
         self.board = init_board(size)
@@ -30,14 +29,13 @@ class Game:
             else:
                 debug.debug_play("Failed to play! Move: {}".format(move))
 
-        if self.winner != -1 and not self.ended:
-            self.ended = True
-            debug.debug_play("Winner: Player %s" % self.winner)
+            if self.winner != -1:
+                debug.debug_play("Winner: Player %s" % self.winner)
 
     def play(self):
-        move = self.players[self.player].get_move(self.board, self.player)
-        self.play_move(move)
-
+        if self.winner == -1:
+            move = self.players[self.player].get_move(self.board, self.player)
+            self.play_move(move)
 
     def click(self, x, y):
         if self.players[self.player][0] == "Human":

@@ -46,7 +46,6 @@ class PlayUI:
         self.shortcut_play = QShortcut(QKeySequence("Return"), self.ui.playTab)
         self.shortcut_play.activated.connect(self.play)
 
-
         # Connect actions
         self.ui.spinBoxSizePlay.valueChanged.connect(self.update_size)
 
@@ -169,8 +168,6 @@ class PlayUI:
         self.ui.graphicsViewPlayer1.toggle_path(self.ui.pushButtonViewPath.isChecked())
         self.ui.graphicsViewPlayer2.toggle_path(self.ui.pushButtonViewPath.isChecked())
 
-
-
     def update_game(self):
         """
         Update UI after a move
@@ -196,7 +193,7 @@ class PlayUI:
         """
         Handle play button click
         """
-        if self.game is not None:
+        if self.game is not None and self.game.players[self.game.player].name != "Human":
             self.game.play()
             self.update_game()
 

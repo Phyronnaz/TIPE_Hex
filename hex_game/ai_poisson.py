@@ -74,7 +74,7 @@ def invert_move(move, player):
         return move[1], move[0]
 
 
-def get_poisson(board, iterations=1000):
+def get_poisson(board):
     key = board.tostring()
     if key not in poisson_dict:
         n = board.shape[0]
@@ -94,7 +94,7 @@ def get_poisson(board, iterations=1000):
         scales[-1, 1] = c
 
         poisson = Poisson(B, scales)
-        poisson.iterations(iterations)
+        poisson.process()
         U = poisson.U
         U += 2
 

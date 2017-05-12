@@ -47,9 +47,11 @@ class Poisson:
         # for (a, b) in NEIGHBORS_1:
         #     neighbors_1 += A[s + a:e + a, s + b:e + b]
 
-        A[s:e, s:e] = 1 / C[s:e, s:e] * (F[s:e, s:e] - (C[s:e, s:e] != 1) * neighbors_1)
+        self.U = 1 / C[s:e, s:e] * (F[s:e, s:e] - (C[s:e, s:e] != 1) * neighbors_1)
 
-    def iterations(self, ni):
-        for i in range(ni):
-            self.gauss_seidel()
+        return numpy.linalg.norm(A[s:e, s:e] - self.U)
+
+    def process(self):
+        while self.gauss_seidel() > 0.001:
+            self.A[2:self.n - 2, 2:self.n - 2] = self.U
         self.U = self.A[2:self.n - 2, 2:self.n - 2]
