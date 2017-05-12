@@ -11,7 +11,6 @@ from hex_game.tools import Group, Position
 
 Move = List[Tuple[int, Position]]
 
-
 class PathAI:
     def __init__(self):
         self.human = HumanPlayer()

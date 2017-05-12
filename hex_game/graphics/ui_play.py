@@ -13,9 +13,6 @@ class PlayUI:
     def __init__(self, ui: Ui_TIPE):
         debug.play_ui = self
 
-        # Hack
-        ui.spinBoxSizePlay.setValue(11)
-
         # Variables
         self.ui = ui
         self.size = 3
@@ -38,7 +35,6 @@ class PlayUI:
 
     def init_ui(self):
         # Initial states
-        self.ui.pushButtonViewDefault.setChecked(True)
         self.ui.pushButtonViewPlayer1.setChecked(False)
         self.ui.pushButtonViewPlayer2.setChecked(False)
 
@@ -50,13 +46,14 @@ class PlayUI:
         self.ui.comboBoxPlayer1.activated.connect(self.update_minimax_spinbox)
         self.ui.comboBoxPlayer2.activated.connect(self.update_minimax_spinbox)
 
-        self.ui.pushButtonViewDefault.clicked.connect(self.update_graphics_views_visibility)
         self.ui.pushButtonViewPlayer1.clicked.connect(self.update_graphics_views_visibility)
         self.ui.pushButtonViewPlayer2.clicked.connect(self.update_graphics_views_visibility)
 
         self.ui.pushButtonPlay.clicked.connect(self.play_button)
-        self.ui.pushButtonPlay.setShortcut("Return")
+
         self.ui.pushButtonNewGame.clicked.connect(self.new_game)
+
+        self.ui.pushButtonViewText.clicked.connect(self.update_text)
 
     def reload_graphics_views(self):
         """
@@ -129,21 +126,22 @@ class PlayUI:
         self.displayed_players = [k for k in self.players if k.check(self.size)]
         names = [k.name for k in self.displayed_players]
 
+        text1 = self.ui.comboBoxPlayer1.currentText()
+        text2 = self.ui.comboBoxPlayer2.currentText()
+
         self.ui.comboBoxPlayer1.clear()
         self.ui.comboBoxPlayer2.clear()
 
         self.ui.comboBoxPlayer1.addItems(names)
         self.ui.comboBoxPlayer2.addItems(names)
 
+        self.ui.comboBoxPlayer1.setCurrentText(text1)
+        self.ui.comboBoxPlayer2.setCurrentText(text2)
+
     def update_graphics_views_visibility(self):
         """
         Enable/Disable HexViews
         """
-        if self.ui.pushButtonViewDefault.isChecked():
-            self.ui.graphicsViewDefault.show()
-        else:
-            self.ui.graphicsViewDefault.hide()
-
         if self.ui.pushButtonViewPlayer1.isChecked():
             self.ui.graphicsViewPlayer1.show()
         else:
@@ -153,6 +151,9 @@ class PlayUI:
             self.ui.graphicsViewPlayer2.show()
         else:
             self.ui.graphicsViewPlayer2.hide()
+
+    def update_text(self):
+        self.ui.graphicsViewDefault.set_text(self.ui.pushButtonViewText.isChecked())
 
     def update_game(self):
         """

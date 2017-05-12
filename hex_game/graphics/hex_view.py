@@ -3,10 +3,10 @@ from PyQt5.QtCore import Qt
 import math
 import numpy as np
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QTextBlockFormat, QTextCursor
 from PyQt5.QtGui import QPen
 from PyQt5.QtGui import QPolygonF
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPolygonItem, QGraphicsLineItem, QGraphicsItem, \
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPolygonItem, QGraphicsLineItem, \
     QGraphicsSimpleTextItem
 
 
@@ -15,16 +15,18 @@ class HexView(QGraphicsView):
         QGraphicsView.__init__(self, *__args)
         self.size = size
         self.callback = callback
+        self.scale = 20
+
+        self.texts = []
+        self.arrows = []
+        self.polygons = np.zeros((size, size), dtype=object)
         self.scene = QGraphicsScene(self)
 
         self.setScene(self.scene)
 
-        self.arrows = []
-
-        self.polygons = np.zeros((size, size), dtype=object)
-
         for i in range(-1, size + 1):
             for j in range(-1, size + 1):
+                # Color
                 if (i, j) in [(-1, -1), (-1, size), (size, -1), (size, size)]:
                     color = 'black'
                 elif i in [-1, size]:
@@ -33,25 +35,19 @@ class HexView(QGraphicsView):
                     color = 'red'
                 else:
                     color = 'white'
-                item = QGraphicsPolygonItemClick(i, j, 25, -np.pi / 6, self.click, color=color)
-                self.scene.addItem(item)
+
+                # Position
+                x, y = self.position(i, j)
+
+                hex = QGraphicsPolygonItemClick(x, y, size=self.scale, callback=self.click, color=color)
+                self.scene.addItem(hex)
+
                 if color == 'white':
-                    self.polygons[i, j] = item
-
-                rotation = -np.pi / 6
-                t = QGraphicsSimpleTextItem(str((i, j)))
-                t.setScale(0.75)
-                p_x = (2 * i + j) * np.sin(np.pi / 3)
-                p_y = j * (2 - np.cos(5 * np.pi / 3))
-
-                r = np.array([[np.cos(rotation), -np.sin(rotation)],
-                              [np.sin(rotation), np.cos(rotation)]])
-                p_x *= 25
-                p_y *= 25
-                p_y, p_x = r.dot(np.array([p_x, p_y]))
-
-                t.setPos(p_x, p_y)
-                self.scene.addItem(t)
+                    self.polygons[i, j] = hex
+                    # Add text
+                    text = self.scene.addText(str(i) + "," + str(j))
+                    text.setPos(x - text.boundingRect().width() / 2, y - text.boundingRect().height() / 2)
+                    self.texts.append(text)
 
     def click(self, x, y):
         if 0 <= x < self.size > y >= 0:
@@ -81,32 +77,50 @@ class HexView(QGraphicsView):
         for i in range(1, len(path)):
             a = path[i - 1]
             b = path[i]
-            arrow = Arrow(a, b, 25, -np.pi / 6)
+            start = self.position(*a)
+            end = self.position(*b)
+            arrow = Arrow(start, end)
             self.scene.addItem(arrow)
             self.arrows.append(arrow)
 
+    def set_text(self, enabled):
+        for text in self.texts:
+            if enabled:
+                text.show()
+            else:
+                text.hide()
+
+    def position(self, x, y):
+        rotation = -np.pi / 6
+
+        p_x = (2 * x + y) * np.sin(np.pi / 3)
+        p_y = y * (2 - np.cos(5 * np.pi / 3))
+
+        r = np.array([[np.cos(rotation), -np.sin(rotation)],
+                      [np.sin(rotation), np.cos(rotation)]])
+
+        p_y, p_x = r.dot(np.array([p_x, p_y]))
+
+        p_x *= self.scale
+        p_y *= self.scale
+
+        return p_x, p_y
+
 
 class QGraphicsPolygonItemClick(QGraphicsPolygonItem):
-    def __init__(self, x, y, size, rotation, callback, color):
+    def __init__(self, x, y, size, callback, color):
         self.position = x, y
         self.callback = callback
+
         points = []
         for a in range(6):
-            p_x = np.sin(a * np.pi / 3)
-            p_y = np.cos(a * np.pi / 3)
-            p_x += (2 * x + y) * np.sin(np.pi / 3)
-            p_y += y * (2 - np.cos(5 * np.pi / 3))
-
-            r = np.array([[np.cos(rotation), -np.sin(rotation)],
-                          [np.sin(rotation), np.cos(rotation)]])
-            p_x *= size
-            p_y *= size
-            p_y, p_x = r.dot(np.array([p_x, p_y]))
-
+            p_x = x + size * np.sin(a * np.pi / 3)
+            p_y = y + size * np.cos(a * np.pi / 3)
             points.append(QPointF(p_x, p_y))
 
         polygon = QPolygonF(points)
         super().__init__(polygon)
+
         self.setPen(QPen(QColor("black"), size / 10))
         self.setBrush(QColor(color))
 
@@ -121,21 +135,7 @@ class QGraphicsPolygonItemClick(QGraphicsPolygonItem):
 
 
 class Arrow(QGraphicsLineItem):
-    def __init__(self, start, end, size, rotation):
-        def position(x, y):
-            p_x = (2 * x + y) * np.sin(np.pi / 3)
-            p_y = y * (2 - np.cos(5 * np.pi / 3))
-
-            r = np.array([[np.cos(rotation), -np.sin(rotation)],
-                          [np.sin(rotation), np.cos(rotation)]])
-            p_x *= size
-            p_y *= size
-            p_y, p_x = r.dot(np.array([p_x, p_y]))
-            return p_x, p_y
-
-        a, b = position(*start)
-        c, d = position(*end)
-
-        super(Arrow, self).__init__(a, b, c, d)
+    def __init__(self, start, end):
+        super(Arrow, self).__init__(*start, *end)
 
         self.setPen(QPen(Qt.green, 10, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))

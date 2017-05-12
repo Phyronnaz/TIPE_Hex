@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'TIPE_Hex_QT/mainwindow.ui'
 #
-# Created by: PyQt5 UI code generator 5.8.1
+# Created by: PyQt5 UI code generator 5.8.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -56,6 +56,7 @@ class Ui_TIPE(object):
         self.formLayoutSize.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.labelSize)
         self.spinBoxSizePlay = QtWidgets.QSpinBox(self.playTab)
         self.spinBoxSizePlay.setMinimum(2)
+        self.spinBoxSizePlay.setProperty("value", 11)
         self.spinBoxSizePlay.setObjectName("spinBoxSizePlay")
         self.formLayoutSize.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.spinBoxSizePlay)
         self.gridLayout.addLayout(self.formLayoutSize, 3, 0, 1, 1)
@@ -64,20 +65,6 @@ class Ui_TIPE(object):
         self.horizontalLayoutView.setContentsMargins(11, 11, 11, 11)
         self.horizontalLayoutView.setSpacing(6)
         self.horizontalLayoutView.setObjectName("horizontalLayoutView")
-        self.labelView = QtWidgets.QLabel(self.playTab)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.labelView.sizePolicy().hasHeightForWidth())
-        self.labelView.setSizePolicy(sizePolicy)
-        self.labelView.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
-        self.labelView.setObjectName("labelView")
-        self.horizontalLayoutView.addWidget(self.labelView)
-        self.pushButtonViewDefault = QtWidgets.QPushButton(self.playTab)
-        self.pushButtonViewDefault.setCheckable(True)
-        self.pushButtonViewDefault.setChecked(False)
-        self.pushButtonViewDefault.setObjectName("pushButtonViewDefault")
-        self.horizontalLayoutView.addWidget(self.pushButtonViewDefault)
         self.pushButtonViewPlayer1 = QtWidgets.QPushButton(self.playTab)
         self.pushButtonViewPlayer1.setCheckable(True)
         self.pushButtonViewPlayer1.setObjectName("pushButtonViewPlayer1")
@@ -86,6 +73,11 @@ class Ui_TIPE(object):
         self.pushButtonViewPlayer2.setCheckable(True)
         self.pushButtonViewPlayer2.setObjectName("pushButtonViewPlayer2")
         self.horizontalLayoutView.addWidget(self.pushButtonViewPlayer2)
+        self.pushButtonViewText = QtWidgets.QPushButton(self.playTab)
+        self.pushButtonViewText.setCheckable(True)
+        self.pushButtonViewText.setChecked(True)
+        self.pushButtonViewText.setObjectName("pushButtonViewText")
+        self.horizontalLayoutView.addWidget(self.pushButtonViewText)
         self.gridLayout.addLayout(self.horizontalLayoutView, 1, 0, 1, 1)
         spacerItem5 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.gridLayout.addItem(spacerItem5, 4, 0, 1, 1)
@@ -408,14 +400,11 @@ class Ui_TIPE(object):
         self.verticalLayout_2.addWidget(self.tabWidget)
         TIPE.setCentralWidget(self.centralWidget)
         self.menuBar = QtWidgets.QMenuBar(TIPE)
-        self.menuBar.setGeometry(QtCore.QRect(0, 0, 766, 19))
+        self.menuBar.setGeometry(QtCore.QRect(0, 0, 766, 29))
         self.menuBar.setObjectName("menuBar")
         self.menuFile = QtWidgets.QMenu(self.menuBar)
         self.menuFile.setObjectName("menuFile")
         TIPE.setMenuBar(self.menuBar)
-        self.mainToolBar = QtWidgets.QToolBar(TIPE)
-        self.mainToolBar.setObjectName("mainToolBar")
-        TIPE.addToolBar(QtCore.Qt.TopToolBarArea, self.mainToolBar)
         self.statusBar = QtWidgets.QStatusBar(TIPE)
         self.statusBar.setObjectName("statusBar")
         TIPE.setStatusBar(self.statusBar)
@@ -434,11 +423,13 @@ class Ui_TIPE(object):
         TIPE.setWindowTitle(_translate("TIPE", "MainWindow"))
         self.plainTextEditDebugPlay.setPlainText(_translate("TIPE", "This is text"))
         self.pushButtonPlay.setText(_translate("TIPE", "Play"))
+        self.pushButtonPlay.setShortcut(_translate("TIPE", "Return"))
         self.labelSize.setText(_translate("TIPE", "Size"))
-        self.labelView.setText(_translate("TIPE", "View"))
-        self.pushButtonViewDefault.setText(_translate("TIPE", "Default"))
         self.pushButtonViewPlayer1.setText(_translate("TIPE", "Player 1"))
+        self.pushButtonViewPlayer1.setShortcut(_translate("TIPE", "Shift+1"))
         self.pushButtonViewPlayer2.setText(_translate("TIPE", "Player 2"))
+        self.pushButtonViewPlayer2.setShortcut(_translate("TIPE", "Shift+2"))
+        self.pushButtonViewText.setText(_translate("TIPE", "Text"))
         self.labelPlayer1.setText(_translate("TIPE", "Player 1"))
         self.labelMinimaxDepthPlayer1.setText(_translate("TIPE", "Depth"))
         self.labelPlayer2.setText(_translate("TIPE", "Player 2"))
@@ -472,8 +463,8 @@ class Ui_TIPE(object):
         self.label_3.setText(_translate("TIPE", "Batch Size"))
         self.pushButtonTrain.setText(_translate("TIPE", "Train"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.trainTab), _translate("TIPE", "Train"))
-        self.menuFile.setTitle(_translate("TIPE", "File"))
-        self.actionOpen.setText(_translate("TIPE", "Open"))
+        self.menuFile.setTitle(_translate("TIPE", "Fi&le"))
+        self.actionOpen.setText(_translate("TIPE", "&Open"))
 
 
 if __name__ == "__main__":
