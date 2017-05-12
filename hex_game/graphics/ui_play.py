@@ -1,5 +1,7 @@
 import numpy as np
 from PyQt5 import QtGui
+from PyQt5.QtGui import QKeySequence
+from PyQt5.QtWidgets import QShortcut
 
 from hex_game.game import Game
 from hex_game.graphics import debug
@@ -15,7 +17,7 @@ class PlayUI:
 
         # Variables
         self.ui = ui
-        self.size = 3
+        self.size = -1
         self.game = None  # type: Game
         self.models_paths = []
         self.displayed_players = []
@@ -40,6 +42,11 @@ class PlayUI:
 
         self.ui.pushButtonPlay.setEnabled(False)
 
+        # Shortcuts
+        self.shortcut_play = QShortcut(QKeySequence("Return"), self.ui.playTab)
+        self.shortcut_play.activated.connect(self.play)
+
+
         # Connect actions
         self.ui.spinBoxSizePlay.valueChanged.connect(self.update_size)
 
@@ -48,12 +55,12 @@ class PlayUI:
 
         self.ui.pushButtonViewPlayer1.clicked.connect(self.update_graphics_views_visibility)
         self.ui.pushButtonViewPlayer2.clicked.connect(self.update_graphics_views_visibility)
+        self.ui.pushButtonViewText.clicked.connect(self.update_text)
+        self.ui.pushButtonViewPath.clicked.connect(self.toggle_path)
 
-        self.ui.pushButtonPlay.clicked.connect(self.play_button)
+        self.ui.pushButtonPlay.clicked.connect(self.play)
 
         self.ui.pushButtonNewGame.clicked.connect(self.new_game)
-
-        self.ui.pushButtonViewText.clicked.connect(self.update_text)
 
     def reload_graphics_views(self):
         """
@@ -154,6 +161,15 @@ class PlayUI:
 
     def update_text(self):
         self.ui.graphicsViewDefault.set_text(self.ui.pushButtonViewText.isChecked())
+        self.ui.graphicsViewPlayer1.set_text(self.ui.pushButtonViewText.isChecked())
+        self.ui.graphicsViewPlayer2.set_text(self.ui.pushButtonViewText.isChecked())
+
+    def toggle_path(self):
+        self.ui.graphicsViewDefault.toggle_path(self.ui.pushButtonViewPath.isChecked())
+        self.ui.graphicsViewPlayer1.toggle_path(self.ui.pushButtonViewPath.isChecked())
+        self.ui.graphicsViewPlayer2.toggle_path(self.ui.pushButtonViewPath.isChecked())
+
+
 
     def update_game(self):
         """
@@ -176,7 +192,7 @@ class PlayUI:
             if aux2 is not None:
                 self.ui.graphicsViewPlayer2.set_board(self.get_board(aux2, q=True))
 
-    def play_button(self):
+    def play(self):
         """
         Handle play button click
         """
@@ -225,6 +241,9 @@ class PlayUI:
         players = [self.displayed_players[combos[k]] for k in range(2)]
         self.game = Game(self.size, players)
         self.update_game()
+        self.ui.graphicsViewDefault.clear_path()
+        self.ui.graphicsViewPlayer1.clear_path()
+        self.ui.graphicsViewPlayer2.clear_path()
         debug.debug_play("New Game")
 
     def add_model(self, path):
@@ -237,5 +256,10 @@ class PlayUI:
             self.players.append(QLearningPlayer(path))
             self.update_combobox()
 
-    def debug_path(self, path):
-        self.ui.graphicsViewDefault.set_path(path)
+    def debug_path(self, path, id=None, player=-1):
+        if player == -1:
+            self.ui.graphicsViewDefault.set_path(path, id)
+        if player == 0:
+            self.ui.graphicsViewPlayer1.set_path(path, id)
+        if player == 1:
+            self.ui.graphicsViewPlayer2.set_path(path, id)

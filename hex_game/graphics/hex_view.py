@@ -16,9 +16,12 @@ class HexView(QGraphicsView):
         self.size = size
         self.callback = callback
         self.scale = 20
+        self.show_path = True
+        self.colors = [Qt.green, Qt.yellow, Qt.black, Qt.cyan, Qt.magenta, Qt.gray]
 
         self.texts = []
-        self.arrows = []
+        self.paths = {}
+        self.paths_colors = {}
         self.polygons = np.zeros((size, size), dtype=object)
         self.scene = QGraphicsScene(self)
 
@@ -39,11 +42,12 @@ class HexView(QGraphicsView):
                 # Position
                 x, y = self.position(i, j)
 
-                hex = QGraphicsPolygonItemClick(x, y, size=self.scale, callback=self.click, color=color)
-                self.scene.addItem(hex)
+                tile = QGraphicsPolygonItemClick(x, y, size=self.scale, color=color,
+                                                 callback=self.click, callback_args=(i, j))
+                self.scene.addItem(tile)
 
                 if color == 'white':
-                    self.polygons[i, j] = hex
+                    self.polygons[i, j] = tile
                     # Add text
                     text = self.scene.addText(str(i) + "," + str(j))
                     text.setPos(x - text.boundingRect().width() / 2, y - text.boundingRect().height() / 2)
@@ -70,18 +74,34 @@ class HexView(QGraphicsView):
         else:
             print("Out of bounds!")
 
-    def set_path(self, path):
-        for arrow in self.arrows:
-            self.scene.removeItem(arrow)
-        self.arrows = []
+    def set_path(self, path, id=None):
+        if id is None:
+            id = np.random.randint(1000000000)
+
+        if id in self.paths:
+            for arrow in self.paths[id]:
+                self.scene.removeItem(arrow)
+        else:
+            self.paths_colors[id] = self.colors[len(self.paths)]
+
+        l = []
         for i in range(1, len(path)):
             a = path[i - 1]
             b = path[i]
             start = self.position(*a)
             end = self.position(*b)
-            arrow = Arrow(start, end)
+            arrow = Arrow(start, end, self.paths_colors[id])
             self.scene.addItem(arrow)
-            self.arrows.append(arrow)
+            l.append(arrow)
+
+        self.paths[id] = l
+        self.toggle_path(self.show_path)
+
+    def clear_path(self):
+        for id in self.paths:
+            for arrow in self.paths[id]:
+                self.scene.removeItem(arrow)
+        self.paths.clear()
 
     def set_text(self, enabled):
         for text in self.texts:
@@ -89,6 +109,15 @@ class HexView(QGraphicsView):
                 text.show()
             else:
                 text.hide()
+
+    def toggle_path(self, enabled):
+        self.show_path = enabled
+        for id in self.paths:
+            for arrow in self.paths[id]:
+                if enabled:
+                    arrow.show()
+                else:
+                    arrow.hide()
 
     def position(self, x, y):
         rotation = -np.pi / 6
@@ -108,8 +137,8 @@ class HexView(QGraphicsView):
 
 
 class QGraphicsPolygonItemClick(QGraphicsPolygonItem):
-    def __init__(self, x, y, size, callback, color):
-        self.position = x, y
+    def __init__(self, x, y, size, color, callback, callback_args):
+        self.callback_args = callback_args
         self.callback = callback
 
         points = []
@@ -125,7 +154,7 @@ class QGraphicsPolygonItemClick(QGraphicsPolygonItem):
         self.setBrush(QColor(color))
 
     def mousePressEvent(self, _):
-        self.callback(*self.position)
+        self.callback(*self.callback_args)
 
     def setColor(self, color):
         self.setBrush(QColor(color))
@@ -135,7 +164,7 @@ class QGraphicsPolygonItemClick(QGraphicsPolygonItem):
 
 
 class Arrow(QGraphicsLineItem):
-    def __init__(self, start, end):
+    def __init__(self, start, end, color):
         super(Arrow, self).__init__(*start, *end)
 
-        self.setPen(QPen(Qt.green, 10, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        self.setPen(QPen(color, 10, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))

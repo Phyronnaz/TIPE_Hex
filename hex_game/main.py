@@ -59,7 +59,7 @@ def has_win(board: numpy.ndarray, player: int):
     """
     Check if a player has win
     :param board: board
-    :param player: int corresponding to the player (1 or 2)
+    :param player: int corresponding to the player (0 or 1)
     :return: Whether or not player has win
     """
     checked = numpy.zeros(board.shape, dtype=bool)
@@ -107,33 +107,47 @@ def get_random_move(board: numpy.ndarray, state: numpy.random.RandomState):
     return moves[0]
 
 
-def is_neighboring(a, b, order):
-    for (k, l) in NEIGHBORS_1 if order == 1 else NEIGHBORS_2:
+def is_neighboring(a, b, distance):
+    for (k, l) in NEIGHBORS_1 if distance == 1 else NEIGHBORS_2:
         if a[0] == b[0] + k and a[1] == b[1] + l:
             return True
     return False
 
 
-def get_common_neighbours(p1, p2, n):
+def get_common_neighbors(p1, p2, board):
     """
     Get common neighbours of points p1 and p2
     :param p1: point 1
     :param p2: point 2
+    :param board: board
     :return: list of tuple
     """
-    l1 = get_neighbors_1(p1, n)
-    l2 = get_neighbors_1(p2, n)
+    l1 = get_neighbors_1(p1, board)
+    l2 = get_neighbors_1(p2, board)
     return [k for k in l1 if k in l2]
 
 
-def get_neighbors_1(p, n):
+def get_neighbors_1(p, board):
+    """
+    Return a list of all NEIGHBORS_1 of p in board
+    :param p: (x, y)
+    :param board: board
+    :return: list[(int, int)]
+    """
+    n = board.shape[0]
     a, b = p
     return [(a + i, b + j) for (i, j) in NEIGHBORS_1 if 0 <= a + i < n > b + j >= 0]
 
 
 def get_neighbors_2(p, board):
+    """
+    Return a list of all NEIGHBORS_2 of p in board
+    :param p: (x, y)
+    :param board: board
+    :return: list[(int, int)]
+    """
     a, b = p
     n = board.shape[0]
     return [(a + i, b + j) for (i, j) in NEIGHBORS_2
             if 0 <= a + i < n > b + j >= 0 and
-            len([k for k in get_common_neighbours(p, (a + i, b + j), n) if board[k] == -1]) == 2]
+            len([k for k in get_common_neighbors(p, (a + i, b + j), board) if board[k] == -1]) == 2]

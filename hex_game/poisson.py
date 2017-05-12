@@ -8,12 +8,12 @@ class Poisson:
         self.m = m = board.shape[0]
         self.n = n = self.m + 4
 
-        self.C = -6  * numpy.ones((n, n))
+        self.C = -6 * numpy.ones((n, n))
 
         self.F = numpy.zeros((n, n))
         self.A = numpy.zeros((n, n))
 
-        U = numpy.zeros((m, m))
+        self.U = numpy.zeros((m, m))
 
         for i in range(m):
             for j in range(m):
@@ -40,7 +40,7 @@ class Poisson:
         for (a, b) in NEIGHBORS_2:
             neighbors_2 += A[s + a:e + a, s + b:e + b]
 
-        A[s:e, s:e] = 1 / C[s:e, s:e] * (F[s:e, s:e] - (F[s:e, s:e] == 0) * (neighbors_1 + 0 * neighbors_2))
+        A[s:e, s:e] = 1 / C[s:e, s:e] * (F[s:e, s:e] - (C[s:e, s:e] != 1) * (neighbors_1 + 0 * neighbors_2))
 
     def iterations(self, ni):
         for i in range(ni):

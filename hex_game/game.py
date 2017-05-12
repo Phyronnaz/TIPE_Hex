@@ -35,11 +35,8 @@ class Game:
             debug.debug_play("Winner: Player %s" % self.winner)
 
     def play(self):
-        try:
-            move = self.players[self.player].get_move(self.board, self.player)
-            self.play_move(move)
-        except Exception as e:
-            print(e)
+        move = self.players[self.player].get_move(self.board, self.player)
+        self.play_move(move)
 
 
     def click(self, x, y):

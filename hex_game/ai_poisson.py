@@ -1,33 +1,48 @@
-from collections import deque
-
 import numpy
+from hex_game.floyd_warshall.floyd_warshall import floyd_warshall
 
 from hex_game.graphics import debug
-from hex_game.main import get_random_move, NEIGHBORS_1, init_board, is_neighboring, play_move_and_copy, can_play_move, \
-    NEIGHBORS_2, get_common_neighbours, get_neighbors_1, get_neighbors_2
+from hex_game.main import is_neighboring, get_common_neighbors, get_neighbors_1, get_neighbors_2
 from hex_game.poisson import Poisson
-from hex_game.floyd_warshall.floyd_warshall import floyd_warshall
+
+poisson_dict = {}
 
 
 def get_move_poisson(board, player):
+    paths = [get_path(board, p) for p in [0, 1]]
+
+    debug.debug_path(invert_path(paths[0], 0), id=player * 10, player=player)
+    debug.debug_path(invert_path(paths[1], 1), id=player * 10 + 1, player=player)
+
+    paths_values = [None, None]
+    for p in [0, 1]:
+        X, Y = paths[p].T
+        i_board = invert_board(board, p)
+        paths_values[p] = get_poisson(i_board)[X, Y]
+
+    best = numpy.argmax([sum(paths_values[p]) for p in [0, 1]])
+    i_board = invert_board(board, best)
+    move = get_move(paths[best], i_board)
+
+    return invert_move(move, best)
+
+
+def get_path(board, player):
     i_board = invert_board(board, player)
-    W, P = get_neighbour_and_previous_matrix(i_board)
+    W, P = get_weights_and_precedents_matrix(i_board)
 
     while floyd_warshall(W, P):
         pass
 
     start, end = find_start_end(W)
 
-    path = get_best_path(start, end, P, i_board)
+    path = find_path(start, end, P, i_board)
 
-    debug.debug_path([k if player == 0 else (k[1], k[0]) for k in path])
+    return path
 
-    move = get_move(path, i_board)
 
-    if player == 1:
-        move = (move[1], move[0])
-
-    return move
+def invert_path(path, player):
+    return [invert_move(k, player) for k in path]
 
 
 def invert_board(board, player):
@@ -43,48 +58,64 @@ def invert_board(board, player):
     return board
 
 
+def invert_move(move, player):
+    if player == 0:
+        return move
+    else:
+        return move[1], move[0]
+
+
 def get_poisson(board, iterations=1000):
+    key = board.tostring()
+    if key not in poisson_dict:
+        n = board.shape[0]
+
+        # Create edges
+        B = -numpy.ones((n + 2, n + 2), dtype=int)  # Large board
+        B[1:n + 1, 1:n + 1] = board
+
+        # Set edges values
+        B[0, :] = 0
+        B[-1, :] = 0
+        B[:, 0] = 1
+        B[:, -1] = 1
+        B[0, 0] = -1
+        B[-1, -1] = -1
+        B[1, -1] = -1
+        B[-1, 1] = -1
+
+        scales = numpy.ones((n + 2, n + 2))
+        c = 1  # How much the borders are used in poisson
+        scales[0, :] = c
+        scales[-1, :] = c
+        scales[:, 0] = c
+        scales[:, -1] = c
+        scales[0, 0] = c
+        scales[-1, -1] = c
+        scales[1, -1] = c
+        scales[-1, 1] = c
+
+        poisson = Poisson(B, scales)
+        poisson.iterations(iterations)
+        U = poisson.U
+        U += 2
+
+        U[U == 1] = 1 / n  # Reduce cost of already placed tiles
+
+        U = U[1:n + 1, 1:n + 1]
+        U.flags.writeable = False
+
+        poisson_dict[key] = U
+
+    return poisson_dict[key]
+
+
+def get_weights_and_precedents_matrix(board):
     n = board.shape[0]
 
-    # Create edges
-    B = -numpy.ones((n + 2, n + 2), dtype=int)  # Large board
-    B[1:n + 1, 1:n + 1] = board
-
-    # Set edges values
-    B[0, :] = 0
-    B[-1, :] = 0
-    B[:, 0] = 1
-    B[:, -1] = 1
-    B[0, 0] = -1
-    B[-1, -1] = -1
-    B[1, -1] = -1
-    B[-1, 1] = -1
-
-    scales = numpy.ones((n + 2, n + 2))
-    c = 1
-    scales[0, :] = c
-    scales[-1, :] = c
-    scales[:, 0] = c
-    scales[:, -1] = c
-    scales[0, 0] = c
-    scales[-1, -1] = c
-    scales[1, -1] = c
-    scales[-1, 1] = c
-
-    poisson = Poisson(B, scales)
-    poisson.iterations(iterations)
-    U = poisson.U
-    U += 2
-    return U[1:n + 1, 1:n + 1]
-
-
-def get_neighbour_and_previous_matrix(board):
     U = get_poisson(board)
 
-    U[U == 1] = 0.1
-
     # Initialization of the neighbour matrix
-    n = board.shape[0]
     W = float("inf") * numpy.ones((n, n, n, n))  # Neighbour matrix
     P = -numpy.ones((n, n, n, n, 2), dtype=int)  # Previous matrix
 
@@ -92,8 +123,8 @@ def get_neighbour_and_previous_matrix(board):
     # precedent neighbour
     for i in range(n):
         for j in range(n):
-            if board[i, j] != 1:
-                for (a, b) in get_neighbors_1((i, j), n) + get_neighbors_2((i, j), board):
+            if board[i, j] != 1:  # If it is not an enemy tile
+                for (a, b) in get_neighbors_1((i, j), board) + get_neighbors_2((i, j), board):
                     if board[a, b] != 1:
                         W[a, b, i, j] = U[i, j]
                         P[a, b, i, j] = [a, b]
@@ -119,44 +150,62 @@ def get_neighbour_and_previous_matrix(board):
 
 
 def find_start_end(W):
-    # Explore the cells of the neighbour matrix representing a path from a starting cell to an ending one (to find a
-    # complete path)
+    """
+    Search the best path
+    :param W: weights matrix
+    :return: (start_x, start_y), (end_x, end_y)
+    """
     n = W.shape[0]
     min_value = float("inf")
     start, end = None, None
-    print(W[0, :, n - 1, :])
+
     for i in range(n):
         for j in range(n):
             if min_value > W[0, i, n - 1, j]:
                 min_value = W[0, i, n - 1, j]
-                start = numpy.array([0, i])
-                end = numpy.array([n - 1, j])
+                start = (0, i)
+                end = (n - 1, j)
 
     return start, end
 
 
-def get_best_path(start, end, P, board):
+def find_path(start, end, P, board):
+    """
+    Find the path between start and end
+    :param start: (int, int) 
+    :param end: (int, int)
+    :param P: precedents matrix
+    :param board: board
+    :return: np.ndarray
+    """
     U = get_poisson(board)
-    n = board.shape[0]
 
-    def aux(pile: deque, start, end):
-        middle = P[start[0], start[1], end[0], end[1]]
-        if -1 in middle:
-            return
-        elif is_neighboring(start, end, 1):
+    def aux(pile, start, end):
+        """
+        Recursive reconstruction of the path from start to end (excluded)
+        :param pile: pile
+        :param start: (int, int)
+        :param end: (int, int)
+        """
+        middle = tuple(P[start[0], start[1], end[0], end[1]])
+
+        if middle == (-1, -1):
+            debug.debug_play_text("Error rebuilding path: unknown precedent")
+        elif start == end:
+            debug.debug_play_text("Error rebuilding path: start = end")
+        elif is_neighboring(start, end, distance=1):
             pile.append(start)
-            return
-        elif is_neighboring(start, end, 2):
+        elif is_neighboring(start, end, distance=2):
             pile.append(start)
-            l = [k for k in get_common_neighbours(start, end, n) if board[k] != 1]
-            pile.append(l[numpy.argmin([U[k] for k in l])])
-            return
+            l = get_common_neighbors(start, end, board)
+            best = l[numpy.argmin([U[k] for k in l])]
+            pile.append(best)
         else:
             aux(pile, start, middle)
             pile.append(middle)
             aux(pile, middle, end)
 
-    pile = deque()
+    pile = []
     aux(pile, start, end)
     pile.append(end)
 
@@ -164,10 +213,15 @@ def get_best_path(start, end, P, board):
 
 
 def get_move(path, board):
-    # Finds the best path by minimizing the sum of the difference from the average (with poisson matrix)
-    n = len(path)
-    X, Y = path.T
-
+    """
+    Get move to play from path
+    :param path: tuple list
+    :param board: board
+    :return: (int, int)
+    """
     U = get_poisson(board)
+
+    X, Y = path.T
     i = numpy.argmax(U[X, Y])
+
     return X[i], Y[i]
