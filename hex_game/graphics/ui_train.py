@@ -24,8 +24,7 @@ class TrainUI:
         self.ui.spinBoxMemory.valueChanged.connect(self.update_save_name)
         self.ui.checkBoxPlayer0.clicked.connect(self.update_save_name)
         self.ui.checkBoxPlayer1.clicked.connect(self.update_save_name)
-        self.ui.checkBoxLearner0.clicked.connect(self.update_save_name)
-        self.ui.checkBoxLearner1.clicked.connect(self.update_save_name)
+
         self.ui.checkBoxLoadPlayer0.clicked.connect(self.update_save_name)
         self.ui.checkBoxLoadPlayer1.clicked.connect(self.update_save_name)
 
@@ -181,7 +180,6 @@ class TrainUI:
         :return: size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs, train_epochs, memory_size, q_players, q_learners
         """
         b0, b1 = self.ui.checkBoxPlayer0.isChecked(), self.ui.checkBoxPlayer1.isChecked()
-        c0, c1 = self.ui.checkBoxLearner0.isChecked(), self.ui.checkBoxLearner1.isChecked()
         if model == "":
             return self.ui.spinBoxSizeTrain.value(), \
                    self.ui.doubleSpinBoxGamma.value(), \
@@ -192,7 +190,7 @@ class TrainUI:
                    self.ui.spinBoxTrainEpochs.value(), \
                    self.ui.spinBoxMemory.value(), \
                    [] + ([0] if b0 else []) + ([1] if b1 else []), \
-                   [] + ([0] if c0 else []) + ([1] if c1 else [])
+                   self.ui.lineEditComment.text()
 
         else:
             d = hex_io.get_parameters_dict(model)
@@ -210,7 +208,7 @@ class TrainUI:
                    self.ui.spinBoxTrainEpochs.value(), \
                    memory_size, \
                    [] + ([0] if b0 else []) + ([1] if b1 else []), \
-                   [] + ([0] if c0 else []) + ([1] if c1 else [])
+                   self.ui.lineEditComment.text()
 
     def set_busy(self, busy):
         """

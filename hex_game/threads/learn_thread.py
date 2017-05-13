@@ -40,7 +40,7 @@ class LearnThread(threading.Thread):
         sess = tf.Session(config=config)
         keras.backend.set_session(sess)
         with sess.graph.as_default():
-            hex_io.save_models_and_df(*learn(*self.parameters, self.models, thread=self), *self.parameters)
+            hex_io.save_models_and_df(*learn(*self.parameters[:9], self.models, thread=self), *self.parameters)
         print("Learning ended")
         self.learning = False
 

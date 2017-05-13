@@ -16,7 +16,7 @@ class QLearningPlayer(Player):
 
     def get_move(self, board: numpy.ndarray, player: int):
         if self.model is None:
-            self.model = keras.models.load_model(model_path)
+            self.model = keras.models.load_model(self.path)
         config = tf.ConfigProto()
         sess = tf.Session(config=config)
         keras.backend.set_session(sess)
@@ -25,6 +25,8 @@ class QLearningPlayer(Player):
         return move
 
     def get_aux_board(self, board: numpy.ndarray, player: int):
+        if self.model is None:
+            self.model = keras.models.load_model(self.path)
         [q_values] = self.model.predict(numpy.array([get_features(board, player)]))
         t = q_values.reshape(board.shape)
         if player == 1:

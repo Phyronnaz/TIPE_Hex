@@ -35,13 +35,16 @@ class Poisson:
         neighbors_1 = numpy.zeros((e - s, e - s))
 
         # Speed depend on direction
-        for (a, b) in [(-1, 1), (0, 1), (1, -1), (0, -1)]:
-            neighbors_1 += numpy.minimum(0, A[s + a:e + a, s + b:e + b]) / 2
+        for (a, b) in [(0, 1), (0, -1)]:
+            neighbors_1 += numpy.minimum(0, A[s + a:e + a, s + b:e + b]) / self.m
             neighbors_1 += numpy.maximum(0, A[s + a:e + a, s + b:e + b])
 
-        for (a, b) in [(-1, 0), (-1, 1), (1, -1), (1, 0)]:
-            neighbors_1 += numpy.maximum(0, A[s + a:e + a, s + b:e + b]) / 2
+        for (a, b) in [(-1, 0), (1, 0)]:
+            neighbors_1 += numpy.maximum(0, A[s + a:e + a, s + b:e + b]) / self.m
             neighbors_1 += numpy.minimum(0, A[s + a:e + a, s + b:e + b])
+
+        for (a, b) in [(-1, 1), (1, -1)]:
+            neighbors_1 += A[s + a:e + a, s + b:e + b]
 
         # Normal
         # for (a, b) in NEIGHBORS_1:

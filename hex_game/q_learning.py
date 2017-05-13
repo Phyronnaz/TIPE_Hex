@@ -7,7 +7,7 @@ import pandas as pd
 import keras.models
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation, Flatten
-from keras.layers.convolutional import Convolution2D
+from keras.layers.convolutional import Conv2D
 from keras.optimizers import RMSprop
 from hex_game.main import *
 from hex_game.winner_check import *
@@ -20,12 +20,12 @@ def init_model(size):
     :return: model
     """
     model = Sequential()
-    model.add(Convolution2D(32, 5, 5, init="lecun_uniform", input_shape=(size + 4, size + 4, 6,), border_mode="valid"))
+    model.add(Conv2D(32, (5, 5), kernel_initializer="lecun_uniform", input_shape=(size + 4, size + 4, 6,), padding="valid"))
     model.add(Activation('relu'))
-    model.add(Convolution2D(32, 3, 3, init="lecun_uniform", border_mode="valid"))
+    model.add(Conv2D(32, (3, 3), kernel_initializer="lecun_uniform", padding="valid"))
     model.add(Activation('relu'))
     model.add(Flatten())
-    model.add(Dense(size ** 2, init="lecun_uniform"))
+    model.add(Dense(size ** 2, kernel_initializer="lecun_uniform"))
     model.add(Activation('linear'))
 
     rms = RMSprop()
@@ -33,27 +33,31 @@ def init_model(size):
     return model
 
 
-def get_features(board, player):
+def get_features(board):
     """
-    Return the features corresponding to player
+    Return features of board
     :param board: board
-    :param player: player
     :return: features
     """
-    if player == 1:
-        board = board.T
     size = board.shape[0]
 
     t = -numpy.ones((size + 4, size + 4, 6))
 
-    t[2:-2, 2:-2, 0] = (board == player) * 2 - 1
-    t[2:-2, 2:-2, 1] = (board == 1 - player) * 2 - 1
+    # line 0: 1 if tile is owned by player 0, else -1
+    # line 1: 1 if tile is owned by player 1, else -1
+    # line 2: 1 if tile is owned by player 0 and connected to upper right border, else -1
+    # line 3: 1 if tile is owned by player 0 and connected to lower left border, else -1
+    # line 4: 1 if tile is owned by player 1 and connected to upper left border, else -1
+    # line 5: 1 if tile is owned by player 1 and connected to lower right border, else -1
 
+    t[2:-2, 2:-2, 0] = (board == 0) * 2 - 1
+    t[2:-2, 2:-2, 1] = (board == 1) * 2 - 1
+
+    # Borders set to 1 in all lines
     t[:2, :, 0] = 1
     t[-2:, :, 0] = 1
     t[:2, :, 2] = 1
     t[-2:, :, 3] = 1
-
     t[:, :2, 1] = 1
     t[:, -2:, 1] = 1
     t[:2, :, 4] = 1
@@ -92,7 +96,7 @@ def get_features(board, player):
     return t
 
 
-def get_action(model, split_board):
+def get_action(model: keras.models.Model, split_board: np.ndarray) -> int:
     """
     Get the move of a Q player
     :param model: model
@@ -108,29 +112,29 @@ def get_action(model, split_board):
     return action
 
 
-def get_move_from_action(player, action, size):
-    i = np.unravel_index(action, (size, size))  # type: tuple
-    move = (i[0], i[1]) if player == 0 else (i[1], i[0])
-    return move
+def get_move_from_action(action: int, size: int) -> (int, int):
+    return np.unravel_index(action, (size, size))
 
 
-def get_move_q_learning(board, player, model):
-    size = board.shape[0]
-    split_board = get_features(board, player)
+def get_action_from_move(move: (int, int), size: int) -> int:
+    return np.ravel_multi_index(move, (size, size))
+
+
+def get_move_q_learning(board: np.ndarray, player: int, model: keras.models.Model) -> (int, int):
+    i_board = invert_board(board, player)
+    size = i_board.shape[0]
+    split_board = get_features(i_board)
     action = get_action(model, split_board)
-    move = get_move_from_action(player, action, size)
-    return move
+    move = get_move_from_action(action, size)
+    return invert_move(move, player)
 
 
-def get_random_action(board: np.ndarray, state: np.random.RandomState):
-    board = board.flatten()
-    actions = [k[0] for k in numpy.argwhere(board == -1)]
-    state.shuffle(actions)
-    return actions[0]
+def get_random_action(board: np.ndarray) -> int:
+    return get_action_from_move(get_random_move(board), board.shape[0])
 
 
 def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs, train_epochs, memory_size,
-          q_players=(1,), allow_freeze=(0, 1), initial_models_path=("", ""), thread=None):
+          q_players=(1,), models_path=("", ""), thread=None):
     """
     Train the model
     :return: model, dataframe
@@ -139,14 +143,14 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
     ##################
     ### Load model ###
     ##################
-    models = [None, None]
+    models = [None, None]  # type: list[keras.models.Model]
 
     for player in range(2):
         if player in q_players:
-            if initial_models_path[player] == "":
+            if models_path[player] == "":
                 models[player] = init_model(size)
             else:
-                models[player] = keras.models.load_model(initial_models_path[player])
+                models[player] = keras.models.load_model(models_path[player])
 
     #####################
     ### Create arrays ###
@@ -168,53 +172,38 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
     ###########################
     ### Initialize counters ###
     ###########################
-    array_counter = 0
-    last_array_counter = 0
+    index = 0
+    log_index = 0
 
     ######################
     ### Set parameters ###
     ######################
     epsilon = initial_epsilon
-    epoch = 0
-    frozen_players = []
+    epoch = 1  # avoid problems with %
 
     #######################
-    ### Start main loop ###
+    ### Main loop ###
     #######################
-    while True:
-        epoch += 1
-
+    while epoch < exploration_epochs + train_epochs and not thread.stop:
         ##################
         ### Thread Log ###
         ##################
-        if epoch % 100 == 0:
+        if epoch % 1 == 0:
             thread.set_epoch(epoch)
-            if epoch % 1000 == 0:
-                l = last_array_counter
-                a = array_counter
+            if epoch % 10 == 0:
+                s = log_index
+                e = index
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore", category=RuntimeWarning)
-                    loss_log_player0 = loss_array_player0[l:a][np.logical_not(np.isnan(loss_array_player0[l:a]))].mean()
-                    loss_log_player1 = loss_array_player1[l:a][np.logical_not(np.isnan(loss_array_player1[l:a]))].mean()
-                w = winner_array[l:a]
+                    loss_log_player0 = loss_array_player0[s:e][np.logical_not(np.isnan(loss_array_player0[s:e]))].mean()
+                    loss_log_player1 = loss_array_player1[s:e][np.logical_not(np.isnan(loss_array_player1[s:e]))].mean()
+                w = winner_array[s:e]
                 c = (w != -1).sum()
                 player0 = (w == 0).sum() / c * 100
                 player1 = (w == 1).sum() / c * 100
                 error = (w == 2).sum() / c * 100
                 thread.log(epoch, loss_log_player0, loss_log_player1, player0, player1, error)
-                last_array_counter = array_counter
-                if player0 > 75 and 0 in allow_freeze:
-                    frozen_players = [0]
-                elif player1 > 75 and 1 in allow_freeze:
-                    frozen_players = [1]
-                else:
-                    frozen_players = []
-
-        #######################
-        ### Break main loop ###
-        #######################
-        if epoch >= exploration_epochs + train_epochs or thread.stop:
-            break
+                log_index = index
 
         ###################
         ### Set epsilon ###
@@ -222,18 +211,16 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
         if epsilon > final_epsilon:
             epsilon -= (initial_epsilon - final_epsilon) / exploration_epochs
         else:
-            epsilon = 0
+            epsilon = final_epsilon
 
         ###############################################
         ### Create board and winner_check variables ###
         ###############################################
         board = init_board(size)
         winner_matrix, winner_counter = init_winner_matrix_and_counter(size)
-        winner = -1
+        winner = -1  # -1: nothing, 0/1: winner, 2: error
         move_count = 0
         current_player = 0
-        ai_random_state = np.random.RandomState()
-        q_random_state = np.random.RandomState()
 
         #################################
         ### Initialize temp variables ###
@@ -245,35 +232,31 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
         ### Game loop ###
         #################
         while True:
-            x = 1 - move_count / size ** 2
-            rewards = {"won": 5 * x, "lost": -5 * x, "error": -10, "nothing": 0}
+            rewards = {"won": 5, "lost": -5, "error": -10, "nothing": 0}
 
             random_move = np.nan
             losses = [np.nan, np.nan]
 
             other_player = 1 - current_player
-            current_player_is_q = current_player in q_players
-            other_player_is_q = other_player in q_players
-            current_player_is_learning = not current_player in frozen_players
-            other_player_is_learning = not other_player in frozen_players
 
-            ################################################
-            ### If game already ended, just update model ###
-            ################################################
+            #########################
+            ### If game not ended ###
+            #########################
             if winner == -1:
                 ##################################
                 ### Get move and save q values ###
                 ##################################
-                if current_player_is_q:
+                if current_player in q_players:
+                    i_board = invert_board(board, current_player)
                     # Compute split board
-                    split_board = get_features(board, current_player)
+                    split_board = get_features(i_board)
 
                     # Random move?
                     random_move = random.random() < epsilon
 
                     # Get action
                     if random_move:
-                        action = get_random_action(board, q_random_state)  # Limit regret
+                        action = get_random_action(i_board)  # Limit regret by not choosing completely random action
                     else:
                         action = get_action(models[current_player], split_board)
 
@@ -282,9 +265,10 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
                     states[current_player] = split_board
 
                     # Get move
-                    move = get_move_from_action(current_player, action, size)
+                    i_move = get_move_from_action(action, size)
+                    move = invert_move(i_move, current_player)
                 else:
-                    move = get_random_move(board, ai_random_state)
+                    move = get_random_move(board)
 
                 ###################################
                 ### Play move and update winner ###
@@ -298,9 +282,9 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
             ######################
             ### Update players ###
             ######################
-            if (other_player_is_q and other_player_is_learning and winner != 2 and move_count != 0) or \
-                    (current_player_is_q and current_player_is_learning and winner == 2):
-                if current_player_is_q and current_player_is_learning and winner == 2:
+            if (other_player in q_players and winner != 2 and move_count != 0) or \
+                    (current_player in q_players and winner == 2):
+                if current_player in q_players and winner == 2:
                     #
                     # Error: Update current player and quit
                     #
@@ -329,26 +313,28 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
                     else:  # winner == -1
                         reward = rewards["nothing"]
                         terminal = False
-                        new_state = get_features(board, other_player)
+                        new_state = get_features(invert_board(board, other_player))
                 #
                 # Save to memory
                 #
+                if len(memory) == memory_size:
+                    memory.popleft()
                 memory.append((old_state, action, new_state, reward, terminal))
 
             ########################
             ### Learn from memory ##
             ########################
-            for player in range(2):
+            for player in q_players:
                 model = models[player]
                 memory = memories[player]
-                if len(memory) == memory_size:
+                if len(memory) == memory_size:  # enougth experiences
                     X = np.zeros((batch_size, size + 4, size + 4, 6))
                     Y = np.zeros((batch_size, size ** 2))
 
-                    minibatch = random.sample(memory, batch_size)
+                    batch = random.sample(memory, batch_size)
 
                     for i in range(batch_size):
-                        old_state, action, new_state, reward, terminal = minibatch[i]
+                        old_state, action, new_state, reward, terminal = batch[i]
 
                         [old_q_values] = model.predict(np.array([old_state]))
 
@@ -364,23 +350,22 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
                         Y[i] = old_q_values
 
                     losses[player] = model.train_on_batch(X, Y)
-                    memory.clear()
 
             ###########
             ### Log ###
             ###########
-            epoch_array[array_counter] = epoch
-            winner_array[array_counter] = winner
-            epsilon_array[array_counter] = epsilon
-            random_move_array[array_counter] = random_move
-            loss_array_player0[array_counter] = losses[0]
-            loss_array_player1[array_counter] = losses[1]
-            move_count_array[array_counter] = move_count
+            epoch_array[index] = epoch
+            winner_array[index] = winner
+            epsilon_array[index] = epsilon
+            random_move_array[index] = random_move
+            loss_array_player0[index] = losses[0]
+            loss_array_player1[index] = losses[1]
+            move_count_array[index] = move_count
 
             ########################
             ### Update counters ###
             ########################
-            array_counter += 1
+            index += 1
             move_count += 1
 
             ######################
@@ -394,16 +379,21 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
             #####################
             current_player = other_player
 
+        #######################
+        ### Increment epoch ###
+        #######################
+        epoch += 1
+
     ########################
     ### Create dataframe ###
     ########################
-    df = pd.DataFrame(dict(epoch=epoch_array[:array_counter],
-                           winner=winner_array[:array_counter],
-                           epsilon=epsilon_array[:array_counter],
-                           random_move=random_move_array[:array_counter],
-                           loss_player0=loss_array_player0[:array_counter],
-                           loss_player1=loss_array_player1[:array_counter],
-                           move_count=move_count_array[:array_counter]
+    df = pd.DataFrame(dict(epoch=epoch_array[:index],
+                           winner=winner_array[:index],
+                           epsilon=epsilon_array[:index],
+                           random_move=random_move_array[:index],
+                           loss_player0=loss_array_player0[:index],
+                           loss_player1=loss_array_player1[:index],
+                           move_count=move_count_array[:index]
                            ))
     ###########
     ### End ###

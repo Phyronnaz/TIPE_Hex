@@ -13,4 +13,4 @@ class PoissonPlayer(Player):
 
     def get_aux_board(self, board: numpy.ndarray, player: int):
         U = get_poisson(board)
-        return 2 - U
+        return 1 + 1 / board.shape[0] - U

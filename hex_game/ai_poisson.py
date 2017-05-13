@@ -1,8 +1,10 @@
 import numpy
+# noinspection PyUnresolvedReferences
 from hex_game.floyd_warshall.floyd_warshall import floyd_warshall
 
 from hex_game.graphics import debug
-from hex_game.main import is_neighboring, get_common_neighbors, get_neighbors_1, get_neighbors_2, add_edges
+from hex_game.main import is_neighboring, get_common_neighbors, get_neighbors_1, get_neighbors_2, add_edges, \
+    invert_path, invert_board
 from hex_game.poisson import Poisson
 
 poisson_dict = {}
@@ -50,30 +52,6 @@ def get_path(board, player):
     return path
 
 
-def invert_path(path, player):
-    return [invert_move(k, player) for k in path]
-
-
-def invert_board(board, player):
-    board = board.copy()
-
-    if player == 1:
-        board = board.T
-        p0 = board == 0
-        p1 = board == 1
-        board[p0] = 1
-        board[p1] = 0
-
-    return board
-
-
-def invert_move(move, player):
-    if player == 0:
-        return move[0], move[1]
-    else:
-        return move[1], move[0]
-
-
 def get_poisson(board):
     key = board.tostring()
     if key not in poisson_dict:
@@ -96,9 +74,7 @@ def get_poisson(board):
         poisson = Poisson(B, scales)
         poisson.process()
         U = poisson.U
-        U += 2
-
-        U[U == 1] = 1 / n  # Reduce cost of already placed tiles
+        U += 1 + 1 / n
 
         U = U[1:n + 1, 1:n + 1]
         U.flags.writeable = False

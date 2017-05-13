@@ -55,7 +55,7 @@ def play_move_and_copy(board: numpy.ndarray, move: (int, int), player: int) -> n
     return new_board
 
 
-def has_win(board: numpy.ndarray, player: int):
+def has_win(board: numpy.ndarray, player: int) -> bool:
     """
     Check if a player has win
     :param board: board
@@ -93,14 +93,14 @@ def has_win(board: numpy.ndarray, player: int):
     return False
 
 
-def get_possibles_moves(board: numpy.ndarray) -> list((int, int)):
+def get_possibles_moves(board: numpy.ndarray) -> [(int, int)]:
     """
     Get all possibles moves
     """
     return [tuple(k) for k in numpy.argwhere(board == -1)]
 
 
-def get_random_move(board: numpy.ndarray, state: numpy.random.RandomState):
+def get_random_move(board: numpy.ndarray) -> (int, int):
     """
     Random move
     :param board: board
@@ -108,12 +108,12 @@ def get_random_move(board: numpy.ndarray, state: numpy.random.RandomState):
     :return: (int, int)
     """
     moves = get_possibles_moves(board)
-    state.shuffle(moves)
+    numpy.random.shuffle(moves)
 
     return moves[0]
 
 
-def is_neighboring(a, b, distance):
+def is_neighboring(a: (int, int), b: (int, int), distance: int) -> bool:
     """
     Are a and b neighbors?
     :param a: (int, int)
@@ -127,7 +127,7 @@ def is_neighboring(a, b, distance):
     return False
 
 
-def get_common_neighbors(p1, p2, board):
+def get_common_neighbors(p1: (int, int), p2: (int, int), board: numpy.ndarray) -> [(int, int)]:
     """
     Get common neighbours of points p1 and p2
     :param p1: point 1
@@ -140,7 +140,7 @@ def get_common_neighbors(p1, p2, board):
     return [k for k in l1 if k in l2]
 
 
-def get_neighbors_1(p, board):
+def get_neighbors_1(p: (int, int), board: numpy.ndarray) -> [(int, int)]:
     """
     Return a list of all NEIGHBORS_1 of p in board
     :param p: (x, y)
@@ -152,7 +152,7 @@ def get_neighbors_1(p, board):
     return [(a + i, b + j) for (i, j) in NEIGHBORS_1 if 0 <= a + i < n > b + j >= 0]
 
 
-def get_neighbors_2(p, board):
+def get_neighbors_2(p: (int, int), board: numpy.ndarray) -> list((int, int)):
     """
     Return a list of all NEIGHBORS_2 of p in board
     :param p: (x, y)
@@ -166,7 +166,7 @@ def get_neighbors_2(p, board):
             len([k for k in get_common_neighbors(p, (a + i, b + j), board) if board[k] == -1]) == 2]
 
 
-def add_edges(board, count):
+def add_edges(board: numpy.ndarray, count: int) -> numpy.ndarray:
     n = board.shape[0]
     B = -numpy.ones((n + 2 * count, n + 2 * count), dtype=int)  # Large board
     B[count:n + count, count:n + count] = board
@@ -185,3 +185,45 @@ def add_edges(board, count):
     B[-count:, :count] = -1
 
     return B
+
+
+def invert_path(path: [(int, int)], player: int) -> [(int, int)]:
+    """
+    Invert moves of path path
+    :param path: path
+    :param player: 0 or 1
+    :return: list((int, int))
+    """
+    return [invert_move(k, player) for k in path]
+
+
+def invert_board(board: numpy.ndarray, player: int) -> numpy.ndarray:
+    """
+    Invert board board
+    :param board: board
+    :param player: 0 or 1
+    :return: copy of inverted board
+    """
+    board = board.copy()
+
+    if player == 1:
+        board = board.T
+        p0 = board == 0
+        p1 = board == 1
+        board[p0] = 1
+        board[p1] = 0
+
+    return board
+
+
+def invert_move(move: (int, int), player: int) -> (int, int):
+    """
+    Invert a move
+    :param move: (int, int)
+    :param player: 0 or 1
+    :return: (int, int)
+    """
+    if player == 0:
+        return move[0], move[1]
+    else:
+        return move[1], move[0]
