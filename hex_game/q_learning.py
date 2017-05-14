@@ -1,16 +1,41 @@
 import random
 import warnings
-from collections import deque
-
 import numpy as np
 import pandas as pd
 import keras.models
+import tensorflow as tf
+
+from hex_game.ai_poisson import get_move_poisson
+from hex_game.main import *
+from collections import deque
 from keras.models import Sequential
+from hex_game.winner_check import *
+from keras.optimizers import RMSprop
+from keras.initializers import Initializer
 from keras.layers.core import Dense, Activation, Flatten
 from keras.layers.convolutional import Conv2D
-from keras.optimizers import RMSprop
-from hex_game.main import *
-from hex_game.winner_check import *
+
+rewards = {"won": 1, "lost": -1, "error": -1, "nothing": 0}
+
+
+class Neighbors1(Initializer):
+    def __call__(self, shape, dtype=None):
+        x = np.random.random(shape)
+        y = np.zeros(shape, dtype="float32")
+        for (a, b) in NEIGHBORS_1:
+            p = (a + 1, b + 1)
+            y[p] = x[p]
+        return tf.Variable(y)
+
+
+class Neighbors2(Initializer):
+    def __call__(self, shape, dtype=None):
+        x = np.random.random(shape)
+        y = np.zeros(shape, dtype="float32")
+        for (a, b) in NEIGHBORS_2:
+            p = (a + 2, b + 2)
+            y[p] = x[p]
+        return tf.Variable(y)
 
 
 def init_model(size):
@@ -19,17 +44,62 @@ def init_model(size):
     :param size: size
     :return: model
     """
+    # http://deeplearning.net/software/theano/tutorial/conv_arithmetic.html
+    #
+    # filters: with 32: (x, y, z) -> (32, y, z)
+    # kernel_size: (w, h)
+    # strides: (d_w, d_h) distance between two consecutive positions of the kernel
+    # padding: "valid": not applied on border / "same": applied on borders with added 0s
+    # data_format: channels_last : inputs shape (batch, height, width, channels)
+    #              channels_first: inputs shape (batch, channels, height, width)
+    # dilation_rate: (d_w, d_h)
+    # activation: If you don't specify anything, no activation is applied (ie. "linear" activation: a(x) = x).
+    # use_bias: Boolean, whether the layer uses a bias vector.
+    # kernel_initializer: Initializer for the kernel weights matrix.
+    # bias_initializer: Initializer for the bias vector.
+    # kernel_regularizer: Regularizer function applied to the kernel weights matrix.
+    # bias_regularizer: Regularizer function applied to the bias vector.
+    # activity_regularizer: Regularizer function applied to the output of the layer.
+    # kernel_constraint: Constraint function applied to the kernel matrix.
+    # bias_constraint: Constraint function applied to the bias vector.
+
     model = Sequential()
-    model.add(Conv2D(32, (5, 5), kernel_initializer="lecun_uniform", input_shape=(size + 4, size + 4, 6,), padding="valid"))
+
+    # Neighbors 2 (3 layers)
+    model.add(Conv2D(filters=64, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
+                     kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform",
+                     input_shape=(size + 4, size + 4, 6)))
     model.add(Activation('relu'))
-    model.add(Conv2D(32, (3, 3), kernel_initializer="lecun_uniform", padding="valid"))
+
+    # model.add(Conv2D(filters=64, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
+    #                  kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
+    # model.add(Activation('relu'))
+    #
+    # model.add(Conv2D(filters=64, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
+    #                  kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
+    # model.add(Activation('relu'))
+
+    # Neighbors 1 (3 layers)
+    model.add(Conv2D(filters=64, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
+                     kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
     model.add(Activation('relu'))
+
+    # model.add(Conv2D(filters=64, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
+    #                  kernel_initializer="lecun_uniform" bias_initializer="lecun_uniform"))
+    # model.add(Activation('relu'))
+    #
+    # model.add(Conv2D(filters=64, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
+    #                  kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
+    # model.add(Activation('relu'))
+
+    # Dense (1 layer)
     model.add(Flatten())
     model.add(Dense(size ** 2, kernel_initializer="lecun_uniform"))
-    model.add(Activation('linear'))
+    model.add(Activation('sigmoid'))
 
     rms = RMSprop()
     model.compile(loss='mse', optimizer=rms)
+
     return model
 
 
@@ -133,6 +203,44 @@ def get_random_action(board: np.ndarray) -> int:
     return get_action_from_move(get_random_move(board), board.shape[0])
 
 
+def train(model, size, n):
+    X = np.empty((n, size + 4, size + 4, 6))
+    Y = np.empty((n, size * size), dtype=int)
+
+    for i in range(n):
+        if i % 100 == 0:
+            print(i)
+
+        board = init_board(size)
+        winner_matrix, winner_counter = init_winner_matrix_and_counter(size)
+        winner = -1
+        current_player = 0
+        while winner == -1:
+            if current_player == 0:
+                move = get_move_poisson(board, 0, debug_path=False)
+                features = get_features(board)
+                [q_values] = model.predict(numpy.array([features]))
+                q_values[get_action_from_move(move, size)] = rewards["won"]
+                q_values[board.flat != -1] = rewards["error"]
+
+                X[i] = features
+                Y[i] = q_values
+            else:
+                move = get_random_move(board)
+
+            if can_play_move(board, move):
+                board[move] = current_player
+                winner, winner_counter = check_for_winner(move, current_player, winner_matrix, winner_counter)
+            else:
+                winner = 2
+
+    for k in range(10 * n):
+        if k % 100 == 0:
+            print(k)
+        l = random.sample(range(n), 64)
+        model.train_on_batch(X[l], Y[l])
+
+
 def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs, train_epochs, memory_size,
           q_players=(1,), models_path=("", ""), thread=None):
     """
@@ -149,6 +257,7 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
         if player in q_players:
             if models_path[player] == "":
                 models[player] = init_model(size)
+                train(models[player], size, 1000)
             else:
                 models[player] = keras.models.load_model(models_path[player])
 
@@ -232,8 +341,6 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
         ### Game loop ###
         #################
         while True:
-            rewards = {"won": 5, "lost": -5, "error": -10, "nothing": 0}
-
             random_move = np.nan
             losses = [np.nan, np.nan]
 
@@ -327,7 +434,7 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
             for player in q_players:
                 model = models[player]
                 memory = memories[player]
-                if len(memory) == memory_size:  # enougth experiences
+                if len(memory) >= batch_size:  # enough experiences
                     X = np.zeros((batch_size, size + 4, size + 4, 6))
                     Y = np.zeros((batch_size, size ** 2))
 

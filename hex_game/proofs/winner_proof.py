@@ -10,7 +10,6 @@ win_count_has_win = 0
 win_count_winner_check = 0
 n = 100
 
-rs = numpy.random.RandomState()
 for i in range(n):
     if i % 10 == 0:
         print(i)
@@ -19,7 +18,7 @@ for i in range(n):
     w = False
     p = 0
     while not w:
-        move = get_random_move(board, rs)
+        move = get_random_move(board)
         play_move(board, move, p)
         hw = has_win(board, p)
         winner, winner_counter = check_for_winner(move, p, winner_matrix, winner_counter)

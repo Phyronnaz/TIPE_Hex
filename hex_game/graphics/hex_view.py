@@ -49,9 +49,11 @@ class HexView(QGraphicsView):
                 if color == 'white':
                     self.polygons[i, j] = tile
                     # Add text
-                    text = self.scene.addText(str(i) + "," + str(j))
+                    text = QGraphicsSimpleTextItem(str(i) + "," + str(j))
                     text.setPos(x - text.boundingRect().width() / 2, y - text.boundingRect().height() / 2)
+                    text.setBrush(Qt.black)
                     self.texts.append(text)
+                    self.scene.addItem(text)
 
     def click(self, x, y):
         if 0 <= x < self.size > y >= 0:

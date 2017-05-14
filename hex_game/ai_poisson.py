@@ -10,7 +10,7 @@ from hex_game.poisson import Poisson
 poisson_dict = {}
 
 
-def get_move_poisson(board, player):
+def get_move_poisson(board, player, debug_path=True):
     paths = [get_path(board, p) for p in [0, 1]]
 
     # paths_values = [None, None]
@@ -27,8 +27,9 @@ def get_move_poisson(board, player):
 
     real_paths = [invert_path(paths[p], p) for p in [0, 1]]
 
-    debug.debug_path(real_paths[0], id=0, player=player)
-    debug.debug_path(real_paths[1], id=1, player=player)
+    if debug_path:
+        debug.debug_path(real_paths[0], id=0, player=player)
+        debug.debug_path(real_paths[1], id=1, player=player)
 
     return [k for k in real_paths[0] if k in real_paths[1]][0]
 

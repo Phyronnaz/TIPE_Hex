@@ -1,15 +1,15 @@
 import os
 from datetime import datetime
 
-version = 3
-save_dir = os.path.expanduser("~") + "/notebooks/saves/V{}/".format(version)
+version = 4
+save_dir = os.path.expanduser("~") + "/Hex/V{}/".format(version)
 
 
 def save_models_and_df(models, df, size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs,
                        train_epochs, memory_size, q_players, comment):
     """
     Save a model and a dataframe
-    :param model: model
+    :param models: models
     :param df: dataframe
     """
     if not os.path.exists(save_dir):

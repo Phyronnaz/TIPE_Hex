@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>766</width>
+    <width>1186</width>
     <height>805</height>
    </rect>
   </property>
@@ -221,7 +221,14 @@
              </widget>
             </item>
             <item row="1" column="1">
-             <widget class="QComboBox" name="comboBoxPlayer1"/>
+             <widget class="QComboBox" name="comboBoxPlayer1">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
             </item>
             <item row="2" column="0">
              <widget class="QLabel" name="labelMinimaxDepthPlayer1">
@@ -232,6 +239,12 @@
             </item>
             <item row="2" column="1">
              <widget class="QSpinBox" name="spinBoxMinimaxDepthPlayer1">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="minimum">
                <number>1</number>
               </property>
@@ -245,7 +258,14 @@
              </widget>
             </item>
             <item row="4" column="1">
-             <widget class="QComboBox" name="comboBoxPlayer2"/>
+             <widget class="QComboBox" name="comboBoxPlayer2">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
             </item>
             <item row="5" column="0">
              <widget class="QLabel" name="labelMinimaxDepthPlayer2">
@@ -256,6 +276,12 @@
             </item>
             <item row="5" column="1">
              <widget class="QSpinBox" name="spinBoxMinimaxDepthPlayer2">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="minimum">
                <number>1</number>
               </property>
@@ -263,6 +289,12 @@
             </item>
             <item row="6" column="1">
              <widget class="QPushButton" name="pushButtonNewGame">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="text">
                <string>New Game</string>
               </property>
@@ -530,7 +562,7 @@
                <double>0.010000000000000</double>
               </property>
               <property name="value">
-               <double>0.900000000000000</double>
+               <double>1.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -553,7 +585,7 @@
                <double>0.001000000000000</double>
               </property>
               <property name="value">
-               <double>1.000000000000000</double>
+               <double>0.100000000000000</double>
               </property>
              </widget>
             </item>
@@ -576,7 +608,7 @@
                <double>0.001000000000000</double>
               </property>
               <property name="value">
-               <double>0.000100000000000</double>
+               <double>0.100000000000000</double>
               </property>
              </widget>
             </item>
@@ -634,7 +666,7 @@
                <number>1000</number>
               </property>
               <property name="value">
-               <number>25000</number>
+               <number>1000</number>
               </property>
              </widget>
             </item>
@@ -654,7 +686,7 @@
                <number>1000</number>
               </property>
               <property name="value">
-               <number>5000</number>
+               <number>500</number>
               </property>
              </widget>
             </item>
@@ -674,7 +706,7 @@
                <number>2</number>
               </property>
               <property name="value">
-               <number>64</number>
+               <number>1024</number>
               </property>
              </widget>
             </item>
@@ -787,7 +819,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>766</width>
+     <width>1186</width>
      <height>30</height>
     </rect>
    </property>
