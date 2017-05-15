@@ -204,8 +204,8 @@ def get_random_action(board: np.ndarray) -> int:
 
 
 def train(model, size, n):
-    X = np.empty((n, size + 4, size + 4, 6))
-    Y = np.empty((n, size * size), dtype=int)
+    X = deque()
+    Y = deque()
 
     for i in range(n):
         if i % 100 == 0:
@@ -213,18 +213,22 @@ def train(model, size, n):
 
         board = init_board(size)
         winner_matrix, winner_counter = init_winner_matrix_and_counter(size)
-        winner = -1
         current_player = 0
+        ai = np.random.randint(2)
+        winner = -1
+
         while winner == -1:
-            if current_player == 0:
-                move = get_move_poisson(board, 0, debug_path=False)
-                features = get_features(board)
+            if current_player == ai:
+                i_board = invert_board(board, current_player)
+                move = get_move_poisson(i_board, 0, debug_path=False)
+                features = get_features(i_board)
                 [q_values] = model.predict(numpy.array([features]))
                 q_values[get_action_from_move(move, size)] = rewards["won"]
-                q_values[board.flat != -1] = rewards["error"]
+                q_values[i_board.flat != -1] = rewards["error"]
 
-                X[i] = features
-                Y[i] = q_values
+                X.append(features)
+                Y.append(q_values)
+                move = invert_move(move, current_player)
             else:
                 move = get_random_move(board)
 
@@ -234,10 +238,15 @@ def train(model, size, n):
             else:
                 winner = 2
 
-    for k in range(10 * n):
+            current_player = 1 - current_player
+    m = len(X)
+    print(m)
+    X = numpy.array(X)
+    Y = numpy.array(Y)
+    for k in range(10 * m):
         if k % 100 == 0:
             print(k)
-        l = random.sample(range(n), 64)
+        l = random.sample(range(m), 64)
         model.train_on_batch(X[l], Y[l])
 
 
@@ -322,6 +331,43 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
         else:
             epsilon = final_epsilon
 
+        #################################
+        ### Initialize temp variables ###
+        #################################
+        actions = [None, None]
+        states = [None, None]
+        losses = [np.nan, np.nan]
+
+        ########################
+        ### Learn from memory ##
+        ########################
+        for player in q_players:
+            model = models[player]
+            memory = memories[player]
+            if len(memory) >= batch_size:  # enough experiences
+                X = np.zeros((batch_size, size + 4, size + 4, 6))
+                Y = np.zeros((batch_size, size ** 2))
+
+                batch = random.sample(memory, batch_size)
+
+                for i in range(batch_size):
+                    old_state, action, new_state, reward, terminal = batch[i]
+
+                    [old_q_values] = model.predict(np.array([old_state]))
+
+                    if terminal:
+                        update = reward
+                    else:
+                        [new_q_values] = model.predict(np.array([new_state]))
+                        update = reward + gamma * max(new_q_values)
+
+                    old_q_values[action] = update
+
+                    X[i] = old_state
+                    Y[i] = old_q_values
+
+                losses[player] = model.train_on_batch(X, Y)
+
         ###############################################
         ### Create board and winner_check variables ###
         ###############################################
@@ -331,19 +377,11 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
         move_count = 0
         current_player = 0
 
-        #################################
-        ### Initialize temp variables ###
-        #################################
-        actions = [None, None]
-        states = [None, None]
-
         #################
         ### Game loop ###
         #################
         while True:
             random_move = np.nan
-            losses = [np.nan, np.nan]
-
             other_player = 1 - current_player
 
             #########################
@@ -428,36 +466,6 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
                     memory.popleft()
                 memory.append((old_state, action, new_state, reward, terminal))
 
-            ########################
-            ### Learn from memory ##
-            ########################
-            for player in q_players:
-                model = models[player]
-                memory = memories[player]
-                if len(memory) >= batch_size:  # enough experiences
-                    X = np.zeros((batch_size, size + 4, size + 4, 6))
-                    Y = np.zeros((batch_size, size ** 2))
-
-                    batch = random.sample(memory, batch_size)
-
-                    for i in range(batch_size):
-                        old_state, action, new_state, reward, terminal = batch[i]
-
-                        [old_q_values] = model.predict(np.array([old_state]))
-
-                        if terminal:
-                            update = reward
-                        else:
-                            [new_q_values] = model.predict(np.array([new_state]))
-                            update = reward + gamma * max(new_q_values)
-
-                        old_q_values[action] = update
-
-                        X[i] = old_state
-                        Y[i] = old_q_values
-
-                    losses[player] = model.train_on_batch(X, Y)
-
             ###########
             ### Log ###
             ###########
@@ -468,6 +476,7 @@ def learn(size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_e
             loss_array_player0[index] = losses[0]
             loss_array_player1[index] = losses[1]
             move_count_array[index] = move_count
+            losses = [np.nan, np.nan]
 
             ########################
             ### Update counters ###

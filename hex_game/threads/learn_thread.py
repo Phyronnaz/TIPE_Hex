@@ -24,7 +24,7 @@ class LearnThread(threading.Thread):
         self.error_log = np.zeros(self.n)
         self.index = 0
 
-        self.start_time = datetime.datetime.now()
+        self.start_time = -1
         self.elapsed_time = ""
         self.remaining_time = ""
         self.current_epoch = 0
@@ -73,13 +73,16 @@ class LearnThread(threading.Thread):
         Set epoch of the training
         :param epoch: epoch
         """
+        if self.start_time == -1:
+            self.start_time = datetime.datetime.now()
+
         self.current_epoch = epoch
 
         elapsed = int((datetime.datetime.now() - self.start_time).seconds)
         total = int(elapsed * self.n / (epoch + 1))
 
-        self.elapsed_time = datetime.timedelta(seconds=elapsed)
         self.remaining_time = datetime.timedelta(seconds=max(total - elapsed, 0))
 
+        self.elapsed_time = datetime.timedelta(seconds=elapsed)
         print("Current epoch: {}; Remaining time: {}; Elapsed time: {}".format(self.current_epoch, self.remaining_time,
                                                                                self.elapsed_time))

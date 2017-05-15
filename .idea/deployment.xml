@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="Jupyter (project level)">
+  <component name="PublishConfigData" autoUpload="Always" serverName="Jupyter">
     <serverData>
-      <paths name="Jupyter (project level)">
+      <paths name="Jupyter">
         <serverdata>
           <mappings>
-            <mapping deploy="/notebooks/admin/PycharmProjects/TIPE_Hex" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/home/victor/PycharmProjects/TIPE_Hex" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

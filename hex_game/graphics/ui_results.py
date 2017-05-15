@@ -135,7 +135,7 @@ class ResultsUI:
             exploration_epochs = hex_io.get_parameters_dict(self.paths[row])["exploration_epochs"]
             train_epochs = hex_io.get_parameters_dict(self.paths[row])["train_epochs"]
             n = exploration_epochs + train_epochs
-            k = int(round(n / 25000 + 0.5) * 1000)
+            k = int(round(n / 2500 + 0.5) * 100)
             c_start = 0
             c_end = int(round(n / k))
 
