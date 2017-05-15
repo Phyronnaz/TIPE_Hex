@@ -1,5 +1,6 @@
 import numpy
 from hex_game.ai_poisson import get_move_poisson, get_poisson
+from hex_game.main import invert_board
 from hex_game.players.player import Player
 
 
@@ -12,5 +13,7 @@ class PoissonPlayer(Player):
         return move
 
     def get_aux_board(self, board: numpy.ndarray, player: int):
-        U = get_poisson(board)
-        return 1 + 1 / board.shape[0] - U
+        i_board = invert_board(board, player)
+        U = get_poisson(i_board)
+        V =  1 + 1 / board.shape[0] - U
+        return V if player == 0 else -V.T

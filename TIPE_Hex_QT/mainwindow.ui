@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="playTab">
        <attribute name="title">
@@ -193,6 +193,13 @@
               </property>
               <property name="checked">
                <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pushButtonScreenshot">
+              <property name="text">
+               <string>Screenshot</string>
               </property>
              </widget>
             </item>
@@ -731,7 +738,7 @@
               <property name="value">
                <number>64</number>
               </property>
-              <property name="displayIntegerBase">
+              <property name="displayIntegerBase" stdset="0">
                <number>10</number>
               </property>
              </widget>
@@ -820,7 +827,7 @@
      <x>0</x>
      <y>0</y>
      <width>1186</width>
-     <height>30</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

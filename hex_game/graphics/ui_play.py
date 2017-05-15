@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import numpy as np
 from PyQt5 import QtGui
 from PyQt5.QtGui import QKeySequence
@@ -47,6 +49,8 @@ class PlayUI:
         self.shortcut_play.activated.connect(self.play)
 
         # Connect actions
+        self.ui.pushButtonScreenshot.clicked.connect(self.screenshot)
+
         self.ui.spinBoxSizePlay.valueChanged.connect(self.update_size)
 
         self.ui.comboBoxPlayer1.activated.connect(self.update_minimax_spinbox)
@@ -229,6 +233,12 @@ class PlayUI:
                     else:
                         t[i, j] = -1
         return t
+
+    def screenshot(self):
+        name = datetime.now().strftime("%Y_%m_%d_%H:%M:%S")
+        self.ui.graphicsViewDefault.screenshot(name + "main")
+        self.ui.graphicsViewPlayer1.screenshot(name + "1")
+        self.ui.graphicsViewPlayer2.screenshot(name + "2")
 
     def new_game(self):
         """

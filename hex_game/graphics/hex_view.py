@@ -3,7 +3,7 @@ from PyQt5.QtCore import Qt
 import math
 import numpy as np
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QColor, QTextBlockFormat, QTextCursor
+from PyQt5.QtGui import QColor, QTextBlockFormat, QTextCursor, QImage, QPainter
 from PyQt5.QtGui import QPen
 from PyQt5.QtGui import QPolygonF
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPolygonItem, QGraphicsLineItem, \
@@ -136,6 +136,17 @@ class HexView(QGraphicsView):
         p_y *= self.scale
 
         return p_x, p_y
+
+    def screenshot(self, name):
+        self.scene.clearSelection()
+        self.scene.setSceneRect(self.scene.itemsBoundingRect())
+        image = QImage(self.scene.sceneRect().size().toSize(), QImage.Format_ARGB32)
+        image.fill(Qt.transparent)
+
+        painter = QPainter(image)
+        self.scene.render(painter)
+        image.save(name + ".png")
+        painter.end()
 
 
 class QGraphicsPolygonItemClick(QGraphicsPolygonItem):
