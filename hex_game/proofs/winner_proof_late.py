@@ -1,8 +1,6 @@
-import numpy
-
+from hex_game.main import get_random_move
 from hex_game.main import play_move, init_board, has_win
 from hex_game.winner_check import check_for_winner, late_init_winner_matrix_and_counter
-from hex_game.main import get_random_move
 
 size = 11
 

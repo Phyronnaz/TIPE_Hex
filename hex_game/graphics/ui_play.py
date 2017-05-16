@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import numpy as np
 from PyQt5 import QtGui
 from PyQt5.QtGui import QKeySequence
@@ -220,11 +218,10 @@ class PlayUI:
         :return: new board
         """
         t = np.zeros(shape=board.shape)
-        maxi = abs(board).max() if abs(board).max() != 0 else 1
         for i in range(board.shape[0]):
             for j in range(board.shape[1]):
                 if q:
-                    t[i, j] = board[i, j] / maxi
+                    t[i, j] = board[i, j]
                 else:
                     if board[i, j] == -1:
                         t[i, j] = 0
@@ -235,10 +232,10 @@ class PlayUI:
         return t
 
     def screenshot(self):
-        name = datetime.now().strftime("%Y_%m_%d_%H:%M:%S")
-        self.ui.graphicsViewDefault.screenshot(name + "main")
-        self.ui.graphicsViewPlayer1.screenshot(name + "1")
-        self.ui.graphicsViewPlayer2.screenshot(name + "2")
+        name = self.ui.lineEditScreenshotName.text()
+        self.ui.graphicsViewDefault.screenshot(name + "_main")
+        self.ui.graphicsViewPlayer1.screenshot(name + "_1")
+        self.ui.graphicsViewPlayer2.screenshot(name + "_2")
 
     def new_game(self):
         """

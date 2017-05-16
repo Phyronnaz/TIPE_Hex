@@ -15,5 +15,5 @@ class PoissonPlayer(Player):
     def get_aux_board(self, board: numpy.ndarray, player: int):
         i_board = invert_board(board, player)
         U = get_poisson(i_board)
-        V =  1 + 1 / board.shape[0] - U
+        V = 1 + 1 / board.shape[0] - U # type: numpy.ndarray
         return V if player == 0 else -V.T

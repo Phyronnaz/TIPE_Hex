@@ -9,9 +9,8 @@ class ResultsPlot(FigureCanvas):
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
-        self.loss = self.fig.add_subplot(221)
-        self.winner = self.fig.add_subplot(222)
-        self.epsilon = self.fig.add_subplot(223)
+        self.loss = self.fig.add_subplot(121)
+        self.winner = self.fig.add_subplot(122)
         self.legend = self.fig.legend([], [], 'lower right')
         self.fig.set_tight_layout(True)
 
@@ -19,18 +18,14 @@ class ResultsPlot(FigureCanvas):
         self.setParent(parent)
         FigureCanvas.setSizePolicy(self, QSizePolicy.Expanding, QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
-        self.names = []
+        self.paths = []
         self.plot_enabled = []
         self.colors = []
+        self.get_name = None
         self.name_plots()
         self.draw()
 
     def name_plots(self):
-        # Epsilon
-        self.epsilon.set_title("Epsilon")
-        self.epsilon.set_xlabel("epoch")
-        self.epsilon.set_ylabel("epsilon")
-
         # Loss
         self.loss.set_title("Loss")
         self.loss.set_xlabel("epoch")
@@ -42,9 +37,9 @@ class ResultsPlot(FigureCanvas):
         self.winner.set_ylabel("percentage")
         self.winner.set_ybound(0, 100)
 
-        labels = ["Player 0", "Player 1", "error"]
-        markers = ["v", "o", "P"]
-        colors = ["black", "black", "black"]
+        labels = ["player", "error"]
+        markers = ["o", "P"]
+        colors = ["black", "black"]
         lines = []
         for i in range(len(colors)):
             lines.append(mlines.Line2D([], [], color=colors[i], label=labels[i], marker=markers[i]))
@@ -52,15 +47,14 @@ class ResultsPlot(FigureCanvas):
 
         # Legend
         lines = []
-        for i in range(len(self.names)):
+        for i in range(len(self.paths)):
             if self.plot_enabled[i]:
-                lines.append(mlines.Line2D([], [], color=self.colors[i], label=self.names[i], marker="o"))
+                lines.append(mlines.Line2D([], [], color=self.colors[i], label=self.paths[i], marker="o"))
         self.legend.remove()
-        l = [self.names[i] for i in range(len(self.names)) if self.plot_enabled[i]]
+        l = [self.get_name(self.paths[i]) for i in range(len(self.paths)) if self.plot_enabled[i]]
         self.legend = self.fig.legend(lines, l, 'lower right')
 
     def clear(self):
-        self.epsilon.cla()
         self.loss.cla()
         self.winner.cla()
         self.name_plots()
@@ -94,11 +88,10 @@ class TrainPlot(FigureCanvas):
         self.winner.set_title("Winner")
         self.winner.set_xlabel("epoch")
         self.winner.set_ylabel("percentage")
-        self.winner.set_ybound(0, 100)
 
-        labels = ["Player 0", "Player 1", "error"]
-        markers = ["v", "o", "P"]
-        colors = ["black", "black", "black"]
+        labels = ["player", "error"]
+        markers = ["o", "P"]
+        colors = ["black", "black"]
         lines = []
         for i in range(len(colors)):
             lines.append(mlines.Line2D([], [], color=colors[i], label=labels[i], marker=markers[i]))

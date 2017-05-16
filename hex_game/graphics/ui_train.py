@@ -1,3 +1,4 @@
+import numpy
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5.QtWidgets import QMessageBox
@@ -15,31 +16,16 @@ class TrainUI:
 
         # Connect update save folder
         self.ui.spinBoxSizeTrain.valueChanged.connect(self.update_save_name)
-        self.ui.doubleSpinBoxGamma.valueChanged.connect(self.update_save_name)
         self.ui.spinBoxBatchSize.valueChanged.connect(self.update_save_name)
-        self.ui.doubleSpinBoxInitialEpsilon.valueChanged.connect(self.update_save_name)
-        self.ui.doubleSpinBoxFinalEpsilon.valueChanged.connect(self.update_save_name)
-        self.ui.spinBoxExplorationEpochs.valueChanged.connect(self.update_save_name)
-        self.ui.spinBoxTrainEpochs.valueChanged.connect(self.update_save_name)
         self.ui.spinBoxMemory.valueChanged.connect(self.update_save_name)
-        self.ui.checkBoxPlayer0.clicked.connect(self.update_save_name)
-        self.ui.checkBoxPlayer1.clicked.connect(self.update_save_name)
 
-        self.ui.checkBoxLoadPlayer0.clicked.connect(self.update_save_name)
-        self.ui.checkBoxLoadPlayer1.clicked.connect(self.update_save_name)
-
-        self.ui.checkBoxLoadPlayer0.clicked.connect(lambda: self.check_box_load(0))
-        self.ui.checkBoxLoadPlayer1.clicked.connect(lambda: self.check_box_load(1))
-
-        self.ui.checkBoxPlayer0.clicked.connect(lambda: self.check_box(0))
-        self.ui.checkBoxPlayer1.clicked.connect(lambda: self.check_box(1))
+        self.ui.checkBoxLoad.clicked.connect(self.check_box_load)
 
         self.last_index = 0
-        self.models = ["", ""]
+        self.model = ""
         self.thread = None  # type: LearnThread
 
-        self.ui.pushButtonChoosePlayer0.pressed.connect(lambda: self.choose_player(0))
-        self.ui.pushButtonChoosePlayer1.pressed.connect(lambda: self.choose_player(1))
+        self.ui.pushButtonChoose.pressed.connect(self.choose_player)
         self.ui.pushButtonTrain.pressed.connect(self.train_button)
 
         self.update_save_name()
@@ -74,15 +60,13 @@ class TrainUI:
 
             # Plot
             self.widgetPlot.loss.plot(self.thread.epoch_log[:self.thread.index],
-                                      self.thread.loss_log_player0[:self.thread.index], 'v-')
-            self.widgetPlot.loss.plot(self.thread.epoch_log[:self.thread.index],
-                                      self.thread.loss_log_player1[:self.thread.index], 'o-')
+                                      self.thread.loss_log[:self.thread.index], 'v-')
+            self.widgetPlot.loss.set_ybound(0, numpy.nanmax(self.thread.loss_log))
+
             self.widgetPlot.winner.plot(self.thread.epoch_log[:self.thread.index],
-                                        self.thread.player0_log[:self.thread.index], 'v-')
+                                        100 - self.thread.error_log[:self.thread.index], 'P-')
             self.widgetPlot.winner.plot(self.thread.epoch_log[:self.thread.index],
-                                        self.thread.player1_log[:self.thread.index], 'o-')
-            self.widgetPlot.winner.plot(self.thread.epoch_log[:self.thread.index],
-                                        self.thread.error_log[:self.thread.index], 'P-')
+                                        self.thread.error_log[:self.thread.index], 'o-')
             self.widgetPlot.winner.set_ybound(0, 100)
 
             # Draw
@@ -102,28 +86,24 @@ class TrainUI:
             if text is not None:
                 self.ui.progressBarTrain.setFormat(text)
 
-    def choose_player(self, player):
+    def choose_player(self):
         """
         Open file dialog to load model to continue training
         """
         f, g = QFileDialog.getOpenFileName(self.ui.centralWidget, "Open file", "", "Model (*.model)")
 
         if f != "":
-            self.models[player] = f
+            self.model = f
             try:
-                self.get_parameters(self.models[player])
+                hex_io.get_parameters(self.model)
             except ValueError:
-                self.models[player] = ""
+                self.model = ""
                 msg_box = QMessageBox()
                 msg_box.setText("Bad naming")
                 msg_box.setWindowTitle("Error")
                 msg_box.exec_()
-            if player == 0:
-                self.ui.lineEditLoadPlayer0.setText(self.models[player])
-            else:
-                self.ui.lineEditLoadPlayer1.setText(self.models[player])
-        self.check_box_load(0)
-        self.check_box_load(1)
+                self.ui.lineEditLoad.setText(self.model)
+        self.check_box_load()
 
     def train_button(self):
         """
@@ -140,75 +120,28 @@ class TrainUI:
         """
         self.ui.lineEditSaveName.setText(hex_io.save_dir + hex_io.get_save_name(*self.get_parameters()))
 
-    def check_box(self, player):
-        unchecked_0 = not self.ui.checkBoxPlayer0.isChecked()
-        unchecked_1 = not self.ui.checkBoxPlayer1.isChecked()
-        both_unchecked = unchecked_0 and unchecked_1
-        if both_unchecked:
-            if player == 0:
-                self.ui.checkBoxPlayer0.setChecked(True)
-            else:
-                self.ui.checkBoxPlayer1.setChecked(True)
-        self.update_save_name()
+    def check_box_load(self):
+        checked = self.ui.checkBoxLoad.isChecked()
 
-    def check_box_load(self, player):
-        unchecked_0 = not self.ui.checkBoxLoadPlayer0.isChecked()
-        unchecked_1 = not self.ui.checkBoxLoadPlayer1.isChecked()
-        both_unchecked = unchecked_0 and unchecked_1
+        self.ui.spinBoxSizeTrain.setEnabled(not checked)
+        self.ui.spinBoxMemory.setEnabled(not checked)
+        self.ui.spinBoxBatchSize.setEnabled(not checked)
 
-        self.ui.spinBoxSizeTrain.setEnabled(both_unchecked)
-        self.ui.doubleSpinBoxGamma.setEnabled(both_unchecked)
-        self.ui.spinBoxBatchSize.setEnabled(both_unchecked)
-        self.ui.spinBoxMemory.setEnabled(both_unchecked)
-        self.ui.checkBoxPlayer0.setEnabled(unchecked_0)
-        self.ui.checkBoxPlayer1.setEnabled(unchecked_1)
+        if checked and self.model != "":
+            d = hex_io.get_parameters_dict(self.model)
+            self.ui.spinBoxSizeTrain.setValue(d["size"])
+            self.ui.spinBoxEpochs.setValue(d["epochs"])
+            self.ui.spinBoxMemory.setValue(d["memory_size"])
+            self.ui.spinBoxBatchSize.setValue(d["batch_size"])
+            self.update_save_name()
 
-        if (not unchecked_0 and player == 0) or (not unchecked_1 and player == 1):
-            model = self.models[player]
-
-            size, gamma, batch_size, _, _, _, _, memory_size, _, _ = self.get_parameters(model)
-            self.ui.spinBoxSizeTrain.setValue(size)
-            self.ui.doubleSpinBoxGamma.setValue(gamma)
-            self.ui.spinBoxBatchSize.setValue(batch_size)
-            self.ui.spinBoxMemory.setValue(memory_size)
-            self.ui.checkBoxPlayer0.setChecked(not unchecked_0)
-            self.ui.checkBoxPlayer1.setChecked(not unchecked_1)
-
-    def get_parameters(self, model=""):
+    def get_parameters(self):
         """
         Get the parameters for train
-        :return: size, gamma, batch_size, initial_epsilon, final_epsilon, exploration_epochs, train_epochs, memory_size, q_players, q_learners
+        :return: size, epochs, memory_size, batch_size, comment
         """
-        b0, b1 = self.ui.checkBoxPlayer0.isChecked(), self.ui.checkBoxPlayer1.isChecked()
-        if model == "":
-            return self.ui.spinBoxSizeTrain.value(), \
-                   self.ui.doubleSpinBoxGamma.value(), \
-                   self.ui.spinBoxBatchSize.value(), \
-                   self.ui.doubleSpinBoxInitialEpsilon.value(), \
-                   self.ui.doubleSpinBoxFinalEpsilon.value(), \
-                   self.ui.spinBoxExplorationEpochs.value(), \
-                   self.ui.spinBoxTrainEpochs.value(), \
-                   self.ui.spinBoxMemory.value(), \
-                   [] + ([0] if b0 else []) + ([1] if b1 else []), \
-                   self.ui.lineEditComment.text()
-
-        else:
-            d = hex_io.get_parameters_dict(model)
-            size = d["size"]
-            gamma = d["gamma"]
-            batch_size = d["batch_size"]
-            memory_size = d["memory_size"]
-
-            return size, \
-                   gamma, \
-                   batch_size, \
-                   self.ui.doubleSpinBoxInitialEpsilon.value(), \
-                   self.ui.doubleSpinBoxFinalEpsilon.value(), \
-                   self.ui.spinBoxExplorationEpochs.value(), \
-                   self.ui.spinBoxTrainEpochs.value(), \
-                   memory_size, \
-                   [] + ([0] if b0 else []) + ([1] if b1 else []), \
-                   self.ui.lineEditComment.text()
+        return self.ui.spinBoxSizeTrain.value(), self.ui.spinBoxEpochs.value(), self.ui.spinBoxMemory.value(), \
+               self.ui.spinBoxBatchSize.value(), self.ui.lineEditComment.text()
 
     def set_busy(self, busy):
         """
@@ -244,7 +177,7 @@ class TrainUI:
         """
         Start training
         """
-        self.thread = LearnThread(self.get_parameters(), self.models)
+        self.thread = LearnThread(*self.get_parameters(), self.model)
         self.thread.start()
         self.set_busy(True)
 

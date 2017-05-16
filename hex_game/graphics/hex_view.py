@@ -1,9 +1,10 @@
-from PyQt5 import QtCore
-from PyQt5.QtCore import Qt
-import math
+import os
+from datetime import datetime
+
 import numpy as np
 from PyQt5.QtCore import QPointF
-from PyQt5.QtGui import QColor, QTextBlockFormat, QTextCursor, QImage, QPainter
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor, QImage, QPainter
 from PyQt5.QtGui import QPen
 from PyQt5.QtGui import QPolygonF
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPolygonItem, QGraphicsLineItem, \
@@ -140,12 +141,22 @@ class HexView(QGraphicsView):
     def screenshot(self, name):
         self.scene.clearSelection()
         self.scene.setSceneRect(self.scene.itemsBoundingRect())
+
         image = QImage(self.scene.sceneRect().size().toSize(), QImage.Format_ARGB32)
         image.fill(Qt.transparent)
 
         painter = QPainter(image)
+        painter.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
         self.scene.render(painter)
-        image.save(name + ".png")
+
+        save_dir = os.path.expanduser("~") + "/screenshots/Hex/"
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+        if os.path.exists(save_dir + name + ".png"):
+            name = datetime.now().strftime("%Y_%m_%d_%H:%M:%S") + name
+
+        image.save(save_dir + name + ".png")
         painter.end()
 
 
