@@ -3,10 +3,12 @@ from PyQt5 import QtGui
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QShortcut
 
+from hex_game.ai_poisson import get_path
 from hex_game.game import Game
 from hex_game.graphics import debug
 from hex_game.graphics.hex_view import HexView
 from hex_game.graphics.mainwindow import Ui_TIPE
+from hex_game.main import invert_path
 from hex_game.players import *
 from hex_game.players.player_poisson import PoissonPlayer
 
@@ -190,6 +192,9 @@ class PlayUI:
                 self.ui.graphicsViewPlayer1.set_board(self.get_board(aux1, q=True))
             if aux2 is not None:
                 self.ui.graphicsViewPlayer2.set_board(self.get_board(aux2, q=True))
+
+            path = get_path(self.game.board, 1 - self.game.player)
+            self.debug_path(invert_path(path, 1 - self.game.player), id=0, player=-1)
 
     def play(self):
         """

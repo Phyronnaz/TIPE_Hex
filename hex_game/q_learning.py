@@ -241,11 +241,10 @@ def train(model, database):
     def f(a, b):
         l = np.zeros((len(b), size ** 2))
         for i in range(len(l)):
-            l[i][a[i].flat != -1] = -1
             l[i][b[i]] = 1
         return np.array([get_features(board) for board in a]), l
 
-    m = n // (10 * size ** 2)
+    m = n // 10
     for i in range(m):
         if i % 100 == 0:
             print("Training: {}% ({})".format(round(100 * i / m, 2), i))
@@ -357,7 +356,7 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
         ###############################################
         ### Create board and winner_check variables ###
         ###############################################
-        board = random.choice(database[0])
+        board = random.choice(database[0]).copy()
         move_count = 0
         winner = -1
 
