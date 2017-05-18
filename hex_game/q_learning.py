@@ -122,15 +122,22 @@ def get_features(board):
     t[2:-2, 2:-2, 0] = (board == 0) * 2 - 1
     t[2:-2, 2:-2, 1] = (board == 1) * 2 - 1
 
-    # Borders set to 1 in all lines
+    # Borders
     t[:2, :, 0] = 1
     t[-2:, :, 0] = 1
     t[:2, :, 2] = 1
     t[-2:, :, 3] = 1
-    t[:, :2, 1] = 1
-    t[:, -2:, 1] = 1
-    t[:2, :, 4] = 1
-    t[-2:, :, 5] = 1
+    t[:, :2, 1] = -1
+    t[:, -2:, 1] = -1
+    t[:2, :, 4] = -1
+    t[-2:, :, 5] = -1
+
+    t[:2, :2, :] = 0
+    t[:2, -2:, :] = 0
+    t[-2:, :2, :] = 0
+    t[-2:, -2:, :] = 0
+
+    print(t[:, :, 0])
 
     # Paths
     for player in range(2):
@@ -244,7 +251,7 @@ def train(model, database):
             l[i][b[i]] = 1
         return np.array([get_features(board) for board in a]), l
 
-    m = n // 100
+    m = n // 10
     for i in range(m):
         if i % 100 == 0:
             print("Training: {}% ({})".format(round(100 * i / m, 2), i))
