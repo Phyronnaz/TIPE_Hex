@@ -244,7 +244,7 @@ def train(model, database):
             l[i][b[i]] = 1
         return np.array([get_features(board) for board in a]), l
 
-    m = n // 10
+    m = n // 100
     for i in range(m):
         if i % 100 == 0:
             print("Training: {}% ({})".format(round(100 * i / m, 2), i))
@@ -280,12 +280,11 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
     #####################
     ### Create arrays ###
     #####################
-    n = epochs * size ** 2
-    epoch_array = np.zeros(n)
-    winner_array = np.zeros(n)
-    random_move_array = np.zeros(n, dtype='bool')
-    loss_array = np.zeros(n)
-    move_count_array = np.zeros(n)
+    winner_array = np.zeros(epochs)
+    loss_array = np.zeros(epochs)
+
+    thread.winner_array = winner_array
+    thread.loss_array = loss_array
 
     #######################
     ### Create memories ###
@@ -311,19 +310,7 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
         ##################
         ### Thread Log ###
         ##################
-        if epoch % 1 == 0:
-            thread.set_epoch(epoch)
-            if epoch % 10 == 0:
-                s = log_index
-                e = index
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=RuntimeWarning)
-                    loss_log = loss_array[s:e][np.logical_not(np.isnan(loss_array[s:e]))].mean()
-                w = winner_array[s:e]
-                c = (w != -1).sum()
-                error = (w == 2).sum() / c * 100
-                thread.log(epoch, loss_log, error)
-                log_index = index
+        thread.set_epoch(epoch)
 
         ########################
         ### Learn from memory ##
@@ -357,7 +344,6 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
         ### Create board and winner_check variables ###
         ###############################################
         board = random.choice(database[0]).copy()
-        move_count = 0
         winner = -1
 
         #################
@@ -422,20 +408,16 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
 
             memory.append((old_state, action, new_state, reward, terminal))
 
-            ###########
-            ### Log ###
-            ###########
-            epoch_array[index] = epoch
-            winner_array[index] = winner
-            random_move_array[index] = random_move
-            loss_array[index] = loss
-            move_count_array[index] = move_count
-            loss = np.nan
-            ########################
-            ### Update counters ###
-            ########################
-            index += 1
-            move_count += 1
+        ###########
+        ### Log ###
+        ###########
+        winner_array[index] = winner
+        loss_array[index] = loss
+
+        ########################
+        ### Update counters ###
+        ########################
+        index += 1
 
         #######################
         ### Increment epoch ###
@@ -445,11 +427,8 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
     ########################
     ### Create dataframe ###
     ########################
-    df = pd.DataFrame(dict(epoch=epoch_array[:index],
-                           winner=winner_array[:index],
-                           random_move=random_move_array[:index],
+    df = pd.DataFrame(dict(winner=winner_array[:index],
                            loss=loss_array[:index],
-                           move_count=move_count_array[:index]
                            ))
     ###########
     ### End ###

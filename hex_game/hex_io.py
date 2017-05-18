@@ -51,14 +51,15 @@ def get_parameters(name: str):
     l = s.split("-")
 
     return int(l[l.index("size") + 1]), \
-           float(l[l.index("epochs") + 1]), \
+           int(l[l.index("epochs") + 1]), \
            int(l[l.index("memory_size") + 1]), \
            int(l[l.index("batch_size") + 1]), \
            l[l.index("comment") + 1]
 
+
 def get_parameters_dict(name: str):
     size, epochs, memory_size, batch_size, comment = get_parameters(name)
-    return {"size": size, "epochs": epochs,"memory_size": memory_size,  "batch_size": batch_size, "comment": comment}
+    return {"size": size, "epochs": epochs, "memory_size": memory_size, "batch_size": batch_size, "comment": comment}
 
 
 def get_pretty_name(*parameters):

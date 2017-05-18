@@ -18,10 +18,8 @@ class LearnThread(threading.Thread):
         self.comment = comment
         self.model = model
 
-        self.epoch_log = np.zeros(self.epochs)
-        self.loss_log = np.zeros(self.epochs)
-        self.error_log = np.zeros(self.epochs)
-        self.index = 0
+        self.winner_array = np.zeros(self.epochs)
+        self.loss_array = np.zeros(self.epochs)
 
         self.start_time = -1
         self.elapsed_time = ""
@@ -41,7 +39,7 @@ class LearnThread(threading.Thread):
         sess = tf.Session(config=config)
         keras.backend.set_session(sess)
         with sess.graph.as_default():
-            model, df = learn(self.size, self.epochs, self.memory_size, self.batch_size, thread=self)
+            model, df = learn(self.size, self.epochs, self.memory_size, self.batch_size, self.model, thread=self)
             hex_io.save_model_and_df(model, df, self.size, self.epochs, self.memory_size, self.batch_size, self.comment)
 
         self.learning = False
@@ -54,17 +52,23 @@ class LearnThread(threading.Thread):
         """
         return self.current_epoch / self.epochs
 
-    def log(self, epoch, loss, error):
-        """
-        Add a row to the logs
-        :param epoch: epoch
-        :param loss: loss
-        :param error: percentage of game ended with an error
-        """
-        self.epoch_log[self.index] = epoch
-        self.loss_log[self.index] = loss
-        self.error_log[self.index] = error
-        self.index += 1
+    def get_plot(self):
+        n = self.current_epoch
+        k = n // 25
+
+        player = np.zeros(25)
+        error = np.zeros(25)
+        loss = np.zeros(25)
+        index = np.zeros(25)
+
+        for i in range(25):
+            index[i] = k * i
+            loss[i] = self.loss_array[k * i:k * (i + 1)].mean()
+
+            w = self.winner_array[k * i:(k * (i + 1))]
+            player[i] = (w == 1).sum() / k * 100
+            error[i] = (w == 2).sum() / k * 100
+        return index, player, error, loss
 
     def set_epoch(self, epoch):
         """

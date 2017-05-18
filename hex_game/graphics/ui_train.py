@@ -52,21 +52,20 @@ class TrainUI:
         """
         Update the plots
         """
-        if self.thread.index != self.last_index:
-            self.last_index = self.thread.index
+        if abs(self.thread.current_epoch - self.last_index) > 10:
+            self.last_index = self.thread.current_epoch
+
+            index, player, error, loss = self.thread.get_plot()
 
             # Clear
             self.widgetPlot.clear()
 
             # Plot
-            self.widgetPlot.loss.plot(self.thread.epoch_log[:self.thread.index],
-                                      self.thread.loss_log[:self.thread.index], 'v-')
-            self.widgetPlot.loss.set_ybound(0, numpy.nanmax(self.thread.loss_log))
+            self.widgetPlot.loss.plot(index, loss, 'v-')
+            self.widgetPlot.loss.set_ybound(0, numpy.nanmax(loss))
 
-            self.widgetPlot.winner.plot(self.thread.epoch_log[:self.thread.index],
-                                        100 - self.thread.error_log[:self.thread.index], 'P-')
-            self.widgetPlot.winner.plot(self.thread.epoch_log[:self.thread.index],
-                                        self.thread.error_log[:self.thread.index], 'o-')
+            self.widgetPlot.winner.plot(index, player, 'o-')
+            self.widgetPlot.winner.plot(index, error, 'P-')
             self.widgetPlot.winner.set_ybound(0, 100)
 
             # Draw
@@ -102,7 +101,7 @@ class TrainUI:
                 msg_box.setText("Bad naming")
                 msg_box.setWindowTitle("Error")
                 msg_box.exec_()
-                self.ui.lineEditLoad.setText(self.model)
+            self.ui.lineEditLoad.setText(self.model)
         self.check_box_load()
 
     def train_button(self):

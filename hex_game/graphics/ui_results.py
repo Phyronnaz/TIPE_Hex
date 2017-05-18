@@ -137,24 +137,19 @@ class ResultsUI:
 
             n = hex_io.get_parameters_dict(self.paths[row])["epochs"]
 
-            k = int(round(n / 2500 + 0.5) * 100)
-            c_start = 0
-            c_end = int(round(n / k))
+            k = n // 25
 
-            player = np.zeros(c_end - c_start)
-            error = np.zeros(c_end - c_start)
-            loss = np.zeros(c_end - c_start)
-            index = np.zeros(c_end - c_start)
+            player = np.zeros(25)
+            error = np.zeros(25)
+            loss = np.zeros(25)
+            index = np.zeros(25)
 
-            for i in range(c_start, c_end):
-                index[i - c_start] = k * i
-                m = (i * k < df.epoch) & (df.epoch < (i + 1) * k)
-                loss[i] = df.loss[m].mean()
+            for i in range(25):
+                index[i] = k * i
+                loss[i] = df.loss[k * i:k * (i + 1)].mean()
 
-                w = df.winner[m]
-                x = (w != -1).sum()
-                if x != 0:
-                    player[i - c_start] = (w == 1).sum() / x * 100
-                    error[i - c_start] = (w == 2).sum() / x * 100
+                w = df.winner[k * i:(k * (i + 1))]
+                player[i] = (w == 1).sum() / k * 100
+                error[i] = (w == 2).sum() / k * 100
             self.cache[row] = index, player, error, loss
         return self.cache[row]
