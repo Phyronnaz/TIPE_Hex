@@ -1,5 +1,4 @@
 import numpy
-from numpy.random import RandomState
 from hex_game.main import get_random_move
 from hex_game.players.player import Player
 

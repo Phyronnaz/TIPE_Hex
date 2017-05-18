@@ -4,7 +4,7 @@ from hex_game.floyd_warshall.floyd_warshall import floyd_warshall
 
 from hex_game.graphics import debug
 from hex_game.main import is_neighboring, get_common_neighbors, get_neighbors_1, get_neighbors_2, add_edges, \
-    invert_path, invert_board
+    invert_path, invert_board, play_move_and_copy
 from hex_game.poisson import Poisson
 
 poisson_dict = {}
@@ -31,7 +31,42 @@ def get_move_poisson(board, player, debug_path=True):
         debug.debug_path(real_paths[0], id=0, player=player)
         debug.debug_path(real_paths[1], id=1, player=player)
 
-    return [k for k in real_paths[0] if k in real_paths[1]][0]
+    valid_paths = [validate_path(c, board) for c in real_paths]
+    expanded_paths = [expand_paths(c, board) for c in real_paths]
+
+    valid_expanded_paths = [validate_path(c, board) for c in expanded_paths]
+
+    l = [k for k in valid_expanded_paths[0] if k in valid_expanded_paths[1] and board[k] == -1]
+
+    c = [1, -1][player]
+
+    i = numpy.argmax([c * score(invert_board(play_move_and_copy(board, k, player), player), *valid_paths) for k in l])
+
+    return l[i]
+
+
+def validate_path(path, board):
+    n = board.shape[0]
+    return [(a, b) for (a, b) in path if 0 <= a < n > b >= 0]
+
+
+def score(board, path, enemy_path):
+    U = get_poisson(board)
+
+    [A, B] = numpy.array(path).T
+    [C, D] = numpy.array(enemy_path).T
+
+    return sum(U[C, D]) - sum(U[A, B])
+
+
+def expand_paths(paths, board):
+    l = []
+    for i in range(len(paths) - 1):
+        l.append(paths[i])
+        if not is_neighboring(paths[i], paths[i + 1], distance=1, board=board):
+            l += get_common_neighbors(paths[i], paths[i + 1], board)
+    l.append(paths[-1])
+    return l
 
 
 def get_path(board, player):
@@ -136,7 +171,6 @@ def find_path(start, end, P, board):
     :param board: board
     :return: np.ndarray
     """
-    U = get_poisson(board)
 
     def aux(pile, start, end):
         """
@@ -148,19 +182,13 @@ def find_path(start, end, P, board):
         middle = tuple(P[start[0], start[1], end[0], end[1]])
 
         if middle == (-1, -1):
-            debug.debug_play_text("Error rebuilding path: unknown precedent")
+            debug.debug_play("Error rebuilding path: unknown precedent")
         elif start == end:
-            debug.debug_play_text("Error rebuilding path: start = end")
-        elif is_neighboring(start, end, distance=1):
+            debug.debug_play("Error rebuilding path: start = end")
+        elif is_neighboring(start, end, distance=1, board=board) or is_neighboring(start, end, distance=2, board=board):
             pile.append(start)
-        elif is_neighboring(start, end, distance=2):
-            pile.append(start)
-            l = get_common_neighbors(start, end, board)
-            best = l[numpy.argmin([U[k] for k in l])]
-            pile.append(best)
         else:
             aux(pile, start, middle)
-            pile.append(middle)
             aux(pile, middle, end)
 
     pile = []

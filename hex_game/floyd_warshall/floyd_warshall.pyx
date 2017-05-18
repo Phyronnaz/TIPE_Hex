@@ -1,9 +1,11 @@
+# noinspection PyUnresolvedReferences
 cimport cython
 cimport numpy as np
 
 ctypedef np.int_t DTYPE_t
 ctypedef np.float_t DTYPE_f
 
+# noinspection PyPep8Naming,PyUnresolvedReferences
 @cython.boundscheck(False)  # turn off bounds-checking for entire function
 @cython.wraparound(False)  # turn off negative index wrapping for entire function
 def floyd_warshall(np.ndarray[DTYPE_f, ndim=4] W, np.ndarray[DTYPE_t, ndim=5] P):

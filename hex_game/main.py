@@ -104,7 +104,6 @@ def get_random_move(board: numpy.ndarray) -> (int, int):
     """
     Random move
     :param board: board
-    :param state: numpy RandomState
     :return: (int, int)
     """
     moves = get_possibles_moves(board)
@@ -113,7 +112,7 @@ def get_random_move(board: numpy.ndarray) -> (int, int):
     return moves[0]
 
 
-def is_neighboring(a: (int, int), b: (int, int), distance: int) -> bool:
+def is_neighboring(a: (int, int), b: (int, int), distance: int, board: numpy.ndarray) -> bool:
     """
     Are a and b neighbors?
     :param a: (int, int)
@@ -121,10 +120,10 @@ def is_neighboring(a: (int, int), b: (int, int), distance: int) -> bool:
     :param distance: 1 or 2
     :return: bool
     """
-    for (k, l) in NEIGHBORS_1 if distance == 1 else NEIGHBORS_2:
-        if a[0] == b[0] + k and a[1] == b[1] + l:
-            return True
-    return False
+    if distance == 1:
+        return a in get_neighbors_1(b, board)
+    else:
+        return a in get_neighbors_2(b, board)
 
 
 def get_common_neighbors(p1: (int, int), p2: (int, int), board: numpy.ndarray) -> [(int, int)]:
@@ -227,3 +226,11 @@ def invert_move(move: (int, int), player: int) -> (int, int):
         return move[0], move[1]
     else:
         return move[1], move[0]
+
+def flip(board: numpy.ndarray) -> numpy.ndarray:
+    """
+    Flip a board
+    :param board: board 
+    :return: flipped board
+    """
+    return board[::-1, ::-1]

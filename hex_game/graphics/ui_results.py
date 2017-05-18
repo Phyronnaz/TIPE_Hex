@@ -12,8 +12,11 @@ from hex_game.graphics.plots import ResultsPlot
 class ResultsUI:
     def __init__(self, ui: Ui_TIPE):
         self.ui = ui
+
         self.create_plot_and_toolbar()
         self.widgetPlot = self.ui.widgetResultsPlot  # type: ResultsPlot
+        self.widgetPlot.get_name = self.get_name
+
         self.dataframes = []
         self.paths = []
         self.cache = dict()
@@ -31,7 +34,7 @@ class ResultsUI:
         self.ui.widgetResultsPlot.deleteLater()
         self.ui.widgetResultsToolbar.deleteLater()
 
-        self.ui.widgetResultsPlot = ResultsPlot(self.ui.resultsTab, width=5, height=5, dpi=80)
+        self.ui.widgetResultsPlot = ResultsPlot(self.ui.resultsTab, width=5, height=5)
         self.ui.widgetResultsPlot.setObjectName("widgetResultsPlot")
         self.ui.verticalLayoutResults.addWidget(self.ui.widgetResultsPlot)
 
@@ -39,9 +42,13 @@ class ResultsUI:
         self.ui.widgetResultsToolbar.setObjectName("widgetResultsToolbar")
         self.ui.verticalLayoutResults.addWidget(self.ui.widgetResultsToolbar)
 
+    def get_name(self, path):
+        s = self.ui.comboBoxColorVariable.currentText()
+        d = {"size": "Size", "epochs": "Epochs", "memory_size": "Memory size", "batch_size": "Batch size"}
+        return d[s] + " = " + str(hex_io.get_parameters_dict(path)[s])
+
     def create_combox_box(self):
-        for s in ["size", "gamma", "initial_epsilon", "final_epsilon", "exploration_epochs", "train_epochs",
-                  "memory_size", "batch_size"]:
+        for s in ["size", "epochs", "memory_size", "batch_size"]:
             self.ui.comboBoxColorVariable.addItem(s)
         l = list(cm.cmap_d.keys())
         l.sort()
@@ -59,7 +66,7 @@ class ResultsUI:
         self.dataframes.append(pd.read_hdf(path))
         self.paths.append(path)
 
-        self.widgetPlot.names.append(name)
+        self.widgetPlot.paths.append(path)
         self.widgetPlot.plot_enabled.append(True)
 
         self.widgetPlot.colors.append("black")
@@ -75,7 +82,7 @@ class ResultsUI:
         self.dataframes = []
         self.paths = []
         self.cache = dict()
-        self.widgetPlot.names = []
+        self.widgetPlot.paths = []
         self.widgetPlot.plot_enabled = []
         self.widgetPlot.colors = []
         self.widgetPlot.clear()
@@ -106,55 +113,43 @@ class ResultsUI:
     def plot(self, row):
         """
         Plot a dataframe
-        :param df: dataframe to plot
         :param row: row in listWidgetResults of the dataframe
         """
         color = self.widgetPlot.colors[row]
-        df = self.dataframes[row]
-
-        # Epsilon
-        self.widgetPlot.epsilon.plot(df["epoch"], df["epsilon"], c=color)
 
         # Winner
+        index, player, error, loss = self.get_arrays(row)
 
-        index, player0, player1, error, loss_player0, loss_player1 = self.get_arrays(row)
-
-        self.widgetPlot.winner.plot(index, player0, 'v-',
-                                    index, player1, 'o-',
+        self.widgetPlot.winner.plot(index, player, 'o-',
                                     index, error, 'P-',
                                     c=color, markersize=5)
         self.widgetPlot.winner.set_ybound(0, 100)
+        self.widgetPlot.winner.set_xbound(0, max(index))
 
         # Loss
-        self.widgetPlot.loss.plot(index, loss_player0, 'v-', c=color, markersize=5)
-        self.widgetPlot.loss.plot(index, loss_player1, 'o-', c=color, markersize=5)
+        self.widgetPlot.loss.plot(index, loss, 'o-', c=color, markersize=5)
+        self.widgetPlot.loss.set_ybound(0, max(loss))
+        self.widgetPlot.loss.set_xbound(0, max(index))
 
     def get_arrays(self, row):
         if row not in self.cache:
             df = self.dataframes[row]
-            exploration_epochs = hex_io.get_parameters_dict(self.paths[row])["exploration_epochs"]
-            train_epochs = hex_io.get_parameters_dict(self.paths[row])["train_epochs"]
-            n = exploration_epochs + train_epochs
-            k = int(round(n / 2500 + 0.5) * 100)
-            c_start = 0
-            c_end = int(round(n / k))
 
-            player0 = np.zeros(c_end - c_start)
-            player1 = np.zeros(c_end - c_start)
-            error = np.zeros(c_end - c_start)
-            loss_player0 = np.zeros(c_end - c_start)
-            loss_player1 = np.zeros(c_end - c_start)
-            index = np.zeros(c_end - c_start)
-            for i in range(c_start, c_end):
-                index[i - c_start] = k * i
-                m = (i * k < df.epoch) & (df.epoch < (i + 1) * k)
-                loss_player0[i] = df.loss_player0[m].mean()
-                loss_player1[i] = df.loss_player1[m].mean()
-                w = df.winner[m]
-                x = (w != -1).sum()
-                if x != 0:
-                    player0[i - c_start] = (w == 0).sum() / x * 100
-                    player1[i - c_start] = (w == 1).sum() / x * 100
-                    error[i - c_start] = (w == 2).sum() / x * 100
-            self.cache[row] = index, player0, player1, error, loss_player0, loss_player1
+            n = hex_io.get_parameters_dict(self.paths[row])["epochs"]
+
+            k = n // 25
+
+            player = np.zeros(25)
+            error = np.zeros(25)
+            loss = np.zeros(25)
+            index = np.zeros(25)
+
+            for i in range(25):
+                index[i] = k * i
+                loss[i] = df.loss[k * i:k * (i + 1)].mean()
+
+                w = df.winner[k * i:(k * (i + 1))]
+                player[i] = (w == 1).sum() / k * 100
+                error[i] = (w == 2).sum() / k * 100
+            self.cache[row] = index, player, error, loss
         return self.cache[row]

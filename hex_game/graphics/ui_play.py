@@ -3,10 +3,12 @@ from PyQt5 import QtGui
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QShortcut
 
+from hex_game.ai_poisson import get_path
 from hex_game.game import Game
 from hex_game.graphics import debug
 from hex_game.graphics.hex_view import HexView
 from hex_game.graphics.mainwindow import Ui_TIPE
+from hex_game.main import invert_path
 from hex_game.players import *
 from hex_game.players.player_poisson import PoissonPlayer
 
@@ -47,6 +49,8 @@ class PlayUI:
         self.shortcut_play.activated.connect(self.play)
 
         # Connect actions
+        self.ui.pushButtonScreenshot.clicked.connect(self.screenshot)
+
         self.ui.spinBoxSizePlay.valueChanged.connect(self.update_size)
 
         self.ui.comboBoxPlayer1.activated.connect(self.update_minimax_spinbox)
@@ -189,6 +193,9 @@ class PlayUI:
             if aux2 is not None:
                 self.ui.graphicsViewPlayer2.set_board(self.get_board(aux2, q=True))
 
+            path = get_path(self.game.board, 1 - self.game.player)
+            self.debug_path(invert_path(path, 1 - self.game.player), id=0, player=-1)
+
     def play(self):
         """
         Handle play button click
@@ -216,11 +223,10 @@ class PlayUI:
         :return: new board
         """
         t = np.zeros(shape=board.shape)
-        maxi = abs(board).max() if abs(board).max() != 0 else 1
         for i in range(board.shape[0]):
             for j in range(board.shape[1]):
                 if q:
-                    t[i, j] = board[i, j] / maxi
+                    t[i, j] = board[i, j]
                 else:
                     if board[i, j] == -1:
                         t[i, j] = 0
@@ -229,6 +235,12 @@ class PlayUI:
                     else:
                         t[i, j] = -1
         return t
+
+    def screenshot(self):
+        name = self.ui.lineEditScreenshotName.text()
+        self.ui.graphicsViewDefault.screenshot(name + "_main")
+        self.ui.graphicsViewPlayer1.screenshot(name + "_1")
+        self.ui.graphicsViewPlayer2.screenshot(name + "_2")
 
     def new_game(self):
         """

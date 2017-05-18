@@ -8,21 +8,18 @@ import tensorflow as tf
 
 
 class LearnThread(threading.Thread):
-    def __init__(self, parameters, models):
+    def __init__(self, size, epochs, memory_size, batch_size, comment, model):
         threading.Thread.__init__(self)
 
-        self.n = parameters[5] + parameters[6]
+        self.size = size
+        self.epochs = epochs
+        self.memory_size = memory_size
+        self.batch_size = batch_size
+        self.comment = comment
+        self.model = model
 
-        self.parameters = parameters
-        self.models = models
-
-        self.epoch_log = np.zeros(self.n)
-        self.loss_log_player0 = np.zeros(self.n)
-        self.loss_log_player1 = np.zeros(self.n)
-        self.player0_log = np.zeros(self.n)
-        self.player1_log = np.zeros(self.n)
-        self.error_log = np.zeros(self.n)
-        self.index = 0
+        self.winner_array = np.zeros(self.epochs)
+        self.loss_array = np.zeros(self.epochs)
 
         self.start_time = -1
         self.elapsed_time = ""
@@ -34,39 +31,44 @@ class LearnThread(threading.Thread):
 
     def run(self):
         self.stop = False
+
         self.learning = True
         print("Learning started")
+
         config = tf.ConfigProto()
         sess = tf.Session(config=config)
         keras.backend.set_session(sess)
         with sess.graph.as_default():
-            hex_io.save_models_and_df(*learn(*self.parameters[:9], self.models, thread=self), *self.parameters)
-        print("Learning ended")
+            model, df = learn(self.size, self.epochs, self.memory_size, self.batch_size, self.model, thread=self)
+            hex_io.save_model_and_df(model, df, self.size, self.epochs, self.memory_size, self.batch_size, self.comment)
+
         self.learning = False
+        print("Learning ended")
 
     def get_progress(self):
         """
         Return progress of the learning
         :return: float between 0 and 1
         """
-        return self.current_epoch / self.n
+        return self.current_epoch / self.epochs
 
-    def log(self, epoch, loss_log_player0, loss_log_player1, player0, player1, error):
-        """
-        Add a row to the logs
-        :param epoch: epoch
-        :param loss: loss
-        :param player0: percentage of game player 0 won
-        :param player1: percentage of game player 1 won
-        :param error: percentage of game ended with an error
-        """
-        self.epoch_log[self.index] = epoch
-        self.loss_log_player0[self.index] = loss_log_player0
-        self.loss_log_player1[self.index] = loss_log_player1
-        self.player0_log[self.index] = player0
-        self.player1_log[self.index] = player1
-        self.error_log[self.index] = error
-        self.index += 1
+    def get_plot(self):
+        n = self.current_epoch
+        k = n // 25
+
+        player = np.zeros(25)
+        error = np.zeros(25)
+        loss = np.zeros(25)
+        index = np.zeros(25)
+
+        for i in range(25):
+            index[i] = k * i
+            loss[i] = self.loss_array[k * i:k * (i + 1)].mean()
+
+            w = self.winner_array[k * i:(k * (i + 1))]
+            player[i] = (w == 1).sum() / k * 100
+            error[i] = (w == 2).sum() / k * 100
+        return index, player, error, loss
 
     def set_epoch(self, epoch):
         """
@@ -79,10 +81,10 @@ class LearnThread(threading.Thread):
         self.current_epoch = epoch
 
         elapsed = int((datetime.datetime.now() - self.start_time).seconds)
-        total = int(elapsed * self.n / (epoch + 1))
+        total = int(elapsed * self.epochs / (epoch + 1))
 
         self.remaining_time = datetime.timedelta(seconds=max(total - elapsed, 0))
-
         self.elapsed_time = datetime.timedelta(seconds=elapsed)
-        print("Current epoch: {}; Remaining time: {}; Elapsed time: {}".format(self.current_epoch, self.remaining_time,
-                                                                               self.elapsed_time))
+
+        print("Current epoch: {}; Remaining time: {}; Elapsed time: {}".format(
+            self.current_epoch, self.remaining_time, self.elapsed_time))
