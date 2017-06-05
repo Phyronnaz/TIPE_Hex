@@ -190,8 +190,10 @@ class PlayUI:
             self.ui.graphicsViewDefault.set_board(self.get_board(self.game.board, q=False))
             if aux1 is not None:
                 self.ui.graphicsViewPlayer1.set_board(self.get_board(aux1, q=True))
+                self.ui.graphicsViewPlayer1.set_texts(aux1)
             if aux2 is not None:
                 self.ui.graphicsViewPlayer2.set_board(self.get_board(aux2, q=True))
+                self.ui.graphicsViewPlayer2.set_texts(aux2)
 
             path = get_path(self.game.board, 1 - self.game.player)
             self.debug_path(invert_path(path, 1 - self.game.player), id=0, player=-1)

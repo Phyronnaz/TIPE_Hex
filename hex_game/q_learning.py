@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import keras.models
 import tensorflow as tf
+from keras.callbacks import History
 
 from hex_game.ai_poisson import get_move_poisson
 from hex_game.main import *
@@ -137,7 +138,7 @@ def get_features(board):
     t[-2:, :2, :] = 0
     t[-2:, -2:, :] = 0
 
-    print(t[:, :, 0])
+    # print(t[:, :, 0])
 
     # Paths
     for player in range(2):
@@ -251,7 +252,7 @@ def train(model, database):
             l[i][b[i]] = 1
         return np.array([get_features(board) for board in a]), l
 
-    m = n // 10
+    m = n // 100
     for i in range(m):
         if i % 100 == 0:
             print("Training: {}% ({})".format(round(100 * i / m, 2), i))
@@ -259,12 +260,21 @@ def train(model, database):
         model.train_on_batch(*f(X[l], Y[l]))
 
 
+def get_norm(model, database):
+    s = 0
+    for i in range(10):
+        board = database[0, int(len(database) * i / 10)]
+        features = get_features(board)
+        [q_values] = model.predict(numpy.array([features]))
+        s += (q_values ** 2).mean()
+    return s / 10
+
+
 def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
     """
     Train the model
     :return: model, dataframe
     """
-
     ##########################
     ## Create/Load database ##
     ##########################
@@ -289,6 +299,7 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
     #####################
     winner_array = np.zeros(epochs)
     loss_array = np.zeros(epochs)
+    norm_array = np.zeros(epochs)
 
     thread.winner_array = winner_array
     thread.loss_array = loss_array
@@ -302,7 +313,6 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
     ### Initialize counters ###
     ###########################
     index = 0
-    log_index = 0
 
     ######################
     ### Set parameters ###
@@ -329,23 +339,26 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
 
             batch = random.sample(memory, batch_size)
 
-            for i in range(batch_size):
-                old_state, action, new_state, reward, terminal = batch[i]
+            old_states = np.array([b[0] for b in batch])
+            new_states = np.array([b[2] for b in batch])
 
-                [old_q_values] = model.predict(np.array([old_state]))
+            old_q_values = model.predict(old_states)
+            new_q_values = model.predict(new_states)
+
+            for i in range(batch_size):
+                _, action, _, reward, terminal = batch[i]
 
                 if terminal:
                     update = reward
                 else:
-                    [new_q_values] = model.predict(np.array([new_state]))
-                    update = reward - max(new_q_values)
+                    update = reward - max(new_q_values[i])
 
-                old_q_values[action] = update
+                old_q_values[i][action] = update
 
-                X[i] = old_state
-                Y[i] = old_q_values
+                X[i] = old_states[i]
+                Y[i] = old_q_values[i]
 
-            loss = model.train_on_batch(X, Y)
+            loss = model.train_on_batch(X, Y,)
 
         ###############################################
         ### Create board and winner_check variables ###
@@ -420,6 +433,7 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
         ###########
         winner_array[index] = winner
         loss_array[index] = loss
+        norm_array[index] = get_norm(model, database)
 
         ########################
         ### Update counters ###
@@ -436,6 +450,7 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
     ########################
     df = pd.DataFrame(dict(winner=winner_array[:index],
                            loss=loss_array[:index],
+                           norm=norm_array[:index]
                            ))
     ###########
     ### End ###

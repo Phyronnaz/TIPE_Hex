@@ -20,7 +20,7 @@ class HexView(QGraphicsView):
         self.show_path = True
         self.colors = [Qt.green, Qt.yellow, Qt.black, Qt.cyan, Qt.magenta, Qt.gray]
 
-        self.texts = []
+        self.texts = np.zeros((size, size), dtype=object)
         self.paths = {}
         self.paths_colors = {}
         self.polygons = np.zeros((size, size), dtype=object)
@@ -53,12 +53,18 @@ class HexView(QGraphicsView):
                     text = QGraphicsSimpleTextItem(str(i) + "," + str(j))
                     text.setPos(x - text.boundingRect().width() / 2, y - text.boundingRect().height() / 2)
                     text.setBrush(Qt.black)
-                    self.texts.append(text)
+
+                    self.texts[i, j] = text
                     self.scene.addItem(text)
 
     def click(self, x, y):
         if 0 <= x < self.size > y >= 0:
             self.callback(x, y)
+
+    def set_texts(self, texts):
+        for i in range(texts.shape[0]):
+            for j in range(texts.shape[1]):
+                self.texts[i, j].setText(str(round(texts[i, j], 1)))
 
     def set_board(self, board):
         for i in range(self.size):
@@ -68,7 +74,7 @@ class HexView(QGraphicsView):
                 elif board[i, j] < 0:
                     r, g, b, a = 255, 0, 0, -int(board[i, j] * 255)
                 else:
-                    r, g, b, a = 0, 0, 255, int(board[i, j] * 255)
+                    r, g, b, a = 0, 0, 255, int(min(board[i, j] * 255, 255))
                 self.polygons[i, j].setColorRGB(r, g, b, a)
 
     def set_color(self, x, y, color):
@@ -107,11 +113,13 @@ class HexView(QGraphicsView):
         self.paths.clear()
 
     def set_text(self, enabled):
-        for text in self.texts:
-            if enabled:
-                text.show()
-            else:
-                text.hide()
+        for i in range(self.size):
+            for j in range(self.size):
+                text = self.texts[i, j]
+                if enabled:
+                    text.show()
+                else:
+                    text.hide()
 
     def toggle_path(self, enabled):
         self.show_path = enabled
