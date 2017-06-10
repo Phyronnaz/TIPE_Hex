@@ -3,12 +3,12 @@ import datetime
 import numpy as np
 from hex_game import hex_io
 from hex_game.q_learning import learn
-import keras.backend
-import tensorflow as tf
+
+from hex_game.tf_init import sess
 
 
 class LearnThread(threading.Thread):
-    def __init__(self, size, epochs, memory_size, batch_size, comment, model):
+    def __init__(self, size, epochs, memory_size, batch_size, comment="", model=""):
         threading.Thread.__init__(self)
 
         self.size = size
@@ -35,9 +35,6 @@ class LearnThread(threading.Thread):
         self.learning = True
         print("Learning started")
 
-        config = tf.ConfigProto()
-        sess = tf.Session(config=config)
-        keras.backend.set_session(sess)
         with sess.graph.as_default():
             model, df = learn(self.size, self.epochs, self.memory_size, self.batch_size, self.model, thread=self)
             hex_io.save_model_and_df(model, df, self.size, self.epochs, self.memory_size, self.batch_size, self.comment)

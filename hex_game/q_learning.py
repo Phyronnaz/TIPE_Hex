@@ -1,21 +1,21 @@
 import os
 import random
-import warnings
+from collections import deque
+
+import keras.models
 import numpy as np
 import pandas as pd
-import keras.models
 import tensorflow as tf
-from keras.callbacks import History
+from keras.initializers import Initializer
+from keras.layers.convolutional import Conv2D
+from keras.layers.core import Dense, Activation, Flatten
+from keras.models import Sequential
+from keras.optimizers import RMSprop
 
+from hex_game import hex_io
 from hex_game.ai_poisson import get_move_poisson
 from hex_game.main import *
-from collections import deque
-from keras.models import Sequential
 from hex_game.winner_check import *
-from keras.optimizers import RMSprop
-from keras.initializers import Initializer
-from keras.layers.core import Dense, Activation, Flatten
-from keras.layers.convolutional import Conv2D
 
 
 class Neighbors1(Initializer):
@@ -65,30 +65,46 @@ def init_model(size):
 
     model = Sequential()
 
-    # Neighbors 2 (3 layers)
-    model.add(Conv2D(filters=64, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
+    # Neighbors 2 (5 layers)
+    model.add(Conv2D(filters=128, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
                      kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform",
                      input_shape=(size + 4, size + 4, 6)))
     model.add(Activation('relu'))
 
-    model.add(Conv2D(filters=64, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
+    model.add(Conv2D(filters=128, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
                      kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
     model.add(Activation('relu'))
 
-    model.add(Conv2D(filters=64, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
+    model.add(Conv2D(filters=128, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
                      kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
     model.add(Activation('relu'))
 
-    # Neighbors 1 (3 layers)
-    model.add(Conv2D(filters=64, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
+    model.add(Conv2D(filters=128, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
                      kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
     model.add(Activation('relu'))
 
-    model.add(Conv2D(filters=64, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
+    model.add(Conv2D(filters=128, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
                      kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
     model.add(Activation('relu'))
 
-    model.add(Conv2D(filters=64, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
+    # Neighbors 1 (5 layers)
+    model.add(Conv2D(filters=128, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
+                     kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
+    model.add(Activation('relu'))
+
+    model.add(Conv2D(filters=128, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
+                     kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
+    model.add(Activation('relu'))
+
+    model.add(Conv2D(filters=128, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
+                     kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
+    model.add(Activation('relu'))
+
+    model.add(Conv2D(filters=128, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
+                     kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
+    model.add(Activation('relu'))
+
+    model.add(Conv2D(filters=128, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
                      kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
     model.add(Activation('relu'))
 
@@ -226,7 +242,7 @@ def create_database(size, n):
             boards.append(board.copy())
             actions.append(get_action_from_move(move, size))
 
-            if random.random() < 1 / 4:
+            if random.random() < 1 / 2:
                 move = get_random_move(board)
 
             board[move] = 0
@@ -329,6 +345,15 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
         ##################
         thread.set_epoch(epoch)
 
+        if epoch % 1000 == 0:
+            print("Starting save")
+            df = pd.DataFrame(dict(winner=winner_array[:index],
+                                   loss=loss_array[:index],
+                                   norm=norm_array[:index]
+                                   ))
+            hex_io.save_model_and_df(model, df, size, epochs, memory_size, batch_size, "current_epoch_{}".format(epoch))
+            print("Save successful")
+
         ########################
         ### Learn from memory ##
         ########################
@@ -358,7 +383,7 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
                 X[i] = old_states[i]
                 Y[i] = old_q_values[i]
 
-            loss = model.train_on_batch(X, Y,)
+            loss = model.train_on_batch(X, Y, )
 
         ###############################################
         ### Create board and winner_check variables ###

@@ -136,7 +136,6 @@ class ResultsUI:
             df = self.dataframes[row]
 
             n = hex_io.get_parameters_dict(self.paths[row])["epochs"]
-
             k = n // 25
 
             player = np.zeros(25)
