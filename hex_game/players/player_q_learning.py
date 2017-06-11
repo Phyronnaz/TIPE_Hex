@@ -1,6 +1,5 @@
 import keras
 import numpy
-import tensorflow as tf
 
 from hex_game.hex_io import get_pretty_name, get_parameters, get_parameters_dict
 from hex_game.main import invert_board

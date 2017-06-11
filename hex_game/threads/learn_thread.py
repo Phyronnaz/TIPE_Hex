@@ -8,7 +8,7 @@ from hex_game.tf_init import sess
 
 
 class LearnThread(threading.Thread):
-    def __init__(self, size, epochs, memory_size, batch_size, comment="", model=""):
+    def __init__(self, size, epochs, memory_size, batch_size, comment="", model="", intermediate_save=False):
         threading.Thread.__init__(self)
 
         self.size = size
@@ -17,6 +17,7 @@ class LearnThread(threading.Thread):
         self.batch_size = batch_size
         self.comment = comment
         self.model = model
+        self.intermediate_save = intermediate_save
 
         self.winner_array = np.zeros(self.epochs)
         self.loss_array = np.zeros(self.epochs)
@@ -36,7 +37,8 @@ class LearnThread(threading.Thread):
         print("Learning started")
 
         with sess.graph.as_default():
-            model, df = learn(self.size, self.epochs, self.memory_size, self.batch_size, self.model, thread=self)
+            model, df = learn(self.size, self.epochs, self.memory_size, self.batch_size, self.model, thread=self,
+                              intermediate_save=self.intermediate_save)
             hex_io.save_model_and_df(model, df, self.size, self.epochs, self.memory_size, self.batch_size, self.comment)
 
         self.learning = False

@@ -65,7 +65,7 @@ def init_model(size):
 
     model = Sequential()
 
-    # Neighbors 2 (5 layers)
+    # Neighbors 2 (3 layers)
     model.add(Conv2D(filters=128, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
                      kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform",
                      input_shape=(size + 4, size + 4, 6)))
@@ -79,23 +79,7 @@ def init_model(size):
                      kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
     model.add(Activation('relu'))
 
-    model.add(Conv2D(filters=128, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
-                     kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
-    model.add(Activation('relu'))
-
-    model.add(Conv2D(filters=128, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
-                     kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
-    model.add(Activation('relu'))
-
-    # Neighbors 1 (5 layers)
-    model.add(Conv2D(filters=128, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
-                     kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
-    model.add(Activation('relu'))
-
-    model.add(Conv2D(filters=128, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
-                     kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
-    model.add(Activation('relu'))
-
+    # Neighbors 1 (3 layers)
     model.add(Conv2D(filters=128, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
                      kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
     model.add(Activation('relu'))
@@ -231,7 +215,7 @@ def create_database(size, n):
     actions = deque()
     for i in range(n):
         if i % 100 == 0:
-            print("Creating database: {}% ({})".format(round(100 * i / n, 2), i))
+            print("Creating database for size {}: {}% ({})".format(size, round(100 * i / n, 2), i))
 
         board = init_board(size)
         winner = -1
@@ -242,7 +226,7 @@ def create_database(size, n):
             boards.append(board.copy())
             actions.append(get_action_from_move(move, size))
 
-            if random.random() < 1 / 2:
+            if random.random() < 3 / 4:
                 move = get_random_move(board)
 
             board[move] = 0
@@ -268,10 +252,9 @@ def train(model, database):
             l[i][b[i]] = 1
         return np.array([get_features(board) for board in a]), l
 
-    m = n // 100
+    m = 1000
     for i in range(m):
-        if i % 100 == 0:
-            print("Training: {}% ({})".format(round(100 * i / m, 2), i))
+        print("Training: {}% ({})".format(round(100 * i / m, 2), i))
         l = random.sample(range(n), 64)
         model.train_on_batch(*f(X[l], Y[l]))
 
@@ -286,7 +269,7 @@ def get_norm(model, database):
     return s / 10
 
 
-def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
+def learn(size, epochs, memory_size, batch_size, model_path="", thread=None, intermediate_save=False):
     """
     Train the model
     :return: model, dataframe
@@ -345,7 +328,7 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
         ##################
         thread.set_epoch(epoch)
 
-        if epoch % 1000 == 0:
+        if epoch % 1000 == 0 and intermediate_save:
             print("Starting save")
             df = pd.DataFrame(dict(winner=winner_array[:index],
                                    loss=loss_array[:index],
@@ -353,6 +336,14 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None):
                                    ))
             hex_io.save_model_and_df(model, df, size, epochs, memory_size, batch_size, "current_epoch_{}".format(epoch))
             print("Save successful")
+        #
+        # if epoch == 100:
+        #     import matplotlib.pyplot as plt
+        #     plt.plot(range(index), loss_array[:index])
+        #     plt.show()
+        #
+        #     plt.plot(range(index), norm_array[:index])
+        #     plt.show()
 
         ########################
         ### Learn from memory ##
