@@ -10,7 +10,8 @@ from hex_game.graphics.ui import UI
 from hex_game.threads.learn_thread import LearnThread
 
 if len(sys.argv) > 1:
-    LearnThread(size=9, epochs=100000, memory_size=10000, batch_size=512, intermediate_save=True, comment="less_training").run()
+    for i in range(10):
+        LearnThread(size=6, epochs=100000, memory_size=10000, batch_size=512, intermediate_save=False).run()
 else:
     app = QtWidgets.QApplication(sys.argv)
     ui = UI()

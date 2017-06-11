@@ -8,7 +8,7 @@ from hex_game.tf_init import sess
 
 
 class LearnThread(threading.Thread):
-    def __init__(self, size, epochs, memory_size, batch_size, comment="", model="", intermediate_save=False):
+    def __init__(self, size, epochs, memory_size, batch_size, comment="", model="", intermediate_save=True):
         threading.Thread.__init__(self)
 
         self.size = size

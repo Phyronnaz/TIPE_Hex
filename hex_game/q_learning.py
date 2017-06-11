@@ -18,26 +18,6 @@ from hex_game.main import *
 from hex_game.winner_check import *
 
 
-class Neighbors1(Initializer):
-    def __call__(self, shape, dtype=None):
-        x = np.random.random(shape)
-        y = np.zeros(shape, dtype="float32")
-        for (a, b) in NEIGHBORS_1:
-            p = (a + 1, b + 1)
-            y[p] = x[p]
-        return tf.Variable(y)
-
-
-class Neighbors2(Initializer):
-    def __call__(self, shape, dtype=None):
-        x = np.random.random(shape)
-        y = np.zeros(shape, dtype="float32")
-        for (a, b) in NEIGHBORS_2:
-            p = (a + 2, b + 2)
-            y[p] = x[p]
-        return tf.Variable(y)
-
-
 def init_model(size):
     """
     Init model with size size
@@ -66,29 +46,29 @@ def init_model(size):
     model = Sequential()
 
     # Neighbors 2 (3 layers)
-    model.add(Conv2D(filters=128, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
+    model.add(Conv2D(filters=64, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
                      kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform",
                      input_shape=(size + 4, size + 4, 6)))
     model.add(Activation('relu'))
 
-    model.add(Conv2D(filters=128, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
+    model.add(Conv2D(filters=64, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
                      kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
     model.add(Activation('relu'))
 
-    model.add(Conv2D(filters=128, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
+    model.add(Conv2D(filters=64, kernel_size=(5, 5), padding="same", data_format="channels_last", use_bias=True,
                      kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
     model.add(Activation('relu'))
 
     # Neighbors 1 (3 layers)
-    model.add(Conv2D(filters=128, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
+    model.add(Conv2D(filters=64, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
                      kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
     model.add(Activation('relu'))
 
-    model.add(Conv2D(filters=128, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
+    model.add(Conv2D(filters=64, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
                      kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
     model.add(Activation('relu'))
 
-    model.add(Conv2D(filters=128, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
+    model.add(Conv2D(filters=64, kernel_size=(3, 3), padding="same", data_format="channels_last", use_bias=True,
                      kernel_initializer="lecun_uniform", bias_initializer="lecun_uniform"))
     model.add(Activation('relu'))
 
@@ -137,8 +117,6 @@ def get_features(board):
     t[:2, -2:, :] = 0
     t[-2:, :2, :] = 0
     t[-2:, -2:, :] = 0
-
-    # print(t[:, :, 0])
 
     # Paths
     for player in range(2):
@@ -252,9 +230,18 @@ def train(model, database):
             l[i][b[i]] = 1
         return np.array([get_features(board) for board in a]), l
 
-    m = 1000
+    if size == 5:
+        m = 1000
+    elif size == 6:
+        m = 5000
+    elif size == 7:
+        m = 10000
+    else:
+        m = 1000
+
     for i in range(m):
-        print("Training: {}% ({})".format(round(100 * i / m, 2), i))
+        if i % 100 == 0:
+            print("Training: {}% ({})".format(round(100 * i / m, 2), i))
         l = random.sample(range(n), 64)
         model.train_on_batch(*f(X[l], Y[l]))
 
@@ -376,9 +363,9 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None, int
 
             loss = model.train_on_batch(X, Y, )
 
-        ###############################################
-        ### Create board and winner_check variables ###
-        ###############################################
+        #####################
+        ### Create board  ###
+        #####################
         board = random.choice(database[0]).copy()
         winner = -1
 

@@ -56,7 +56,7 @@ def score(board, path, enemy_path):
     [A, B] = numpy.array(path).T
     [C, D] = numpy.array(enemy_path).T
 
-    return sum(U[C, D]) - sum(U[A, B])
+    return sum(U[C, D]) + sum(U[A, B])
 
 
 def expand_paths(paths, board):

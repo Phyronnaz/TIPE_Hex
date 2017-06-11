@@ -118,6 +118,7 @@ def is_neighboring(a: (int, int), b: (int, int), distance: int, board: numpy.nda
     :param a: (int, int)
     :param b: (int, int)
     :param distance: 1 or 2
+    :param board: board
     :return: bool
     """
     if distance == 1:
@@ -166,6 +167,12 @@ def get_neighbors_2(p: (int, int), board: numpy.ndarray) -> list((int, int)):
 
 
 def add_edges(board: numpy.ndarray, count: int) -> numpy.ndarray:
+    """
+    Add edges to board
+    :param board: board
+    :param count: number of edges
+    :return: new board
+    """
     n = board.shape[0]
     B = -numpy.ones((n + 2 * count, n + 2 * count), dtype=int)  # Large board
     B[count:n + count, count:n + count] = board
