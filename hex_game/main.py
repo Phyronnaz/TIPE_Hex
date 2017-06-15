@@ -1,9 +1,18 @@
+#############################################################################
+# Fichier qui comprend des fonctions utiles lors de l'analyse du jeu de Hex #
+#############################################################################
+
 import numpy
 
 NEIGHBORS_1 = [(0, 1), (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1)]
 NEIGHBORS_2 = [(-1, 2), (1, 1), (2, -1), (1, -2), (-1, -1), (-2, 1)]
 
 
+# -1: empty tile
+#  0: player 0
+#  1: player 1
+#
+# Board:
 #  -------------> y
 # |  000000000
 # | 1
@@ -55,12 +64,12 @@ def play_move_and_copy(board: numpy.ndarray, move: (int, int), player: int) -> n
     return new_board
 
 
-def has_win(board: numpy.ndarray, player: int) -> bool:
+def has_won(board: numpy.ndarray, player: int) -> bool:
     """
-    Check if a player has win
+    Check if a player has won
     :param board: board
     :param player: int corresponding to the player (0 or 1)
-    :return: Whether or not player has win
+    :return: Whether or not player has won
     """
     checked = numpy.zeros(board.shape, dtype=bool)
     size = board.shape[0]
@@ -104,7 +113,7 @@ def get_random_move(board: numpy.ndarray) -> (int, int):
     """
     Random move
     :param board: board
-    :return: (int, int)
+    :return: move
     """
     moves = get_possibles_moves(board)
     numpy.random.shuffle(moves)
@@ -152,7 +161,7 @@ def get_neighbors_1(p: (int, int), board: numpy.ndarray) -> [(int, int)]:
     return [(a + i, b + j) for (i, j) in NEIGHBORS_1 if 0 <= a + i < n > b + j >= 0]
 
 
-def get_neighbors_2(p: (int, int), board: numpy.ndarray) -> list((int, int)):
+def get_neighbors_2(p: (int, int), board: numpy.ndarray) -> [(int, int)]:
     """
     Return a list of all NEIGHBORS_2 of p in board
     :param p: (x, y)
@@ -233,6 +242,7 @@ def invert_move(move: (int, int), player: int) -> (int, int):
         return move[0], move[1]
     else:
         return move[1], move[0]
+
 
 def flip(board: numpy.ndarray) -> numpy.ndarray:
     """

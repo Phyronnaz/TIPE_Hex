@@ -1,9 +1,11 @@
 import numpy
-
 from hex_game.main import NEIGHBORS_1
 
 
 class Poisson:
+    """
+    Class to handle Poisson equation solving
+    """
     def __init__(self, board, scales):
         self.m = m = board.shape[0]
         self.n = n = self.m + 4
@@ -34,7 +36,6 @@ class Poisson:
 
         neighbors_1 = numpy.zeros((e - s, e - s))
 
-        # Normal
         for (a, b) in NEIGHBORS_1:
             neighbors_1 += A[s + a:e + a, s + b:e + b]
 

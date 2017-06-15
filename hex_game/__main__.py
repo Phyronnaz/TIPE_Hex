@@ -7,7 +7,7 @@ if path not in sys.path:
 
 from PyQt5 import QtWidgets
 from hex_game.graphics.ui import UI
-from hex_game.threads.learn_thread import LearnThread
+from hex_game.learn_thread import LearnThread
 
 if len(sys.argv) > 1:
     for i in range(10):

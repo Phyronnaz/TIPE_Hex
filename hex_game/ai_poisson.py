@@ -1,4 +1,10 @@
-import numpy
+############################
+# Fichier de l'heuristique #
+############################
+
+
+
+import numpy as np
 # noinspection PyUnresolvedReferences
 from hex_game.floyd_warshall.floyd_warshall import floyd_warshall
 
@@ -10,20 +16,15 @@ from hex_game.poisson import Poisson
 poisson_dict = {}
 
 
-def get_move_poisson(board, player, debug_path=True):
+def get_move_poisson(board : np.ndarray, player: int, debug_path=True) -> (int, int):
+    """
+    Return heuristic move
+    :param board: board
+    :param player: player
+    :param debug_path: debug path?
+    :return: 
+    """
     paths = [get_path(board, p) for p in [0, 1]]
-
-    # paths_values = [None, None]
-    # for p in [0, 1]:
-    #     X, Y = paths[p].T
-    #     i_board = invert_board(board, p)
-    #     paths_values[p] = get_poisson(i_board)[X, Y]
-    #
-    # best = numpy.argmax([sum(paths_values[p]) for p in [0, 1]])
-    # i_board = invert_board(board, best)
-    # move = get_move(paths[best], i_board)
-    #
-    # return invert_move(move, best)
 
     real_paths = [invert_path(paths[p], p) for p in [0, 1]]
 
@@ -32,7 +33,7 @@ def get_move_poisson(board, player, debug_path=True):
         debug.debug_path(real_paths[1], id=1, player=player)
 
     valid_paths = [validate_path(c, board) for c in real_paths]
-    expanded_paths = [expand_paths(c, board) for c in real_paths]
+    expanded_paths = [expand_path(c, board) for c in real_paths]
 
     valid_expanded_paths = [validate_path(c, board) for c in expanded_paths]
 
@@ -40,36 +41,61 @@ def get_move_poisson(board, player, debug_path=True):
 
     c = [1, -1][player]
 
-    i = numpy.argmax([c * score(invert_board(play_move_and_copy(board, k, player), player), *valid_paths) for k in l])
+    i = np.argmax([c * score(invert_board(play_move_and_copy(board, k, player), player), *valid_paths) for k in l])
 
     return l[i]
 
 
-def validate_path(path, board):
+def validate_path(path : [(int, int)], board : np.ndarray) -> [(int, int)]:
+    """
+    Return path without invalid tiles
+    :param path: path
+    :param board: board
+    :return: path
+    """
     n = board.shape[0]
     return [(a, b) for (a, b) in path if 0 <= a < n > b >= 0]
 
 
-def score(board, path, enemy_path):
+def score(board : np.ndarray, path : [(int, int)], enemy_path:[(int, int)]) -> float:
+    """
+    Return the score (weigths of enemy path + weigths of player path)
+    :param board: board
+    :param path: player path
+    :param enemy_path: enenmy path
+    :return: score
+    """
     U = get_poisson(board)
 
-    [A, B] = numpy.array(path).T
-    [C, D] = numpy.array(enemy_path).T
+    [A, B] = np.array(path).T
+    [C, D] = np.array(enemy_path).T
 
     return sum(U[C, D]) + sum(U[A, B])
 
 
-def expand_paths(paths, board):
+def expand_path(path : [(int, int)], board : np.ndarray) -> [(int, int)]:
+    """
+    Add NEIGHBORS_2 to path path 
+    :param path: path
+    :param board: board
+    :return: path with extra tiles
+    """
     l = []
-    for i in range(len(paths) - 1):
-        l.append(paths[i])
-        if not is_neighboring(paths[i], paths[i + 1], distance=1, board=board):
-            l += get_common_neighbors(paths[i], paths[i + 1], board)
-    l.append(paths[-1])
+    for i in range(len(path) - 1):
+        l.append(path[i])
+        if not is_neighboring(path[i], path[i + 1], distance=1, board=board):
+            l += get_common_neighbors(path[i], path[i + 1], board)
+    l.append(path[-1])
     return l
 
 
-def get_path(board, player):
+def get_path(board : np.ndarray, player : int) -> [(int, int)]:
+    """
+    Get the path of player player on board board
+    :param board: board
+    :param player: player
+    :return: path
+    """
     i_board = add_edges(invert_board(board, player), 1)
 
     W, P = get_weights_and_precedents_matrix(i_board)
@@ -88,7 +114,12 @@ def get_path(board, player):
     return path
 
 
-def get_poisson(board):
+def get_poisson(board : np.ndarray) -> np.ndarray:
+    """
+    Calculate poisson weights matrix
+    :param board: board
+    :return: poisson + 1 + 1/n
+    """
     key = board.tostring()
     if key not in poisson_dict:
         n = board.shape[0]
@@ -96,7 +127,7 @@ def get_poisson(board):
         # Create edges
         B = add_edges(board, 1)
 
-        scales = numpy.ones((n + 2, n + 2))
+        scales = np.ones((n + 2, n + 2))
         c = 1  # How much edges are used in poisson
         scales[0, :] = c
         scales[-1, :] = c
@@ -120,14 +151,20 @@ def get_poisson(board):
     return poisson_dict[key]
 
 
-def get_weights_and_precedents_matrix(board):
+def get_weights_and_precedents_matrix(board: np.ndarray) -> (np.ndarray, np.ndarray):
+    """
+    Initialize weights and precedents matrix
+    :param board: board
+    :return: weights, precedents
+    """
+
     n = board.shape[0]
 
     U = get_poisson(board)
 
     # Initialization of the neighbour matrix
-    W = float("inf") * numpy.ones((n, n, n, n))  # Neighbour matrix
-    P = -numpy.ones((n, n, n, n, 2), dtype=int)  # Previous matrix
+    W = float("inf") * np.ones((n, n, n, n))  # Neighbour matrix
+    P = -np.ones((n, n, n, n, 2), dtype=int)  # Previous matrix
 
     # Create paths with all linked cells with the cell's poisson value as the weight and the linked cell as the
     # precedent neighbour
@@ -142,7 +179,7 @@ def get_weights_and_precedents_matrix(board):
     return W, P
 
 
-def find_start_end(W):
+def find_start_end(W : np.ndarray) -> ((int, int), (int, int)):
     """
     Search the best path
     :param W: weights matrix
@@ -162,14 +199,14 @@ def find_start_end(W):
     return start, end
 
 
-def find_path(start, end, P, board):
+def find_path(start : (int, int), end : (int, int), P : np.ndarray, board : np.ndarray) -> np.ndarray:
     """
     Find the path between start and end
-    :param start: (int, int) 
-    :param end: (int, int)
+    :param start: start position
+    :param end: end position
     :param P: precedents matrix
     :param board: board
-    :return: np.ndarray
+    :return: path
     """
 
     def aux(pile, start, end):
@@ -195,19 +232,19 @@ def find_path(start, end, P, board):
     aux(pile, start, end)
     pile.append(end)
 
-    return numpy.array(pile)
+    return np.array(pile)
 
 
-def get_move(path, board):
+def get_move(path : [(int, int)], board : np.ndarray) -> (int, int):
     """
     Get move to play from path
     :param path: tuple list
     :param board: board
-    :return: (int, int)
+    :return: move
     """
     U = get_poisson(board)
 
     X, Y = path.T
-    i = numpy.argmax(U[X, Y])
+    i = np.argmax(U[X, Y])
 
     return X[i], Y[i]

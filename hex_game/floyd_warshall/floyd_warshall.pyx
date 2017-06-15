@@ -1,3 +1,8 @@
+##################
+# Floyd Warshall #
+##################
+
+
 # noinspection PyUnresolvedReferences
 cimport cython
 cimport numpy as np
@@ -9,7 +14,7 @@ ctypedef np.float_t DTYPE_f
 @cython.boundscheck(False)  # turn off bounds-checking for entire function
 @cython.wraparound(False)  # turn off negative index wrapping for entire function
 def floyd_warshall(np.ndarray[DTYPE_f, ndim=4] W, np.ndarray[DTYPE_t, ndim=5] P):
-    # Classical Floyd Warshall algorithm with the precedent neighbour kept in memory to rebuild the explored paths
+    # Floyd Warshall algorithm with the precedent neighbour kept in memory to rebuild the explored paths
     n = W.shape[0]
     modified = False
     for a in range(n):

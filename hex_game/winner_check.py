@@ -1,3 +1,8 @@
+############################################################################
+# Fichier qui comprend les fonctions qui donnent le gagant plus rapidement #
+############################################################################
+
+
 import numpy
 from hex_game.main import NEIGHBORS_1
 
@@ -18,10 +23,10 @@ def init_winner_matrix_and_counter(size: int):
 
 def late_init_winner_matrix_and_counter(board: numpy.ndarray):
     """
-       Init winner matrix and winner counter from already started board game
-       :param board: board
-       :return: winner_matrix, winner_counter
-       """
+    Init winner matrix and winner counter from already started board game
+    :param board: board
+    :return: winner_matrix, winner_counter
+    """
     n = board.shape[0]
     winner_matrix, winner_counter = init_winner_matrix_and_counter(n)
     for i in range(n):
@@ -51,7 +56,7 @@ def check_for_winner(move: (int, int), player: int, winner_matrix: numpy.ndarray
     if len(player_neighbors) == 0:  # Last move alone
         winner_matrix[move] = winner_counter * p
         winner_counter += 1
-    elif len(player_neighbors) == 1:  # Only one neighbors
+    elif len(player_neighbors) == 1:  # Only one neighbor
         winner_matrix[move] = player_neighbors[0]
     elif 1 * p in player_neighbors and 2 * p in player_neighbors:  # if sides are now neighbors
         winner = player

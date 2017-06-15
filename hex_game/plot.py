@@ -1,6 +1,14 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import easygui
+import os
+import sys
+
+# path = os.path.dirname(os.path.realpath(__file__))[:-8]
+path = "/home/victor/PycharmProjects/TIPE_Hex/"
+if path not in sys.path:
+    sys.path.insert(0, path)
+
 
 path = easygui.fileopenbox(default="/home/victor/Hex/")
 

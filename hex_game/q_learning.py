@@ -1,3 +1,7 @@
+##################################
+# Fichier qui gère le Q learning #
+##################################
+
 import os
 import random
 from collections import deque
@@ -5,8 +9,6 @@ from collections import deque
 import keras.models
 import numpy as np
 import pandas as pd
-import tensorflow as tf
-from keras.initializers import Initializer
 from keras.layers.convolutional import Conv2D
 from keras.layers.core import Dense, Activation, Flatten
 from keras.models import Sequential
@@ -209,9 +211,9 @@ def create_database(size, n):
 
             board[move] = 0
 
-            if has_win(board, 0):
+            if has_won(board, 0):
                 winner = 0
-            elif has_win(board, 1):
+            elif has_won(board, 1):
                 winner = 1
 
             board = invert_board(board, 1)
@@ -418,7 +420,7 @@ def learn(size, epochs, memory_size, batch_size, model_path="", thread=None, int
             old_state = features
             new_state = get_features(board)
 
-            if has_win(board, 1):
+            if has_won(board, 1):
                 winner = 1
                 reward = 1
                 terminal = True

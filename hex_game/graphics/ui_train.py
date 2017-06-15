@@ -2,10 +2,11 @@ import numpy
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5.QtWidgets import QMessageBox
-from hex_game.graphics.plots import TrainPlot
+
 from hex_game import hex_io
 from hex_game.graphics.mainwindow import Ui_TIPE
-from hex_game.threads.learn_thread import LearnThread
+from hex_game.graphics.plots import TrainPlot
+from hex_game.learn_thread import LearnThread
 
 
 class TrainUI:
